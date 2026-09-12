@@ -1,17 +1,18 @@
 <?php
 /**
- * PRISMA-SLR - API: Projetos
- * GET    /api/projects.php        → listar todos
- * GET    /api/projects.php?id=N   → buscar um
- * POST   /api/projects.php        → criar
- * PUT    /api/projects.php?id=N   → atualizar
- * DELETE /api/projects.php?id=N   → excluir
+ * PRISMA-SLR - API: Projects
+ * GET    /api/projects.php        → list all
+ * GET    /api/projects.php?id=N   → fetch one
+ * POST   /api/projects.php        → create
+ * PUT    /api/projects.php?id=N   → update
+ * DELETE /api/projects.php?id=N   → delete
  */
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/auth.php';
+require_once __DIR__ . '/../config/api_guard.php';
 
-// Sessão deve ser iniciada antes de qualquer output
+// Session must be started before any output
 startSecureSession();
 
 header('Content-Type: application/json; charset=utf-8');
@@ -21,20 +22,21 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
-// Exige autenticação
+// Requires authentication
 $sessionUser = currentUser();
 if (!$sessionUser) {
     jsonResponse(['error' => true, 'message' => 'Não autenticado'], 401);
 }
-$userId = $sessionUser['id'];
+$userId     = $sessionUser['id'];
+$reviewerId = (int) $userId;
 
 $pdo    = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 $action = $_GET['action'] ?? null;
 
-// ── Ação especial: sync_reasons ───────────────────────────────────
-// Sincroniza exclusion_reasons da fase 'screening' com o campo exclusion_criteria do projeto
+// ── Special action: sync_reasons ───────────────────────────────────
+// Syncs 'screening'-phase exclusion_reasons with the project's exclusion_criteria field
 if ($action === 'sync_reasons') {
     $projId = $id ?? (int)($_GET['project_id'] ?? 0);
     if (!$projId) jsonResponse(['error'=>true,'message'=>'project_id obrigatório'], 422);
@@ -43,13 +45,13 @@ if ($action === 'sync_reasons') {
     $row = $stmt->fetch();
     if (!$row) jsonResponse(['error'=>true,'message'=>'Projeto não encontrado'], 404);
     syncExclusionReasons($pdo, $projId, $row['exclusion_criteria'] ?? '');
-    // Retorna os motivos atualizados
+    // Returns the updated reasons
     $stmt2 = $pdo->prepare("SELECT id, reason, description FROM exclusion_reasons WHERE project_id = ? AND phase = 'screening' ORDER BY sort_order");
     $stmt2->execute([$projId]);
     jsonResponse(['success'=>true, 'reasons' => $stmt2->fetchAll()]);
 }
 
-// ── Ações especiais: checklist ────────────────────────────────────
+// ── Special actions: checklist ────────────────────────────────────
 if ($action === 'checklist') {
     if ($method === 'GET') {
         $projId = $id ?? (int)($_GET['project_id'] ?? 0);
@@ -91,36 +93,37 @@ switch ($method) {
 
 case 'GET':
     if ($id) {
-        // Buscar projeto com estatísticas — só se pertencer ao usuário logado
+        // Fetch project with statistics — only if it belongs to the logged-in user
         $stmt = $pdo->prepare("
             SELECT p.*,
                    (SELECT COUNT(*) FROM search_sources ss WHERE ss.project_id = p.id) AS total_sources,
                    (SELECT COUNT(*) FROM articles a WHERE a.project_id = p.id) AS total_articles,
                    (SELECT COUNT(*) FROM articles a WHERE a.project_id = p.id AND a.is_duplicate = 1) AS total_duplicates,
-                   (SELECT COUNT(*) FROM articles a WHERE a.project_id = p.id AND a.status = 'included') AS total_included
+                   (SELECT COUNT(*) FROM articles a WHERE a.project_id = p.id AND a.is_duplicate = 0 AND " . personalIncludedExists($reviewerId) . ") AS total_included
             FROM projects p
-            WHERE p.id = ? AND p.user_id = ?
+            WHERE p.id = ? AND (p.user_id = ?
+                  OR p.id IN (SELECT project_id FROM project_members WHERE user_id = ?))
         ");
-        $stmt->execute([$id, $userId]);
+        $stmt->execute([$id, $userId, $userId]);
         $project = $stmt->fetch();
 
         if (!$project) {
             jsonResponse(['error' => true, 'message' => 'Projeto não encontrado'], 404);
         }
 
-        // Fontes de busca
+        // Search sources
         $stmt2 = $pdo->prepare("SELECT * FROM search_sources WHERE project_id = ? ORDER BY imported_at DESC");
         $stmt2->execute([$id]);
         $project['sources'] = $stmt2->fetchAll();
 
-        // Motivos de exclusão
+        // Exclusion reasons
         $stmt3 = $pdo->prepare("SELECT * FROM exclusion_reasons WHERE project_id = ? ORDER BY phase, sort_order");
         $stmt3->execute([$id]);
         $project['exclusion_reasons'] = $stmt3->fetchAll();
 
         jsonResponse($project);
     } else {
-        // Listar projetos do usuário logado com estatísticas resumidas
+        // List the logged-in user's projects with summary statistics
         $stmt = $pdo->prepare("
             SELECT p.*,
                    COALESCE(s.total_sources, 0) AS total_sources,
@@ -133,14 +136,14 @@ case 'GET':
                        COUNT(DISTINCT ss.id) AS total_sources,
                        COUNT(DISTINCT a.id) AS total_articles,
                        COUNT(DISTINCT CASE WHEN a.is_duplicate = 1 THEN a.id END) AS total_duplicates,
-                       COUNT(DISTINCT CASE WHEN a.status = 'included' THEN a.id END) AS total_included
+                       COUNT(DISTINCT CASE WHEN a.is_duplicate = 0 AND " . personalIncludedExists($reviewerId) . " THEN a.id END) AS total_included
                 FROM projects p2
                 LEFT JOIN search_sources ss ON ss.project_id = p2.id
                 LEFT JOIN articles a ON a.project_id = p2.id
-                WHERE p2.user_id = ?
                 GROUP BY p2.id
             ) s ON s.project_id = p.id
             WHERE p.user_id = ?
+               OR p.id IN (SELECT project_id FROM project_members WHERE user_id = ?)
             ORDER BY p.created_at DESC
         ");
         $stmt->execute([$userId, $userId]);
@@ -174,7 +177,7 @@ case 'POST':
 
     $newId = (int) $pdo->lastInsertId();
 
-    // Insere motivos de exclusão padrão para elegibilidade
+    // Insert default exclusion reasons for eligibility
     $defaultEligibility = [
         ['eligibility', 'Metodologia inadequada',             'O método não atende aos critérios de inclusão'],
         ['eligibility', 'Dados insuficientes',                'O estudo não apresenta dados suficientes para análise'],
@@ -189,10 +192,10 @@ case 'POST':
         $stmtR->execute([$newId, $r[0], $r[1], $r[2], $i]);
     }
 
-    // Sincroniza critérios de exclusão da triagem com exclusion_reasons
+    // Syncs the screening exclusion criteria with exclusion_reasons
     syncExclusionReasons($pdo, $newId, $data['exclusion_criteria'] ?? '');
 
-    // Inicializa checklist PRISMA 2020
+    // Initializes the PRISMA 2020 checklist
     insertPrismaChecklist($pdo, $newId);
 
     jsonResponse(['success' => true, 'id' => $newId, 'message' => 'Projeto criado com sucesso'], 201);
@@ -223,7 +226,7 @@ case 'PUT':
     $values[] = $userId;
     $pdo->prepare("UPDATE projects SET " . implode(', ', $sets) . " WHERE id = ? AND user_id = ?")->execute($values);
 
-    // Se exclusion_criteria foi atualizado, sincroniza os motivos de exclusão da triagem
+    // If exclusion_criteria was updated, sync the screening exclusion reasons
     if (array_key_exists('exclusion_criteria', $data)) {
         syncExclusionReasons($pdo, $id, $data['exclusion_criteria'] ?? '');
     }
@@ -235,7 +238,7 @@ case 'PUT':
 case 'DELETE':
     if (!$id) jsonResponse(['error' => true, 'message' => 'ID obrigatório'], 422);
 
-    // Verifica existência e propriedade
+    // Verify existence and ownership
     $stmt = $pdo->prepare("SELECT id FROM projects WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
     if (!$stmt->fetch()) {
@@ -252,7 +255,8 @@ default:
 }
 
 // -----------------------------------------------------------------
-// Sincroniza exclusion_reasons (fase screening) com exclusion_criteria do projeto
+// Syncs exclusion_reasons (screening phase) with the project's exclusion_criteria
+// Uses a text-based upsert to preserve existing IDs (avoids orphans in screening_decisions)
 // -----------------------------------------------------------------
 function syncExclusionReasons(PDO $pdo, int $projectId, ?string $criteriaRaw): void
 {
@@ -265,21 +269,33 @@ function syncExclusionReasons(PDO $pdo, int $projectId, ?string $criteriaRaw): v
     $criteria = array_values(array_filter($criteria));
     if (empty($criteria)) return;
 
-    // Remove motivos antigos da fase screening deste projeto
-    $pdo->prepare("DELETE FROM exclusion_reasons WHERE project_id = ? AND phase = 'screening'")->execute([$projectId]);
-
-    // Insere os critérios de exclusão do projeto como motivos de triagem
-    $stmt = $pdo->prepare("
+    // Upsert: updates sort_order if it already exists by text; inserts if not.
+    // Never deletes — preserves IDs referenced in screening_decisions.
+    $upsert = $pdo->prepare("
         INSERT INTO exclusion_reasons (project_id, phase, reason, is_default, sort_order)
         VALUES (?, 'screening', ?, 1, ?)
+        ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order), is_default = 1
     ");
     foreach ($criteria as $i => $criterion) {
-        $stmt->execute([$projectId, trim($criterion), $i]);
+        $upsert->execute([$projectId, trim($criterion), $i]);
+    }
+
+    // Remove reasons that are no longer in the criteria AND have no linked decisions
+    if (!empty($criteria)) {
+        $placeholders = implode(',', array_fill(0, count($criteria), '?'));
+        $pdo->prepare("
+            DELETE er FROM exclusion_reasons er
+            WHERE er.project_id = ? AND er.phase = 'screening'
+              AND er.reason NOT IN ($placeholders)
+              AND NOT EXISTS (
+                SELECT 1 FROM screening_decisions sd WHERE sd.reason_id = er.id
+              )
+        ")->execute(array_merge([$projectId], array_map('trim', $criteria)));
     }
 }
 
 // -----------------------------------------------------------------
-// Função auxiliar: insere checklist PRISMA 2020 para o projeto
+// Helper function: inserts the PRISMA 2020 checklist for the project
 // -----------------------------------------------------------------
 function insertPrismaChecklist(PDO $pdo, int $projectId): void
 {

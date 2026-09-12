@@ -1,14 +1,19 @@
 <?php
 /**
  * PRISMA-SLR — api/references.php
- * Gera referências formatadas em ABNT NBR 6023:2018 ou APA 7ª ed.
+ * Generates references formatted in ABNT NBR 6023:2018 or APA 7th ed.
  */
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/api_guard.php';
+
+$apiUser    = requireApiAuth();
+$reviewerId = (int) $apiUser['id'];
 
 $projectId = (int)($_GET['project_id'] ?? 0);
+if ($projectId) requireProjectAccess(getDB(), (int) $projectId);
 $format    = strtolower(trim($_GET['format'] ?? 'abnt'));  // abnt | apa
 $scope     = $_GET['scope'] ?? 'included';                // included | all
 $idsRaw    = trim($_GET['ids'] ?? '');
@@ -21,8 +26,8 @@ if (!$projectId) {
 try {
     $db = getDB();
 
-    // ── Busca artigos ────────────────────────────────────────────
-    $statusFilter = ($scope === 'all') ? "a.is_duplicate = 0" : "a.status = 'included'";
+    // ── Fetch articles ──────────────────────────────────────────
+    $statusFilter = ($scope === 'all') ? "a.is_duplicate = 0" : "a.is_duplicate = 0 AND " . personalIncludedExists($reviewerId);
 
     if ($idsRaw !== '') {
         $ids = array_filter(array_map('intval', explode(',', $idsRaw)));
@@ -54,7 +59,7 @@ try {
         exit;
     }
 
-    // ── Busca autores para todos os artigos de uma vez ───────────
+    // ── Fetch authors for all articles at once ───────────────────
     $artIds = array_column($articles, 'id');
     $ph2    = implode(',', array_fill(0, count($artIds), '?'));
     $authSql = "SELECT aa.article_id, au.full_name, aa.position
@@ -66,13 +71,13 @@ try {
     $authStmt->execute($artIds);
     $authRows = $authStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Agrupa autores por article_id (parseia full_name em last/first)
+    // Groups authors by article_id (parses full_name into last/first)
     $authorsByArticle = [];
     foreach ($authRows as $row) {
         $authorsByArticle[$row['article_id']][] = parseFullName($row['full_name'] ?? '');
     }
 
-    // ── Gera referências ─────────────────────────────────────────
+    // ── Generate references ───────────────────────────────────────
     $references = [];
     foreach ($articles as $art) {
         $authors = $authorsByArticle[$art['id']] ?? [];
@@ -87,7 +92,7 @@ try {
         ];
     }
 
-    // Ordem alfabética pelo texto da referência (sobrenome do 1º autor)
+    // Alphabetical order by reference text (last name of the 1st author)
     usort($references, fn($a, $b) => mb_strtolower($a['reference']) <=> mb_strtolower($b['reference']));
 
     echo json_encode([
@@ -139,7 +144,7 @@ function abntAuthors(array $authors): string
 {
     if (empty($authors)) return '[s.n.]';
 
-    // ABNT: lista até 3; se mais de 3, primeiro + et al.
+    // ABNT: lists up to 3; if more than 3, first + et al.
     $list  = array_slice($authors, 0, 3);
     $parts = [];
     foreach ($list as $a) {
@@ -159,7 +164,7 @@ function abntAuthors(array $authors): string
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  APA 7ª edição
+//  APA 7th edition
 // ═══════════════════════════════════════════════════════════════════
 function formatAPA(array $art, array $authors): string
 {
@@ -213,7 +218,7 @@ function apaAuthors(array $authors): string
     }
 
     if ($total > 20) {
-        // 19 autores + ... + último
+        // 19 authors + ... + last one
         $last_a = $authors[$total - 1];
         $l = trim($last_a['last']);
         $f = trim($last_a['first'] ?? '');
@@ -233,20 +238,20 @@ function apaAuthors(array $authors): string
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  Parser de nome completo → {last, first}
+//  Full name parser → {last, first}
 // ═══════════════════════════════════════════════════════════════════
 function parseFullName(string $fullName): array
 {
     $name = trim($fullName);
     if (!$name) return ['last' => '', 'first' => ''];
 
-    // Formato "Sobrenome, Nome" ou "Sobrenome, N."  (mais comum em bases bibliográficas)
+    // "Lastname, Firstname" or "Lastname, F." format (most common in bibliographic databases)
     if (strpos($name, ',') !== false) {
         [$last, $first] = explode(',', $name, 2);
         return ['last' => trim($last), 'first' => trim($first)];
     }
 
-    // Formato "Nome Sobrenome" — última palavra é o sobrenome
+    // "Firstname Lastname" format — last word is the surname
     $parts = preg_split('/\s+/', $name, -1, PREG_SPLIT_NO_EMPTY);
     if (count($parts) === 1) return ['last' => $parts[0], 'first' => ''];
     $last  = array_pop($parts);

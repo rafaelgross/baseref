@@ -1,29 +1,65 @@
 <?php
 /**
- * PRISMA-SLR - API: Dados do Diagrama PRISMA 2020
+ * PRISMA-SLR - API: PRISMA 2020 Flow Diagram Data
  * GET /api/prisma-flow.php?project_id=N
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/api_guard.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
+$apiUser = requireApiAuth();
+$reviewerId = (int) $apiUser['id'];
+
 $pdo       = getDB();
 $projectId = isset($_GET['project_id']) ? (int) $_GET['project_id'] : null;
+if ($projectId) requireProjectAccess(getDB(), (int) $projectId);
 
 if (!$projectId) jsonResponse(['error' => true, 'message' => 'project_id obrigatório'], 422);
 
-// Verifica projeto
+// ── POST: permanently delete duplicates ─────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['action'] ?? '') === 'delete_duplicates') {
+    $stmt = $pdo->prepare("DELETE FROM articles WHERE project_id = ? AND is_duplicate = 1");
+    $stmt->execute([$projectId]);
+    jsonResponse(['success' => true, 'deleted' => $stmt->rowCount()]);
+}
+
+// ── POST: delete articles excluded at screening or eligibility ──────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['action'] ?? '') === 'delete_excluded') {
+    $stage = $_GET['stage'] ?? '';
+    if ($stage === 'screened') {
+        // Excluded at screening: status = 'excluded' with a decision in the screening phase
+        $stmt = $pdo->prepare("
+            DELETE a FROM articles a
+            JOIN screening_decisions sd ON sd.article_id = a.id
+            WHERE a.project_id = ? AND a.status = 'excluded' AND sd.stage = 'screening'
+        ");
+    } elseif ($stage === 'eligible') {
+        // Excluded at full text: status = 'excluded' with a decision in the eligibility phase
+        $stmt = $pdo->prepare("
+            DELETE a FROM articles a
+            JOIN screening_decisions sd ON sd.article_id = a.id
+            WHERE a.project_id = ? AND a.status = 'excluded' AND sd.stage = 'eligibility'
+        ");
+    } else {
+        jsonResponse(['error' => true, 'message' => 'stage inválido'], 422);
+    }
+    $stmt->execute([$projectId]);
+    jsonResponse(['success' => true, 'deleted' => $stmt->rowCount()]);
+}
+
+// Verify project
 $stmt = $pdo->prepare("SELECT id, title FROM projects WHERE id = ?");
 $stmt->execute([$projectId]);
 $project = $stmt->fetch();
 if (!$project) jsonResponse(['error' => true, 'message' => 'Projeto não encontrado'], 404);
 
 // -----------------------------------------------------------------
-// Contagens por fonte de busca
+// Counts per search source
 // -----------------------------------------------------------------
 $stmt = $pdo->prepare("
     SELECT ss.name, ss.source_type, ss.total_imported,
@@ -37,7 +73,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([$projectId]);
 $sources = $stmt->fetchAll();
 
-// Total identificado
+// Total identified
 $totalIdentified = 0;
 $byDatabase = [];
 foreach ($sources as $src) {
@@ -51,7 +87,7 @@ foreach ($sources as $src) {
 }
 
 // -----------------------------------------------------------------
-// Duplicatas removidas (confirmadas)
+// Duplicates removed (confirmed)
 // -----------------------------------------------------------------
 $stmt = $pdo->prepare("
     SELECT COUNT(DISTINCT article_id_2) AS total
@@ -61,101 +97,108 @@ $stmt = $pdo->prepare("
 $stmt->execute([$projectId]);
 $duplicatesRemoved = (int) $stmt->fetchColumn();
 
-// Artigos únicos (após remoção de duplicatas)
+// Unique articles (after duplicate removal)
 $uniqueAfterDedup = $totalIdentified - $duplicatesRemoved;
 
 // -----------------------------------------------------------------
-// Fase de triagem (screening)
+// Screening and eligibility phases — decisions from the logged-in reviewer
+// (same "mine" rule as Screening/Dashboard: each reviewer sees their own
+// progress, not the project's consolidated official status)
 // -----------------------------------------------------------------
-// Total triado = artigos com decisão de screening
+$mine = "AND sd.is_consensus = 0 AND (sd.reviewer_id = ? OR sd.reviewer_id IS NULL)";
+
+// Total screened by me = articles with my own screening decision
 $stmt = $pdo->prepare("
     SELECT COUNT(DISTINCT a.id) AS total
     FROM articles a
-    JOIN screening_decisions sd ON sd.article_id = a.id AND sd.phase = 'screening'
+    JOIN screening_decisions sd ON sd.article_id = a.id AND sd.phase = 'screening' $mine
     WHERE a.project_id = ? AND a.is_duplicate = 0
 ");
-$stmt->execute([$projectId]);
+$stmt->execute([$reviewerId, $projectId]);
 $screened = (int) $stmt->fetchColumn();
 
-// Excluídos na triagem
+// Excluded by me at screening
 $stmt = $pdo->prepare("
-    SELECT COUNT(*) AS total
+    SELECT COUNT(DISTINCT sd.article_id) AS total
     FROM screening_decisions sd
     JOIN articles a ON a.id = sd.article_id
-    WHERE a.project_id = ? AND sd.phase = 'screening' AND sd.decision = 'exclude'
+    WHERE a.project_id = ? AND a.is_duplicate = 0 AND sd.phase = 'screening' AND sd.decision = 'exclude' $mine
 ");
-$stmt->execute([$projectId]);
+$stmt->execute([$projectId, $reviewerId]);
 $excludedScreening = (int) $stmt->fetchColumn();
 
-// Incluídos na triagem (passaram para elegibilidade)
+// Included by me at screening (moved on to eligibility)
 $stmt = $pdo->prepare("
-    SELECT COUNT(*) AS total
+    SELECT COUNT(DISTINCT sd.article_id) AS total
     FROM screening_decisions sd
     JOIN articles a ON a.id = sd.article_id
-    WHERE a.project_id = ? AND sd.phase = 'screening' AND sd.decision = 'include'
+    WHERE a.project_id = ? AND a.is_duplicate = 0 AND sd.phase = 'screening' AND sd.decision = 'include' $mine
 ");
-$stmt->execute([$projectId]);
+$stmt->execute([$projectId, $reviewerId]);
 $includedScreening = (int) $stmt->fetchColumn();
 
-// Motivos de exclusão na triagem
+// Exclusion reasons I used at screening
 $stmt = $pdo->prepare("
-    SELECT er.reason, COUNT(*) AS total
+    SELECT er.reason, COUNT(DISTINCT sd.article_id) AS total
     FROM screening_decisions sd
     JOIN articles a ON a.id = sd.article_id
     LEFT JOIN exclusion_reasons er ON er.id = sd.reason_id
-    WHERE a.project_id = ? AND sd.phase = 'screening' AND sd.decision = 'exclude'
+    WHERE a.project_id = ? AND a.is_duplicate = 0 AND sd.phase = 'screening' AND sd.decision = 'exclude' $mine
     GROUP BY er.id, er.reason
     ORDER BY total DESC
 ");
-$stmt->execute([$projectId]);
+$stmt->execute([$projectId, $reviewerId]);
 $screeningReasons = $stmt->fetchAll();
 
 // -----------------------------------------------------------------
-// Fase de elegibilidade (full text)
+// Eligibility phase (full text) — only among those I included at screening
 // -----------------------------------------------------------------
 $stmt = $pdo->prepare("
     SELECT COUNT(DISTINCT a.id) AS total
     FROM articles a
-    JOIN screening_decisions sd ON sd.article_id = a.id AND sd.phase = 'eligibility'
+    JOIN screening_decisions sd ON sd.article_id = a.id AND sd.phase = 'eligibility' $mine
     WHERE a.project_id = ? AND a.is_duplicate = 0
 ");
-$stmt->execute([$projectId]);
+$stmt->execute([$reviewerId, $projectId]);
 $assessedEligibility = (int) $stmt->fetchColumn();
 
-// Excluídos na elegibilidade
+// Excluded by me at eligibility
 $stmt = $pdo->prepare("
-    SELECT COUNT(*) AS total
+    SELECT COUNT(DISTINCT sd.article_id) AS total
     FROM screening_decisions sd
     JOIN articles a ON a.id = sd.article_id
-    WHERE a.project_id = ? AND sd.phase = 'eligibility' AND sd.decision = 'exclude'
+    WHERE a.project_id = ? AND a.is_duplicate = 0 AND sd.phase = 'eligibility' AND sd.decision = 'exclude' $mine
 ");
-$stmt->execute([$projectId]);
+$stmt->execute([$projectId, $reviewerId]);
 $excludedEligibility = (int) $stmt->fetchColumn();
 
-// Motivos de exclusão na elegibilidade
+// Exclusion reasons I used at eligibility
 $stmt = $pdo->prepare("
-    SELECT er.reason, COUNT(*) AS total
+    SELECT er.reason, COUNT(DISTINCT sd.article_id) AS total
     FROM screening_decisions sd
     JOIN articles a ON a.id = sd.article_id
     LEFT JOIN exclusion_reasons er ON er.id = sd.reason_id
-    WHERE a.project_id = ? AND sd.phase = 'eligibility' AND sd.decision = 'exclude'
+    WHERE a.project_id = ? AND a.is_duplicate = 0 AND sd.phase = 'eligibility' AND sd.decision = 'exclude' $mine
     GROUP BY er.id, er.reason
     ORDER BY total DESC
 ");
-$stmt->execute([$projectId]);
+$stmt->execute([$projectId, $reviewerId]);
 $eligibilityReasons = $stmt->fetchAll();
 
 // -----------------------------------------------------------------
-// Incluídos na revisão
+// Included by me in the review (final eligibility decision)
 // -----------------------------------------------------------------
 $stmt = $pdo->prepare("
-    SELECT COUNT(*) FROM articles WHERE project_id = ? AND status = 'included'
+    SELECT COUNT(DISTINCT sd.article_id) AS total
+    FROM screening_decisions sd
+    JOIN articles a ON a.id = sd.article_id
+    WHERE a.project_id = ? AND a.is_duplicate = 0 AND sd.phase = 'eligibility' AND sd.decision = 'include' $mine
 ");
-$stmt->execute([$projectId]);
+$stmt->execute([$projectId, $reviewerId]);
 $totalIncluded = (int) $stmt->fetchColumn();
 
 // -----------------------------------------------------------------
-// Resposta final
+// Final response
 // -----------------------------------------------------------------
 jsonResponse([
     'project_id'    => $projectId,

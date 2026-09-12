@@ -1,13 +1,15 @@
 <?php
 /**
- * PRISMA-SLR - API: Triagem e Elegibilidade
+ * PRISMA-SLR - API: Screening and Eligibility
  *
- * GET  /api/screening.php?project_id=N&phase=screening  → artigos para triar
- * POST /api/screening.php                                → registrar decisão
- * GET  /api/screening.php?project_id=N&summary=1        → resumo das fases
+ * GET  /api/screening.php?project_id=N&phase=screening  → articles to screen
+ * POST /api/screening.php                                → record decision
+ * GET  /api/screening.php?project_id=N&summary=1        → phase summary
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/api_guard.php';
+require_once __DIR__ . '/screening_status.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -16,13 +18,16 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
+$apiUser = requireApiAuth();
+$reviewerId = (int) $apiUser['id'];
+
 $pdo    = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Migração: garante coluna rating na tabela screening_decisions
+// Migration: ensures the rating column exists on screening_decisions
 try {
     $pdo->exec("ALTER TABLE screening_decisions ADD COLUMN rating TINYINT UNSIGNED NULL DEFAULT NULL");
-} catch (Exception $e) { /* coluna já existe */ }
+} catch (Exception $e) { /* column already exists */ }
 
 // -----------------------------------------------------------------
 switch ($method) {
@@ -30,51 +35,54 @@ switch ($method) {
 
 case 'GET':
     $projectId = isset($_GET['project_id']) ? (int) $_GET['project_id'] : null;
+    if ($projectId) requireProjectAccess(getDB(), (int) $projectId);
     if (!$projectId) jsonResponse(['error' => true, 'message' => 'project_id obrigatório'], 422);
 
-    // Modo sumário: retorna contagens de cada fase
+    // Summary mode: returns counts for each phase
     if (!empty($_GET['summary'])) {
-        jsonResponse(getScreeningSummary($pdo, $projectId));
+        jsonResponse(getScreeningSummary($pdo, $projectId, $reviewerId));
         break;
     }
 
-    $phase          = $_GET['phase']           ?? 'screening'; // 'screening' ou 'eligibility'
-    $pending        = !empty($_GET['pending_only']);            // apenas sem decisão
-    $decisionFilter = $_GET['decision_filter'] ?? '';          // 'include', 'exclude' ou ''
+    $phase          = $_GET['phase']           ?? 'screening'; // 'screening' or 'eligibility'
+    $pending        = !empty($_GET['pending_only']);            // only without a decision
+    $decisionFilter = $_GET['decision_filter'] ?? '';          // 'include', 'exclude' or ''
 
     $page    = max(1, (int) ($_GET['page'] ?? 1));
     $perPage = min(50, max(5, (int) ($_GET['per_page'] ?? 20)));
     $offset  = ($page - 1) * $perPage;
 
     if ($phase === 'screening') {
-        // Triagem: artigos que não são duplicatas
+        // Screening: articles that are not duplicates
         $baseWhere = "a.project_id = ? AND a.is_duplicate = 0";
         $params    = [$projectId];
 
+        $mine = "AND sd.is_consensus = 0 AND (sd.reviewer_id = $reviewerId OR sd.reviewer_id IS NULL)";
         if ($pending) {
-            $baseWhere .= " AND NOT EXISTS (SELECT 1 FROM screening_decisions sd WHERE sd.article_id = a.id AND sd.phase = 'screening')";
+            $baseWhere .= " AND NOT EXISTS (SELECT 1 FROM screening_decisions sd WHERE sd.article_id = a.id AND sd.phase = 'screening' $mine)";
         } elseif ($decisionFilter === 'include') {
-            $baseWhere .= " AND EXISTS (SELECT 1 FROM screening_decisions sd WHERE sd.article_id = a.id AND sd.phase = 'screening' AND sd.decision = 'include')";
+            $baseWhere .= " AND EXISTS (SELECT 1 FROM screening_decisions sd WHERE sd.article_id = a.id AND sd.phase = 'screening' AND sd.decision = 'include' $mine)";
         } elseif ($decisionFilter === 'exclude') {
-            $baseWhere .= " AND EXISTS (SELECT 1 FROM screening_decisions sd WHERE sd.article_id = a.id AND sd.phase = 'screening' AND sd.decision = 'exclude')";
+            $baseWhere .= " AND EXISTS (SELECT 1 FROM screening_decisions sd WHERE sd.article_id = a.id AND sd.phase = 'screening' AND sd.decision = 'exclude' $mine)";
         }
     } else {
-        // Elegibilidade: artigos que passaram na triagem (incluídos nela)
+        // Eligibility: articles that passed screening (effective status) or already have an eligibility decision
         $baseWhere = "a.project_id = ? AND a.is_duplicate = 0
-                      AND EXISTS (SELECT 1 FROM screening_decisions sd WHERE sd.article_id = a.id
-                                  AND sd.phase = 'screening' AND sd.decision = 'include')";
+                      AND (a.status IN ('eligible','included')
+                           OR EXISTS (SELECT 1 FROM screening_decisions se WHERE se.article_id = a.id AND se.phase = 'eligibility'))";
         $params    = [$projectId];
 
+        $mine = "AND sd2.is_consensus = 0 AND (sd2.reviewer_id = $reviewerId OR sd2.reviewer_id IS NULL)";
         if ($pending) {
-            $baseWhere .= " AND NOT EXISTS (SELECT 1 FROM screening_decisions sd2 WHERE sd2.article_id = a.id AND sd2.phase = 'eligibility')";
+            $baseWhere .= " AND NOT EXISTS (SELECT 1 FROM screening_decisions sd2 WHERE sd2.article_id = a.id AND sd2.phase = 'eligibility' $mine)";
         } elseif ($decisionFilter === 'include') {
-            $baseWhere .= " AND EXISTS (SELECT 1 FROM screening_decisions sd2 WHERE sd2.article_id = a.id AND sd2.phase = 'eligibility' AND sd2.decision = 'include')";
+            $baseWhere .= " AND EXISTS (SELECT 1 FROM screening_decisions sd2 WHERE sd2.article_id = a.id AND sd2.phase = 'eligibility' AND sd2.decision = 'include' $mine)";
         } elseif ($decisionFilter === 'exclude') {
-            $baseWhere .= " AND EXISTS (SELECT 1 FROM screening_decisions sd2 WHERE sd2.article_id = a.id AND sd2.phase = 'eligibility' AND sd2.decision = 'exclude')";
+            $baseWhere .= " AND EXISTS (SELECT 1 FROM screening_decisions sd2 WHERE sd2.article_id = a.id AND sd2.phase = 'eligibility' AND sd2.decision = 'exclude' $mine)";
         }
     }
 
-    // Filtro de busca
+    // Search filter
     if (!empty($_GET['search'])) {
         $s = '%' . $_GET['search'] . '%';
         $baseWhere .= " AND (a.title LIKE ? OR a.abstract LIKE ?)";
@@ -82,12 +90,12 @@ case 'GET':
         $params[] = $s;
     }
 
-    // Contagem total
+    // Total count
     $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM articles a WHERE $baseWhere");
     $stmtCount->execute($params);
     $total = (int) $stmtCount->fetchColumn();
 
-    // Artigos
+    // Articles
     $stmtArt = $pdo->prepare("
         SELECT a.id, a.title, a.abstract, a.year, a.journal, a.doi,
                a.source_type, a.document_type, a.url,
@@ -96,6 +104,7 @@ case 'GET':
                sd.notes, sd.rating
         FROM articles a
         LEFT JOIN screening_decisions sd ON sd.article_id = a.id AND sd.phase = ?
+             AND sd.is_consensus = 0 AND (sd.reviewer_id = $reviewerId OR sd.reviewer_id IS NULL)
         LEFT JOIN exclusion_reasons er ON er.id = sd.reason_id
         WHERE $baseWhere
         ORDER BY a.id ASC
@@ -104,7 +113,7 @@ case 'GET':
     $stmtArt->execute(array_merge([$phase], $params, [$perPage, $offset]));
     $articles = $stmtArt->fetchAll();
 
-    // Autores para cada artigo
+    // Authors for each article
     if (!empty($articles)) {
         $ids = array_column($articles, 'id');
         $ph  = implode(',', array_fill(0, count($ids), '?'));
@@ -121,7 +130,7 @@ case 'GET':
         }
     }
 
-    // Motivos de exclusão do projeto
+    // Project exclusion reasons
     $stmtReasons = $pdo->prepare("
         SELECT id, reason, description
         FROM exclusion_reasons
@@ -151,6 +160,7 @@ case 'POST':
     if (!$articleId || !$phase || !$decision) {
         jsonResponse(['error' => true, 'message' => 'article_id, phase e decision são obrigatórios'], 422);
     }
+    requireArticleAccess($pdo, $articleId);
 
     if (!in_array($phase,    ['screening', 'eligibility'])) {
         jsonResponse(['error' => true, 'message' => 'phase inválido'], 422);
@@ -164,19 +174,50 @@ case 'POST':
     $rating   = isset($data['rating']) && $data['rating'] >= 1 && $data['rating'] <= 5
                 ? (int) $data['rating'] : null;
 
-    // Upsert da decisão
+    // Upsert this reviewer's decision (legacy decisions have reviewer_id NULL and
+    // are absorbed by the current reviewer to avoid duplicates)
     $pdo->prepare("
-        INSERT INTO screening_decisions (article_id, phase, decision, reason_id, notes, rating)
-        VALUES (?, ?, ?, ?, ?, ?)
+        UPDATE screening_decisions SET reviewer_id = ?
+        WHERE article_id = ? AND phase = ? AND reviewer_id IS NULL AND is_consensus = 0
+    ")->execute([$reviewerId, $articleId, $phase]);
+
+    $pdo->prepare("
+        INSERT INTO screening_decisions (article_id, reviewer_id, is_consensus, phase, decision, reason_id, notes, rating)
+        VALUES (?, ?, 0, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
             decision   = VALUES(decision),
             reason_id  = VALUES(reason_id),
             notes      = VALUES(notes),
             rating     = VALUES(rating),
             decided_at = NOW()
-    ")->execute([$articleId, $phase, $decision, $reasonId, $notes, $rating]);
+    ")->execute([$articleId, $reviewerId, $phase, $decision, $reasonId, $notes, $rating]);
 
-    // Atualiza status do artigo
+    // Update article status
+    $newStatus = computeArticleStatus($pdo, $articleId);
+    $pdo->prepare("UPDATE articles SET status = ? WHERE id = ?")->execute([$newStatus, $articleId]);
+
+    jsonResponse(['success' => true, 'article_id' => $articleId, 'new_status' => $newStatus]);
+    break;
+
+// -----------------------------------------------------------------
+case 'DELETE':
+    // Remove the screening decision so the article goes back to pending
+    $data      = getJsonBody();
+    $articleId = (int) ($data['article_id'] ?? 0);
+    $phase     = $data['phase'] ?? '';
+
+    if (!$articleId || !in_array($phase, ['screening', 'eligibility'])) {
+        jsonResponse(['error' => true, 'message' => 'article_id e phase são obrigatórios'], 422);
+    }
+    requireArticleAccess($pdo, $articleId);
+
+    $pdo->prepare("
+        DELETE FROM screening_decisions
+        WHERE article_id = ? AND phase = ?
+              AND is_consensus = 0 AND (reviewer_id = ? OR reviewer_id IS NULL)
+    ")->execute([$articleId, $phase, $reviewerId]);
+
+    // Recalculate article status
     $newStatus = computeArticleStatus($pdo, $articleId);
     $pdo->prepare("UPDATE articles SET status = ? WHERE id = ?")->execute([$newStatus, $articleId]);
 
@@ -192,103 +233,83 @@ default:
 // Helpers
 // -----------------------------------------------------------------
 
-/**
- * Calcula o status do artigo com base nas decisões registradas
- */
 function computeArticleStatus(PDO $pdo, int $articleId): string
 {
-    $stmt = $pdo->prepare("
-        SELECT phase, decision FROM screening_decisions WHERE article_id = ?
-    ");
-    $stmt->execute([$articleId]);
-    $decisions = [];
-    foreach ($stmt->fetchAll() as $row) {
-        $decisions[$row['phase']] = $row['decision'];
-    }
-
-    // Excluído em alguma fase
-    if (($decisions['screening']   ?? '') === 'exclude') return 'excluded';
-    if (($decisions['eligibility'] ?? '') === 'exclude') return 'excluded';
-
-    // Incluído na elegibilidade
-    if (($decisions['eligibility'] ?? '') === 'include') return 'included';
-
-    // Passou pela triagem
-    if (($decisions['screening'] ?? '') === 'include') return 'eligible';
-
-    // Passou pela triagem com incerteza
-    if (($decisions['screening'] ?? '') === 'uncertain') return 'screened';
-
-    return 'screened';
+    return computeArticleStatusShared($pdo, $articleId);
 }
 
 /**
- * Resumo de contagens por fase
+ * Summary of counts per phase — filtered by the current reviewer's decisions
+ * (same "mine" rule used in the listing) so the chip totals always
+ * match what appears when clicking each filter.
  */
-function getScreeningSummary(PDO $pdo, int $projectId): array
+function getScreeningSummary(PDO $pdo, int $projectId, int $reviewerId): array
 {
-    // Total não duplicados
+    // Total non-duplicates
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM articles WHERE project_id = ? AND is_duplicate = 0");
     $stmt->execute([$projectId]);
     $totalNonDup = (int) $stmt->fetchColumn();
 
-    // Triagem: sem decisão
+    $mine = "AND sd.is_consensus = 0 AND (sd.reviewer_id = ? OR sd.reviewer_id IS NULL)";
+
+    // Screening: without a decision (from this reviewer)
     $stmt = $pdo->prepare("
         SELECT COUNT(*) FROM articles a
         WHERE a.project_id = ? AND a.is_duplicate = 0
-        AND NOT EXISTS (SELECT 1 FROM screening_decisions sd WHERE sd.article_id = a.id AND sd.phase = 'screening')
+        AND NOT EXISTS (SELECT 1 FROM screening_decisions sd WHERE sd.article_id = a.id AND sd.phase = 'screening' $mine)
     ");
-    $stmt->execute([$projectId]);
+    $stmt->execute([$projectId, $reviewerId]);
     $pendingScreening = (int) $stmt->fetchColumn();
 
-    // Triagem: incluídos
+    // Screening: included (by this reviewer)
     $stmt = $pdo->prepare("
-        SELECT COUNT(*) FROM screening_decisions sd
+        SELECT COUNT(DISTINCT sd.article_id) FROM screening_decisions sd
         JOIN articles a ON a.id = sd.article_id
-        WHERE a.project_id = ? AND sd.phase = 'screening' AND sd.decision = 'include'
+        WHERE a.project_id = ? AND a.is_duplicate = 0 AND sd.phase = 'screening' AND sd.decision = 'include' $mine
     ");
-    $stmt->execute([$projectId]);
+    $stmt->execute([$projectId, $reviewerId]);
     $includedScreening = (int) $stmt->fetchColumn();
 
-    // Triagem: excluídos
+    // Screening: excluded (by this reviewer)
     $stmt = $pdo->prepare("
-        SELECT COUNT(*) FROM screening_decisions sd
+        SELECT COUNT(DISTINCT sd.article_id) FROM screening_decisions sd
         JOIN articles a ON a.id = sd.article_id
-        WHERE a.project_id = ? AND sd.phase = 'screening' AND sd.decision = 'exclude'
+        WHERE a.project_id = ? AND a.is_duplicate = 0 AND sd.phase = 'screening' AND sd.decision = 'exclude' $mine
     ");
-    $stmt->execute([$projectId]);
+    $stmt->execute([$projectId, $reviewerId]);
     $excludedScreening = (int) $stmt->fetchColumn();
 
-    // Elegibilidade: sem decisão (passaram na triagem)
+    // Eligibility: without a decision (passed screening, from this reviewer)
+    $mine2 = "AND sd2.is_consensus = 0 AND (sd2.reviewer_id = ? OR sd2.reviewer_id IS NULL)";
     $stmt = $pdo->prepare("
         SELECT COUNT(*) FROM articles a
         WHERE a.project_id = ? AND a.is_duplicate = 0
-        AND EXISTS (SELECT 1 FROM screening_decisions sd WHERE sd.article_id = a.id AND sd.phase = 'screening' AND sd.decision = 'include')
-        AND NOT EXISTS (SELECT 1 FROM screening_decisions sd2 WHERE sd2.article_id = a.id AND sd2.phase = 'eligibility')
+        AND EXISTS (SELECT 1 FROM screening_decisions sd WHERE sd.article_id = a.id AND sd.phase = 'screening' AND sd.decision = 'include' $mine)
+        AND NOT EXISTS (SELECT 1 FROM screening_decisions sd2 WHERE sd2.article_id = a.id AND sd2.phase = 'eligibility' $mine2)
     ");
-    $stmt->execute([$projectId]);
+    $stmt->execute([$projectId, $reviewerId, $reviewerId]);
     $pendingEligibility = (int) $stmt->fetchColumn();
 
-    // Elegibilidade: incluídos
+    // Eligibility: included by this reviewer
     $stmt = $pdo->prepare("
         SELECT COUNT(*) FROM articles a
-        WHERE a.project_id = ? AND a.status = 'included'
+        WHERE a.project_id = ? AND a.is_duplicate = 0 AND " . personalIncludedExists($reviewerId) . "
     ");
     $stmt->execute([$projectId]);
     $included = (int) $stmt->fetchColumn();
 
-    // Elegibilidade: excluídos
+    // Eligibility: excluded (by this reviewer)
     $stmt = $pdo->prepare("
-        SELECT COUNT(*) FROM screening_decisions sd
+        SELECT COUNT(DISTINCT sd.article_id) FROM screening_decisions sd
         JOIN articles a ON a.id = sd.article_id
-        WHERE a.project_id = ? AND sd.phase = 'eligibility' AND sd.decision = 'exclude'
+        WHERE a.project_id = ? AND a.is_duplicate = 0 AND sd.phase = 'eligibility' AND sd.decision = 'exclude' $mine
     ");
-    $stmt->execute([$projectId]);
+    $stmt->execute([$projectId, $reviewerId]);
     $excludedEligibility = (int) $stmt->fetchColumn();
 
-    // Exclusões por motivo (elegibilidade)
+    // Exclusions by reason (eligibility)
     $stmt = $pdo->prepare("
-        SELECT er.reason, COUNT(*) AS total
+        SELECT er.reason, COUNT(DISTINCT sd.article_id) AS total
         FROM screening_decisions sd
         JOIN articles a ON a.id = sd.article_id
         JOIN exclusion_reasons er ON er.id = sd.reason_id

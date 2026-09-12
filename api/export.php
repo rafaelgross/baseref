@@ -1,15 +1,19 @@
 <?php
 /**
- * PRISMA-SLR - API: Exportação
+ * PRISMA-SLR - API: Export
  * GET /api/export.php?project_id=N&format=FORMAT&scope=SCOPE
  *
- * Formatos: csv, bibtex, json
+ * Formats: csv, bibtex, json
  * Scope: all, included, screened
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/api_guard.php';
+
+requireApiAuth();
 
 $projectId = isset($_GET['project_id']) ? (int) $_GET['project_id'] : null;
+if ($projectId) requireProjectAccess(getDB(), (int) $projectId);
 $format    = strtolower($_GET['format'] ?? 'csv');
 $scope     = $_GET['scope'] ?? 'included';
 
@@ -21,7 +25,7 @@ if (!$projectId) {
 
 $pdo = getDB();
 
-// Projeto
+// Project
 $stmt = $pdo->prepare("SELECT * FROM projects WHERE id = ?");
 $stmt->execute([$projectId]);
 $project = $stmt->fetch();
@@ -31,13 +35,22 @@ if (!$project) {
     exit;
 }
 
-// Escopo
-$where = "a.project_id = ?";
+// Scope — export uses the project's official corpus (not personal), so that
+// all reviewers export the same set and can work on it together.
+$where  = "a.project_id = ?";
+$params = [$projectId];
 if ($scope === 'included')      $where .= " AND a.status = 'included'";
 elseif ($scope === 'screened')  $where .= " AND a.status IN ('eligible','included') AND a.is_duplicate = 0";
 elseif ($scope === 'all')       $where .= " AND a.is_duplicate = 0";
 
-// Busca artigos
+// Filters by a single imported source/database (optional)
+$sourceId = isset($_GET['source_id']) ? (int) $_GET['source_id'] : 0;
+if ($sourceId) {
+    $where   .= " AND a.source_id = ?";
+    $params[] = $sourceId;
+}
+
+// Fetch articles
 $stmt = $pdo->prepare("
     SELECT a.*,
            ss.name AS source_name
@@ -46,10 +59,10 @@ $stmt = $pdo->prepare("
     WHERE $where
     ORDER BY a.year DESC, a.title
 ");
-$stmt->execute([$projectId]);
+$stmt->execute($params);
 $articles = $stmt->fetchAll();
 
-// Para cada artigo, busca autores e keywords
+// For each article, fetch authors and keywords
 $ids = array_column($articles, 'id');
 $authorMap  = [];
 $keywordMap = [];
@@ -78,13 +91,17 @@ if (!empty($ids)) {
     }
 }
 
-// Adiciona autores/keywords nos artigos
+// Add authors/keywords to the articles
 foreach ($articles as &$art) {
     $art['authors_str']  = $authorMap[$art['id']]  ?? '';
     $art['keywords_str'] = $keywordMap[$art['id']] ?? '';
 }
+unset($art);
 
-$filename = 'PRISMA-SLR_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $project['title']) . '_' . $scope;
+$filenameSuffix = $sourceId && !empty($articles[0]['source_name'])
+    ? preg_replace('/[^a-zA-Z0-9_-]/', '_', $articles[0]['source_name'])
+    : $scope;
+$filename = 'PRISMA-SLR_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $project['title']) . '_' . $filenameSuffix;
 
 // -----------------------------------------------------------------
 // CSV
@@ -97,7 +114,7 @@ if ($format === 'csv') {
     $out = fopen('php://output', 'w');
     fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8
 
-    // Cabeçalho
+    // Header
     fputcsv($out, [
         'ID','Título','Autores','Ano','Periódico','Volume','Número','Páginas',
         'DOI','ISSN','Tipo','Idioma','Editora','Citações','Open Access',
@@ -153,7 +170,7 @@ if ($format === 'bibtex') {
     foreach ($articles as $art) {
         $type = $typeMap[$art['document_type'] ?? ''] ?? 'misc';
 
-        // Gera chave BibTeX
+        // Generate BibTeX key
         $firstAuthor = '';
         if (!empty($art['authors_str'])) {
             $parts = explode(' and ', $art['authors_str']);

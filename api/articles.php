@@ -1,12 +1,13 @@
 <?php
 /**
- * PRISMA-SLR - API: Artigos
- * GET  /api/articles.php?project_id=N  → lista com filtros
- * GET  /api/articles.php?id=N          → artigo completo
- * PUT  /api/articles.php?id=N          → atualizar status/campos
+ * PRISMA-SLR - API: Articles
+ * GET  /api/articles.php?project_id=N  → filtered list
+ * GET  /api/articles.php?id=N          → full article
+ * PUT  /api/articles.php?id=N          → update status/fields
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/api_guard.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -14,6 +15,9 @@ header('Access-Control-Allow-Methods: GET, PUT, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
+
+$apiUser    = requireApiAuth();
+$reviewerId = (int) $apiUser['id'];
 
 $pdo    = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
@@ -25,13 +29,13 @@ switch ($method) {
 
 case 'GET':
     if ($id) {
-        // Artigo completo com autores, palavras-chave e afiliações
+        // Full article with authors, keywords and affiliations
         $stmt = $pdo->prepare("SELECT a.* FROM articles a WHERE a.id = ?");
         $stmt->execute([$id]);
         $article = $stmt->fetch();
         if (!$article) jsonResponse(['error' => true, 'message' => 'Artigo não encontrado'], 404);
 
-        // Autores
+        // Authors
         $stmt2 = $pdo->prepare("
             SELECT au.full_name, aa.position
             FROM article_authors aa
@@ -42,17 +46,17 @@ case 'GET':
         $stmt2->execute([$id]);
         $article['authors'] = $stmt2->fetchAll();
 
-        // Palavras-chave
+        // Keywords
         $stmt3 = $pdo->prepare("SELECT keyword, keyword_type FROM article_keywords WHERE article_id = ? ORDER BY keyword_type, keyword");
         $stmt3->execute([$id]);
         $article['keywords'] = $stmt3->fetchAll();
 
-        // Afiliações
+        // Affiliations
         $stmt4 = $pdo->prepare("SELECT institution, country FROM article_affiliations WHERE article_id = ?");
         $stmt4->execute([$id]);
         $article['affiliations'] = $stmt4->fetchAll();
 
-        // Decisões de triagem
+        // Screening decisions
         $stmt5 = $pdo->prepare("
             SELECT sd.*, er.reason AS exclusion_reason_text
             FROM screening_decisions sd
@@ -65,21 +69,27 @@ case 'GET':
         jsonResponse($article);
 
     } else {
-        // Lista com filtros e paginação
+        // Filtered, paginated list
         $projectId = isset($_GET['project_id']) ? (int) $_GET['project_id'] : null;
+        if ($projectId) requireProjectAccess(getDB(), (int) $projectId);
         if (!$projectId) jsonResponse(['error' => true, 'message' => 'project_id obrigatório'], 422);
 
         $page     = max(1, (int) ($_GET['page'] ?? 1));
         $perPage  = min(100, max(10, (int) ($_GET['per_page'] ?? 25)));
         $offset   = ($page - 1) * $perPage;
 
-        // Filtros
+        // Filters
         $where  = ['a.project_id = ?'];
         $params = [$projectId];
 
         if (!empty($_GET['status'])) {
-            $where[] = 'a.status = ?';
-            $params[] = $_GET['status'];
+            if ($_GET['status'] === 'included') {
+                $where[] = 'a.is_duplicate = 0';
+                $where[] = personalIncludedExists($reviewerId);
+            } else {
+                $where[] = 'a.status = ?';
+                $params[] = $_GET['status'];
+            }
         }
         if (!empty($_GET['source_type'])) {
             $where[] = 'a.source_type = ?';
@@ -107,7 +117,7 @@ case 'GET':
 
         $whereClause = implode(' AND ', $where);
 
-        // ── Modo counts_only (para export.php) ────────────────────
+        // ── counts_only mode (for export.php) ──────────────────────
         if (!empty($_GET['counts_only'])) {
             $cnt = function(string $extra, array $p = []) use ($pdo, $projectId): int {
                 $s = $pdo->prepare("SELECT COUNT(*) FROM articles a WHERE a.project_id = ? AND a.is_duplicate = 0 AND $extra");
@@ -117,7 +127,7 @@ case 'GET':
             jsonResponse(['counts' => [
                 'all'      => $cnt("1=1"),
                 'screened' => $cnt("a.status IN ('eligible','included')"),
-                'included' => $cnt("a.status = 'included'"),
+                'included' => $cnt(personalIncludedExists($reviewerId)),
                 'excluded' => $cnt("a.status = 'excluded'"),
             ]]);
         }
@@ -127,7 +137,7 @@ case 'GET':
         $stmtCount->execute($params);
         $total = (int) $stmtCount->fetchColumn();
 
-        // Ordenação — aceita sort=year_desc, year_asc, title, cited_by
+        // Sorting — accepts sort=year_desc, year_asc, title, cited_by
         $sortParam = $_GET['sort'] ?? 'imported_at_desc';
         $sortMap = [
             'year_desc'  => ['a.year',        'DESC'],
@@ -140,7 +150,7 @@ case 'GET':
         ];
         [$orderField, $orderDir] = $sortMap[$sortParam] ?? ['a.imported_at', 'DESC'];
 
-        // Artigos
+        // Articles
         $params[] = $perPage;
         $params[] = $offset;
         $stmt = $pdo->prepare("
@@ -158,7 +168,7 @@ case 'GET':
         $stmt->execute($params);
         $articles = $stmt->fetchAll();
 
-        // Autores resumidos para cada artigo
+        // Summarized authors for each article
         if (!empty($articles)) {
             $ids          = array_column($articles, 'id');
             $placeholders = implode(',', array_fill(0, count($ids), '?'));
@@ -179,7 +189,7 @@ case 'GET':
             }
         }
 
-        // Metadados extras para página de incluídos
+        // Extra metadata for the included articles page
         $stmtMeta = $pdo->prepare("
             SELECT
               COUNT(DISTINCT a.journal) AS unique_journals,
@@ -192,7 +202,7 @@ case 'GET':
         $stmtMeta->execute(array_slice($params, 0, count($params) - 2));
         $meta = $stmtMeta->fetch();
 
-        // Anos disponíveis para filtro
+        // Available years for filtering
         $stmtYears = $pdo->prepare("SELECT DISTINCT year FROM articles a WHERE $whereClause AND year IS NOT NULL ORDER BY year DESC");
         $stmtYears->execute(array_slice($params, 0, count($params) - 2));
         $years = array_column($stmtYears->fetchAll(), 'year');
@@ -214,6 +224,7 @@ case 'GET':
 // -----------------------------------------------------------------
 case 'PUT':
     if (!$id) jsonResponse(['error' => true, 'message' => 'ID obrigatório'], 422);
+    requireArticleAccess($pdo, (int) $id);
 
     $data  = getJsonBody();
     $allowed = ['status','is_duplicate','duplicate_of'];
