@@ -1,281 +1,140 @@
-# BaseRef
+# PRISMA-SLR
 
-> Free, open-source web platform for conducting and reporting Systematic Literature Reviews under the **PRISMA 2020** protocol.
+**Sistema web open source para gestão de Revisões Sistemáticas da Literatura** baseado no protocolo **PRISMA 2020**.
 
-![PHP](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-5.7%2B-4479A1?logo=mysql&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
-![PRISMA](https://img.shields.io/badge/Protocol-PRISMA%202020-6c63ff)
+![PRISMA-SLR Screenshot](assets/img/logo.svg)
 
----
+## Funcionalidades
 
-## About the project
+- **Projetos** — Gerencie múltiplas revisões simultaneamente
+- **Importação** — Suporte a arquivos `.bib` do Scopus e Web of Science
+- **Deduplicação** — Detecção automática de artigos duplicados por DOI e similaridade de título
+- **Triagem** — Avaliação de título/resumo com decisões de inclusão/exclusão e motivos configuráveis
+- **Elegibilidade** — Avaliação de texto completo
+- **Diagrama PRISMA 2020** — Gerado automaticamente com exportação PNG/SVG
+- **Bibliometria** — 12 gráficos + redes de co-autoria e co-ocorrência de keywords
+- **Exportação** — CSV, BibTeX e JSON para todos os escopos
+- **Checklist PRISMA 2020** — 27 itens para garantir conformidade do relatório
 
-**BaseRef** is a complete platform for managing every stage of a systematic literature review, from importing bibliographic references to generating the PRISMA 2020 flow diagram and the 27-item reporting checklist. It runs on any web server with PHP and MySQL, with no build step and no paid external dependencies.
+## Tecnologias
 
-The distinguishing property of BaseRef is that **every count reported in the PRISMA 2020 flow diagram is aggregated from the individually stored screening decisions, rather than typed in by the reviewer**. Two SQL views pre-aggregate the counters in real time, which guarantees that the number of records entering each stage equals the number leaving the preceding one, and keeps the origin of any excluded study auditable down to the record and to the exclusion reason applied to it.
+- **Backend**: PHP 8+ / MySQL
+- **Frontend**: HTML5, CSS3, JavaScript (sem framework)
+- **Gráficos**: Chart.js 4, vis.js 9, wordcloud2.js
+- **Servidor local**: MAMP (macOS/Windows), XAMPP ou qualquer servidor PHP+MySQL
 
-The system supports multiple users via Google account login, each with their own projects and isolated data.
+## Instalação (MAMP)
 
-Live demonstration instance: [baseref.com.br](https://baseref.com.br)
+### Pré-requisitos
+- [MAMP](https://www.mamp.info/) instalado e rodando
+- PHP 8.0+ e MySQL 8.0+
 
----
+### Passo a passo
 
-## Features
+1. **Clone o repositório** na pasta `htdocs` do MAMP:
+   ```bash
+   cd /Applications/MAMP/htdocs
+   git clone https://github.com/SEU_USUARIO/prisma-slr.git
+   cd prisma-slr
+   ```
 
-- **Project management** — create and manage multiple systematic reviews
-- **Reference import** — BibTeX (`.bib`), RIS (`.ris`), PubMed XML (`.xml`) and plain text (`.txt`), with automatic format and provenance detection
-- **Metadata enrichment via OpenAlex** — fills gaps in imported records by DOI, in batches of up to 50, using the public OpenAlex API with no key and no account required. Strictly non-destructive: abstracts are written only when empty and reconstructed from the inverted index, citation counts only updated when higher, open access flags only set when confirmed
-- **Automatic deduplication** — two-phase detection combining exact normalized DOI matching and configurable fuzzy title similarity (default 85%), with mandatory human confirmation of every similarity-flagged pair before removal
-- **Title and abstract screening** — include/exclude interface with a controlled list of exclusion reasons defined per project, so no exclusion can be registered without a reason
-- **Blinded multi-reviewer screening with Cohen's kappa** — when more than one reviewer is assigned, assessments are blinded and Cohen's kappa is computed continuously from the stored decisions and interpreted on the Landis and Koch scale, so agreement is monitored while screening is still in progress
-- **Full-text eligibility** — second assessment phase with its own customizable reason list
-- **PRISMA 2020 flow diagram** — automatic generation with PNG and SVG export, derived from the stored decisions
-- **PRISMA 2020 checklist** — all 27 mandatory items, with the values already recorded in the system populated automatically
-- **Bibliometrics** — analyses computed over the review corpus itself, with no export and re-import cycle: Lotka's law of author productivity, Bradford's zoning of source dispersion, the H, G and M indices, Callon thematic mapping through co-word analysis, temporal series, geographic distribution, keyword co-occurrence and co-authorship networks
-- **Formatted references** — automatic generation in **ABNT NBR 6023:2018** and **APA 7th edition**
-- **Export** — CSV (19 fields, UTF-8 with BOM), BibTeX and JSON, in three scopes: all records, screened records, or included records only
-- **Multi-language** — interface translatable via gtranslate.io (PT / EN / ES)
-- **Light/dark theme** — per-user theme toggle
-- **Google OAuth 2.0 authentication** — no passwords stored locally; each user has isolated projects
+2. **Configure o banco de dados** em `config/database.php`:
+   ```php
+   define('DB_HOST', '127.0.0.1');
+   define('DB_PORT', '8889');      // Padrão MAMP = 8889
+   define('DB_NAME', 'prisma_slr');
+   define('DB_USER', 'root');
+   define('DB_PASS', 'root');
+   ```
 
----
+3. **Crie o banco de dados** via phpMyAdmin (MAMP → Open WebStart → phpMyAdmin):
+   - Crie o banco `prisma_slr` (charset: `utf8mb4`)
+   - Importe o arquivo `sql/schema.sql`
 
-## Supported bibliographic databases
+   **Ou via terminal:**
+   ```bash
+   /Applications/MAMP/Library/bin/mysql -u root -proot -P 8889 -h 127.0.0.1 \
+     -e "CREATE DATABASE IF NOT EXISTS prisma_slr CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   /Applications/MAMP/Library/bin/mysql -u root -proot -P 8889 -h 127.0.0.1 prisma_slr \
+     < sql/schema.sql
+   ```
 
-| Database | Export format |
-| --- | --- |
-| Scopus | BibTeX, RIS |
-| Web of Science | BibTeX, RIS |
-| PubMed | XML, RIS |
-| Embase | RIS |
-| Mendeley / Zotero / EndNote | RIS, BibTeX |
-| IEEE Xplore | BibTeX |
-| Others | BibTeX, RIS |
+4. **Acesse no navegador:**
+   ```
+   http://localhost:8888/prisma-slr/
+   ```
+   > Porta padrão do MAMP = 8888. Ajuste conforme sua configuração.
 
-Format detection is performed from file content rather than declared by the user: the `EID` field identifies Scopus exports and the `Unique-ID` field identifies Web of Science exports in BibTeX files, the `TY -` header pattern identifies RIS, and the record structure identifies PubMed XML. Detecting provenance automatically matters because PRISMA 2020 requires records identified to be disaggregated by search source.
+## Instalação (XAMPP / outros)
 
----
-
-## Technologies
-
-- **Back-end:** PHP 8.1+ (no frameworks)
-- **Database:** MySQL 5.7+ / MariaDB 10.4+
-- **Front-end:** HTML5, CSS3, vanilla JavaScript
-- **JS libraries:** Chart.js, vis.js Network, WordCloud2.js, FileSaver.js
-- **External services:** Google OAuth 2.0 (authentication), OpenAlex REST API (metadata enrichment, optional), MyMemory (abstract translation, optional)
-
----
-
-## Requirements
-
-- PHP 8.1 or higher with extensions: `pdo_mysql`, `curl`, `simplexml`, `mbstring`
-- MySQL 5.7+ or MariaDB 10.4+
-- Web server: Apache or Nginx (or MAMP/XAMPP for local use)
-- A [Google Cloud Console](https://console.cloud.google.com/) account to configure OAuth
-
-There is no build step and no external dependency manager.
-
----
-
-## Installation
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/rafaelgross/baseref.git
-cd baseref
-```
-
-### 2. Set up the database
-
-Create the database and run the SQL scripts in order:
-
-```bash
-mysql -u root -p < sql/schema.sql
-mysql -u root -p baseref < sql/add_users_table.sql
-mysql -u root -p baseref < sql/add_user_id_to_projects.sql
-```
-
-### 3. Configure the database connection
-
-Edit `config/database.php` with your credentials:
-
+Configure `config/database.php` com:
 ```php
-define('DB_HOST', '127.0.0.1');
-define('DB_PORT', '3306');   // 8889 for MAMP
-define('DB_NAME', 'baseref');
-define('DB_USER', 'your_user');
-define('DB_PASS', 'your_password');
+define('DB_PORT', '3306');    // porta padrão MySQL
+define('DB_USER', 'root');    // ou seu usuário
+define('DB_PASS', '');        // ou sua senha
 ```
 
-### 4. Configure Google OAuth 2.0
+## Uso Básico
 
-#### 4.1 Create credentials in the Google Cloud Console
+1. **Criar projeto** → Projetos → Novo Projeto
+2. **Importar referências** → Importar → arraste arquivos `.bib` do Scopus ou WoS
+3. **Dedupliquem** → Duplicatas → Detectar (ajuste threshold se necessário)
+4. **Triagem** → Triagem → avalie título/resumo artigo por artigo
+5. **Elegibilidade** → Elegibilidade → avalie texto completo
+6. **Visualizar resultados** → Diagrama PRISMA / Bibliometria
+7. **Exportar** → Exportar → CSV, BibTeX ou JSON
+8. **Checklist** → Checklist PRISMA 2020 → 27 itens para o relatório
 
-1. Go to [console.cloud.google.com](https://console.cloud.google.com)
-2. Create or select a project
-3. Go to **APIs & Services** → **Credentials** → **+ Create Credentials** → **OAuth 2.0 Client ID**
-4. Application type: **Web application**
-5. Under **Authorized redirect URIs**, add:
-   - `http://localhost/baseref/auth/callback.php` (local environment)
-   - `https://yourdomain.com/baseref/auth/callback.php` (production)
-6. Copy the **Client ID** and the **Client Secret**
+## Formatos Suportados
 
-#### 4.2 Paste the credentials into the system
+### Scopus (`.bib`)
+- Campos: `EID`, `affiliations`, `author_keywords`, `note` (cited by), `source`
+- Auto-detectado por padrão
 
-Edit `config/auth.php`:
+### Web of Science (`.bib`)
+- Campos: `Unique-ID`, `Times-Cited`, `Keywords-Plus`, `Affiliation`, `Web-of-Science-Index`
+- Auto-detectado por padrão
 
-```php
-define('GOOGLE_CLIENT_ID',     'YOUR_CLIENT_ID.apps.googleusercontent.com');
-define('GOOGLE_CLIENT_SECRET', 'YOUR_CLIENT_SECRET');
-define('GOOGLE_REDIRECT_URI',  'http://localhost/baseref/auth/callback.php');
-```
-
-### 5. Configure abstract translation (optional)
-
-The **Translate** button in screening uses the free [MyMemory](https://mymemory.translated.net/) API. Without an email the limit is 1,000 words/day; with a registered email it rises to 10,000 words/day.
-
-Add to the end of your `config/database.php`:
-
-```php
-// Email to raise the translation limit (free at mymemory.translated.net)
-define('MYMEMORY_EMAIL', 'you@email.com');
-```
-
-> This file is in `.gitignore` — your email is never pushed to the repository.
-
-Metadata enrichment via OpenAlex requires no configuration: the public API is queried without a key.
-
-### 6. Access the system
-
-Point your web server to the project folder and open it in the browser. On first launch you will be redirected to the Google login screen.
-
-> **First access:** the first user to log in will have all existing projects in the database automatically assigned to their account.
-
----
-
-## Local use with MAMP (macOS)
-
-1. Copy the `baseref` folder to `/Applications/MAMP/htdocs/`
-2. Start MAMP and open `http://localhost/baseref/`
-3. Use phpMyAdmin (`http://localhost:8888/phpMyAdmin`) to run the SQL scripts
-4. Set `DB_PORT` to `8889` in `config/database.php`
-
----
-
-## Project structure
+## Estrutura do Projeto
 
 ```
-baseref/
-├── api/                 # REST endpoints (PHP)
-│   ├── articles.php
-│   ├── bibliometrics.php
-│   ├── duplicates.php
-│   ├── enrich.php       # OpenAlex metadata enrichment
-│   ├── export.php
-│   ├── import.php
-│   ├── prisma-flow.php
+prisma-slr/
+├── api/               # Endpoints REST (PHP)
 │   ├── projects.php
-│   ├── references.php
-│   └── screening.php
+│   ├── import.php
+│   ├── articles.php
+│   ├── duplicates.php
+│   ├── screening.php
+│   ├── prisma-flow.php
+│   ├── bibliometrics.php
+│   └── export.php
 ├── assets/
-│   ├── css/style.css    # Global styles
-│   ├── js/              # Per-page scripts
-│   └── img/             # Logo and icons
-├── auth/                # OAuth 2.0 flow
-│   ├── callback.php
-│   ├── google.php
-│   └── logout.php
+│   ├── css/style.css  # Design system completo
+│   ├── js/            # Scripts
+│   └── img/           # Imagens
 ├── config/
-│   ├── auth.php         # OAuth config and session helpers
-│   └── database.php     # PDO connection
-├── lib/                 # Reference parsers
-│   ├── BibTexParser.php
-│   ├── RisParser.php
-│   └── PubMedXmlParser.php
-├── pages/               # PHP views per page
-├── sql/                 # Database scripts
-│   ├── schema.sql
-│   ├── add_users_table.sql
-│   └── add_user_id_to_projects.sql
-├── index.php            # Main router
-└── login.php            # Login page
+│   └── database.php   # Configuração do banco
+├── lib/
+│   └── BibTexParser.php  # Parser BibTeX customizado
+├── pages/             # Páginas PHP (inclusas via index.php)
+├── sql/
+│   └── schema.sql     # Esquema do banco de dados
+└── index.php          # Roteador principal
+```
+
+## Licença
+
+MIT © 2024 — Veja [LICENSE](LICENSE)
+
+## Citação
+
+Se usar este software em sua pesquisa, por favor cite:
+
+```
+PRISMA-SLR: Sistema web para gestão de Revisões Sistemáticas da Literatura.
+GitHub: https://github.com/SEU_USUARIO/prisma-slr
 ```
 
 ---
 
-## Data model
-
-The relational model comprises the normalized tables `projects`, `search_sources`, `articles`, `authors`, `article_authors` (N:N), `article_keywords`, `article_affiliations`, `duplicates`, `exclusion_reasons`, `screening_decisions` and `prisma_checklist`.
-
-Two SQL views, `vw_prisma_counts` and `vw_project_stats`, pre-aggregate the flow diagram counters in real time. These views are the mechanism that enforces the conservation property of the PRISMA chain: the counts entering and leaving each stage are derived from the same underlying decision records rather than maintained independently.
-
----
-
-## Multi-user
-
-The system supports multiple researchers in isolation:
-
-- Each user logs in with their own Google account
-- Each user only sees and manages their own projects
-- New users start with an empty project list
-- No user limit
-
----
-
-## Security
-
-- Authentication via Google OAuth 2.0 (no passwords stored locally)
-- CSRF protection with a state token in all OAuth flows
-- Sessions with automatic expiration (8 hours)
-- Parameterized queries via PDO in all endpoints
-- Each user can only access projects they own
-
----
-
-## License
-
-Distributed under the **MIT** license. See the [LICENSE](LICENSE) file for details.
-
----
-
-## Contributing
-
-Contributions are welcome. To contribute:
-
-1. Fork the project
-2. Create a branch for your feature (`git checkout -b feature/my-feature`)
-3. Commit your changes (`git commit -m 'feat: add my feature'`)
-4. Push to the branch (`git push origin feature/my-feature`)
-5. Open a Pull Request
-
----
-
-## Citation
-
-If you use BaseRef in your research, please cite the archived software release:
-
-```
-Gross R, Gonçalves RF. BaseRef: an open-source platform for systematic literature
-reviews. Version 1.0.0 [software]. Zenodo; 2026.
-https://doi.org/10.5281/zenodo.21119457
-```
-
-Validation data for the pilot review is separately archived:
-
-```
-Gross R, Gonçalves RF. Validation data for the BaseRef method: pilot systematic
-review on blockchain and smart contracts in the circular economy [dataset].
-Zenodo. 2026. https://doi.org/10.5281/zenodo.21133086
-```
-
----
-
-## References
-
-- Page MJ, McKenzie JE, Bossuyt PM, Boutron I, Hoffmann TC, Mulrow CD, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ 2021;372:n71. https://doi.org/10.1136/bmj.n71
-- Cohen J. A coefficient of agreement for nominal scales. Educ Psychol Meas 1960;20(1):37-46.
-- Landis JR, Koch GG. The measurement of observer agreement for categorical data. Biometrics 1977;33(1):159-74.
-- ABNT NBR 6023:2018 — Information and documentation: References
-- APA 7th edition — Publication Manual of the American Psychological Association
+Desenvolvido para apoiar pesquisadores na condução de revisões sistemáticas da literatura de acordo com o protocolo PRISMA 2020.

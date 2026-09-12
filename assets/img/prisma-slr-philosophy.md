@@ -1,0 +1,15 @@
+# Epistemic Clarity
+
+**An aesthetic movement born from the discipline of systematic knowledge.**
+
+---
+
+Space is the argument. Every gap between elements carries weight equal to the marks themselves — white breath between form and form is not absence, it is the pause in scientific reasoning. Compositions emerge from a rigorous internal logic: structures align not by intuition but by principle, each element occupying its position as naturally as a finding occupies its place in a literature matrix. The canvas breathes with academic restraint, never cluttered, never performative.
+
+Color carries the burden of meaning. Deep oceanic blue anchors the composition with the gravity of peer-reviewed certainty — a hue that speaks of institutional trust, ink on archival paper, the reliable permanence of established knowledge. Against this foundation, cold cyan traces move like light refracted through a prism: the moment raw data transforms into understood truth. White is not background but active silence, the unmarked space in a data table that makes the filled cells legible. This palette was calibrated over countless iterations — the product of deep expertise in chromatic relationships between academic authority and scientific discovery.
+
+Form follows the logic of filtration. Geometric precision governs every shape: the prism as both object and metaphor, receiving light and dispersing it into its constituent truths. Triangular structures create directionality — a visual grammar for systematic process, for the movement from many sources toward singular clarity. These forms are meticulous in their construction, painstakingly refined until each edge and angle speaks with the authority of a methodology. Nothing here happened by accident; every vertex was placed with the care of someone who has spent years understanding how shape communicates rigor.
+
+Typography is a surgical instrument. Letters are selected not for warmth but for precision — geometric, modern, carrying the weight of institutional authority without coldness. The wordmark stands as a primary visual element, not decoration. Hierarchy is established through scale and weight alone: no color shifts, no ornament. Text appears sparingly, as if each character had to justify its inclusion through editorial review. This economy of word is the mark of mastery — knowing what to omit requires more expertise than knowing what to include.
+
+Rhythm emerges from systematic repetition. Small repeated marks — the visual echo of a methodology applied consistently — build texture without noise. These accumulations suggest process: the patient accumulation of evidence, the thousands of abstracts screened, the careful construction of knowledge. The composition rewards sustained viewing, revealing layers of detail that announce themselves slowly, the way understanding deepens with study. This is work that appears effortless precisely because it was labored over with the obsessive care of someone at the absolute top of their discipline — every decision reconsidered, every element refined until nothing could be added or removed without diminishing the whole.

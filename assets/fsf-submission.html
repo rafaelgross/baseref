@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRISMA-SLR — FSF Free Software Directory Submission</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Mono&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;font-size:14px;line-height:1.7;color:#1a1a2e;background:#fff;padding:0}
+  .page{max-width:800px;margin:0 auto;padding:48px 56px}
+  .cover{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);color:#fff;padding:64px 56px 48px;min-height:320px;display:flex;flex-direction:column;justify-content:flex-end}
+  .cover-badge{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#e94560;margin-bottom:16px}
+  .cover h1{font-size:42px;font-weight:700;line-height:1.15;margin-bottom:8px}
+  .cover h1 span{color:#e94560}
+  .cover-sub{font-size:16px;color:#a8b2c8;margin-bottom:32px;max-width:560px}
+  .cover-meta{display:flex;gap:40px;flex-wrap:wrap;font-size:12px;color:#a8b2c8;border-top:1px solid rgba(255,255,255,0.1);padding-top:24px}
+  .cover-meta strong{display:block;color:#fff;font-size:13px}
+  section{padding:40px 0 0}
+  h2{font-size:18px;font-weight:700;color:#0f3460;border-left:4px solid #e94560;padding-left:12px;margin-bottom:20px}
+  h3{font-size:14px;font-weight:600;color:#1a1a2e;margin:20px 0 6px}
+  p{color:#333;margin-bottom:12px}
+  ul,ol{padding-left:20px;margin-bottom:12px}
+  li{margin-bottom:4px;color:#333}
+  .field-block{background:#f7f8fc;border:1px solid #e0e4f0;border-radius:8px;padding:16px 20px;margin-bottom:12px}
+  .field-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:4px}
+  .field-value{font-size:13.5px;color:#1a1a2e;font-weight:500}
+  .field-value code{font-family:'Fira Mono',monospace;font-size:12.5px;background:#eef0ff;padding:1px 6px;border-radius:4px;color:#4040a0}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .feature-card{background:#f7f8fc;border-radius:8px;padding:14px 16px;border:1px solid #e0e4f0}
+  .feature-card .icon{font-size:20px;margin-bottom:6px}
+  .feature-card strong{display:block;font-size:12px;font-weight:700;color:#0f3460;margin-bottom:4px}
+  .feature-card span{font-size:11.5px;color:#555}
+  .tech-tag{display:inline-block;background:#eef0ff;color:#4040a0;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin:3px 4px 3px 0}
+  .highlight-box{background:linear-gradient(135deg,#f0f4ff,#f7f8fc);border:1px solid #c9d0f0;border-radius:10px;padding:20px 24px;margin:16px 0}
+  .highlight-box p{margin:0;font-size:13px;color:#333}
+  .highlight-box strong{color:#0f3460}
+  .divider{border:none;border-top:1px solid #e8eaf5;margin:32px 0}
+  .note{font-size:12px;color:#777;font-style:italic}
+  table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px}
+  th{background:#0f3460;color:#fff;padding:8px 12px;text-align:left;font-size:11px;letter-spacing:0.5px}
+  td{padding:8px 12px;border-bottom:1px solid #e8eaf5;color:#333}
+  tr:nth-child(even) td{background:#f9faff}
+  .footer{margin-top:48px;padding-top:24px;border-top:2px solid #e8eaf5;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#999}
+  .footer strong{color:#0f3460}
+  @media print{
+    body{font-size:12px}
+    .cover{padding:48px 40px 36px}
+    .cover h1{font-size:32px}
+    .page{padding:32px 40px}
+    .feature-grid{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-badge">Free Software — MIT License</div>
+  <h1>PRISMA<span>-SLR</span></h1>
+  <p class="cover-sub">Open-source web system for managing Systematic Literature Reviews based on the PRISMA 2020 protocol</p>
+  <div class="cover-meta">
+    <div><strong>Version</strong>1.0.0</div>
+    <div><strong>License</strong>MIT</div>
+    <div><strong>Language</strong>PHP 8+ / JavaScript</div>
+    <div><strong>Year</strong>2024–2025</div>
+    <div><strong>Repository</strong>github.com/rafaelgross/prisma-slr</div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- FSF REGISTRATION FIELDS -->
+  <section>
+    <h2>FSF Directory Registration Fields</h2>
+    <p>The following fields correspond directly to the FSF Free Software Directory submission form.</p>
+
+    <div class="two-col">
+      <div class="field-block">
+        <div class="field-label">Short description (1 line)</div>
+        <div class="field-value">Web system for systematic literature reviews (PRISMA 2020)</div>
+      </div>
+      <div class="field-block">
+        <div class="field-label">Version</div>
+        <div class="field-value">1.0.0</div>
+      </div>
+    </div>
+
+    <div class="field-block">
+      <div class="field-label">Full name</div>
+      <div class="field-value">PRISMA-SLR</div>
+    </div>
+
+    <div class="field-block">
+      <div class="field-label">Homepage / Project URL</div>
+      <div class="field-value"><code>https://github.com/rafaelgross/prisma-slr</code></div>
+    </div>
+
+    <div class="field-block">
+      <div class="field-label">Download URL</div>
+      <div class="field-value"><code>https://github.com/rafaelgross/prisma-slr/archive/refs/heads/main.zip</code></div>
+    </div>
+
+    <div class="field-block">
+      <div class="field-label">License</div>
+      <div class="field-value">MIT License (SPDX: <code>MIT</code>) — Free, permissive, OSI-approved</div>
+    </div>
+
+    <div class="field-block">
+      <div class="field-label">Long description</div>
+      <div class="field-value" style="white-space:pre-line;line-height:1.8">PRISMA-SLR is a free and open-source web application that supports researchers in conducting systematic literature reviews (SLR) following the PRISMA 2020 (Preferred Reporting Items for Systematic Reviews and Meta-Analyses) protocol.
+
+It provides a complete workflow: importing references from Scopus and Web of Science (.bib files), automatic duplicate detection, title/abstract screening, full-text eligibility assessment, automatic PRISMA 2020 flow diagram generation, bibliometric analysis with 12 chart types, co-authorship and keyword co-occurrence networks, and export to CSV, BibTeX, and JSON.
+
+The system runs on any PHP 8+ + MySQL server and requires no proprietary dependencies.</div>
+    </div>
+
+    <div class="field-block">
+      <div class="field-label">Keywords / Categories</div>
+      <div class="field-value">systematic review, literature review, PRISMA, bibliometrics, research tool, academic, science</div>
+    </div>
+
+    <div class="two-col">
+      <div class="field-block">
+        <div class="field-label">Is GNU?</div>
+        <div class="field-value">No</div>
+      </div>
+      <div class="field-block">
+        <div class="field-label">Status</div>
+        <div class="field-value">Active development</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- DESCRIPTION -->
+  <section>
+    <h2>Software Description</h2>
+
+    <div class="highlight-box">
+      <p><strong>PRISMA-SLR</strong> is an open-source web system for managing Systematic Literature Reviews (SLR). It implements the complete PRISMA 2020 workflow — from importing references to generating the final flow diagram and bibliometric analysis — in a single, self-hosted application with no vendor lock-in.</p>
+    </div>
+
+    <h3>Purpose</h3>
+    <p>Conducting a systematic literature review requires tracking hundreds of articles through multiple screening phases while maintaining a precise audit trail. Most researchers rely on proprietary tools (Rayyan, Covidence, Parsifal) that impose usage limits, fees, and data lock-in. PRISMA-SLR provides all essential functionality as free software, deployable on any PHP/MySQL server.</p>
+
+    <h3>Key Features</h3>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">📁</div>
+        <strong>Multi-project Management</strong>
+        <span>Manage multiple systematic reviews simultaneously with per-project configurations</span>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📥</div>
+        <strong>BibTeX Import</strong>
+        <span>Import from Scopus and Web of Science .bib files with automatic source detection</span>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔍</div>
+        <strong>Duplicate Detection</strong>
+        <span>Automatic deduplication by DOI and title similarity with configurable threshold</span>
+      </div>
+      <div class="feature-card">
+        <div class="icon">✅</div>
+        <strong>Two-phase Screening</strong>
+        <span>Title/abstract screening and full-text eligibility with configurable exclusion reasons</span>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📊</div>
+        <strong>PRISMA 2020 Diagram</strong>
+        <span>Auto-generated SVG/PNG flow diagram with real-time data and export capability</span>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📈</div>
+        <strong>Bibliometric Analysis</strong>
+        <span>12 chart types including co-authorship networks, keyword clouds, country maps</span>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📤</div>
+        <strong>Export</strong>
+        <span>Export to CSV, BibTeX, and JSON for any scope (all, included, excluded)</span>
+      </div>
+      <div class="feature-card">
+        <div class="icon">☑️</div>
+        <strong>PRISMA Checklist</strong>
+        <span>27-item reporting checklist to verify compliance with the PRISMA 2020 statement</span>
+      </div>
+    </div>
+
+    <h3>Bibliometric Charts</h3>
+    <ul>
+      <li>Publications per year</li>
+      <li>Top journals (horizontal bar)</li>
+      <li>Top authors (horizontal bar)</li>
+      <li>Top countries — choropleth world map (D3.js)</li>
+      <li>Document types (doughnut)</li>
+      <li>Citation distribution (histogram)</li>
+      <li>Rating distribution (star ratings)</li>
+      <li>Keywords by year (stacked bar)</li>
+      <li>Co-authorship network (vis.js)</li>
+      <li>Keyword co-occurrence network (vis.js)</li>
+      <li>Keyword word cloud (wordcloud2.js)</li>
+    </ul>
+  </section>
+
+  <hr class="divider">
+
+  <!-- TECHNICAL -->
+  <section>
+    <h2>Technical Information</h2>
+
+    <h3>Technology Stack</h3>
+    <p>
+      <span class="tech-tag">PHP 8+</span>
+      <span class="tech-tag">MySQL 8 / MariaDB</span>
+      <span class="tech-tag">HTML5</span>
+      <span class="tech-tag">CSS3 (custom design system)</span>
+      <span class="tech-tag">Vanilla JavaScript</span>
+      <span class="tech-tag">Chart.js 4</span>
+      <span class="tech-tag">D3.js 7</span>
+      <span class="tech-tag">vis.js 9</span>
+      <span class="tech-tag">TopoJSON</span>
+      <span class="tech-tag">wordcloud2.js</span>
+    </p>
+    <p class="note">No frontend framework required. Runs on any standard PHP+MySQL hosting environment (MAMP, XAMPP, Apache/Nginx).</p>
+
+    <h3>Architecture</h3>
+    <table>
+      <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+      <tr><td>Backend</td><td>PHP 8+ (procedural + PDO)</td><td>REST API endpoints, session auth, BibTeX parsing</td></tr>
+      <tr><td>Database</td><td>MySQL 8 / MariaDB</td><td>Articles, projects, screening decisions, bibliometric data</td></tr>
+      <tr><td>Frontend</td><td>HTML5 + CSS3 + JS (no framework)</td><td>SPA-style navigation, charts, SVG diagrams</td></tr>
+      <tr><td>Charts</td><td>Chart.js, D3.js, vis.js</td><td>Statistical visualization, networks, geographic maps</td></tr>
+    </table>
+
+    <h3>System Requirements</h3>
+    <ul>
+      <li>PHP 8.0 or higher</li>
+      <li>MySQL 8.0+ or MariaDB 10.5+</li>
+      <li>Any standard web server (Apache, Nginx) or MAMP/XAMPP for local use</li>
+      <li>Modern browser (Chrome, Firefox, Safari, Edge)</li>
+    </ul>
+
+    <h3>Repository Structure</h3>
+    <table>
+      <tr><th>Directory</th><th>Contents</th></tr>
+      <tr><td><code>api/</code></td><td>REST endpoints: projects, import, articles, duplicates, screening, bibliometrics, export</td></tr>
+      <tr><td><code>pages/</code></td><td>PHP page templates loaded by the single-page router</td></tr>
+      <tr><td><code>assets/</code></td><td>CSS, JavaScript, images, data files</td></tr>
+      <tr><td><code>config/</code></td><td>Database connection, authentication helpers</td></tr>
+      <tr><td><code>lib/</code></td><td>BibTeX parser library</td></tr>
+      <tr><td><code>sql/</code></td><td>Complete database schema (schema.sql)</td></tr>
+    </table>
+  </section>
+
+  <hr class="divider">
+
+  <!-- FREEDOM ANALYSIS -->
+  <section>
+    <h2>Free Software Compliance</h2>
+
+    <table>
+      <tr><th>Freedom</th><th>Implementation</th></tr>
+      <tr><td><strong>Freedom 0</strong> — Run for any purpose</td><td>MIT license permits unrestricted use</td></tr>
+      <tr><td><strong>Freedom 1</strong> — Study and modify</td><td>Full source code available on GitHub; no obfuscation</td></tr>
+      <tr><td><strong>Freedom 2</strong> — Redistribute copies</td><td>MIT license permits redistribution without restriction</td></tr>
+      <tr><td><strong>Freedom 3</strong> — Distribute modified versions</td><td>MIT license permits distributing modifications</td></tr>
+    </table>
+
+    <div class="highlight-box">
+      <p>All dependencies are either free software (Chart.js MIT, D3.js ISC, vis.js MIT/Apache, TopoJSON MIT) or freely available open data (Natural Earth TopoJSON). No proprietary libraries or services required.</p>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- CONTACT -->
+  <section>
+    <h2>Maintainer Information</h2>
+
+    <div class="two-col">
+      <div class="field-block">
+        <div class="field-label">Maintainer Name</div>
+        <div class="field-value">Rafael Gross</div>
+      </div>
+      <div class="field-block">
+        <div class="field-label">Role</div>
+        <div class="field-value">Developer / Maintainer</div>
+      </div>
+    </div>
+    <div class="field-block">
+      <div class="field-label">Project URL</div>
+      <div class="field-value"><code>https://github.com/rafaelgross/prisma-slr</code></div>
+    </div>
+    <div class="field-block">
+      <div class="field-label">Download URL</div>
+      <div class="field-value"><code>https://github.com/rafaelgross/prisma-slr/archive/refs/heads/main.zip</code></div>
+    </div>
+    <div class="field-block">
+      <div class="field-label">Source Code (git clone)</div>
+      <div class="field-value"><code>git clone https://github.com/rafaelgross/prisma-slr.git</code></div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- SCREENSHOTS DESCRIPTION -->
+  <section>
+    <h2>Interface Screenshots (Description)</h2>
+    <p>The following screens are available in the application:</p>
+
+    <table>
+      <tr><th>#</th><th>Screen</th><th>Description</th></tr>
+      <tr>
+        <td>1</td>
+        <td>Dashboard / Projects</td>
+        <td>Project list with statistics (total articles, duplicates, included). Dark modern theme with sidebar navigation.</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>BibTeX Import</td>
+        <td>Drag-and-drop import interface with progress indicator and automatic source type detection (Scopus / Web of Science).</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Duplicate Detection</td>
+        <td>Side-by-side article comparison with similarity score and batch confirmation controls.</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Screening (Triagem)</td>
+        <td>Article list with title/abstract, include/exclude/uncertain buttons, configurable exclusion reasons, star rating, and notes. Supports table view and abstract modal view.</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>PRISMA 2020 Flow Diagram</td>
+        <td>Auto-generated SVG diagram following the PRISMA 2020 standard. Shows identification, screening, eligibility, and inclusion counts with exportable PNG/SVG.</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>Bibliometrics</td>
+        <td>Dashboard with 11+ charts: publications/year, top journals, top authors, country choropleth map, co-authorship network, keyword co-occurrence network, word cloud, and more.</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>PRISMA 2020 Checklist</td>
+        <td>27-item interactive checklist for verifying report compliance. Tracks completion per item with yes/partial/no responses and page references.</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td>Export</td>
+        <td>Export to CSV, BibTeX, and JSON for all articles, included only, or any filtered subset.</td>
+      </tr>
+    </table>
+  </section>
+
+  <hr class="divider">
+
+  <!-- CITATION -->
+  <section>
+    <h2>Academic Citation</h2>
+    <div class="field-block">
+      <div class="field-label">Suggested citation</div>
+      <div class="field-value">Gross, R. (2025). <em>PRISMA-SLR: An open-source web system for systematic literature review management</em>. Retrieved from https://github.com/rafaelgross/prisma-slr</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div>
+      <strong>PRISMA-SLR</strong> — Open Source Systematic Review Tool<br>
+      MIT License · github.com/rafaelgross/prisma-slr
+    </div>
+    <div style="text-align:right">
+      Document generated for<br>FSF Free Software Directory submission<br>
+      May 2025
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Auto open print dialog when loaded directly
+// window.onload = () => window.print();
+</script>
+</body>
+</html>
