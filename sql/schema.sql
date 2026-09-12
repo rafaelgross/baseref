@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS articles (
     article_number VARCHAR(100),
     issn VARCHAR(30),
     eissn VARCHAR(30),
-    isbn VARCHAR(50),
+    isbn VARCHAR(200),
 
     -- Identificadores
     doi VARCHAR(255),
@@ -253,22 +253,22 @@ SELECT
      AND a.status IN ('screened','eligible','included','excluded')
      AND a.is_duplicate = FALSE) AS screened,
 
-    -- Excluídos na triagem
-    (SELECT COUNT(*) FROM screening_decisions sd
+    -- Excluídos na triagem (DISTINCT: no modo multirrevisor há 2+ decisões por artigo)
+    (SELECT COUNT(DISTINCT sd.article_id) FROM screening_decisions sd
      INNER JOIN articles a ON sd.article_id = a.id
      WHERE a.project_id = p.id AND sd.phase = 'screening'
-     AND sd.decision = 'exclude') AS excluded_screening,
+     AND sd.decision = 'exclude' AND a.status = 'excluded') AS excluded_screening,
 
     -- Avaliados texto completo
-    (SELECT COUNT(*) FROM screening_decisions sd
+    (SELECT COUNT(DISTINCT sd.article_id) FROM screening_decisions sd
      INNER JOIN articles a ON sd.article_id = a.id
      WHERE a.project_id = p.id AND sd.phase = 'eligibility') AS assessed_eligibility,
 
     -- Excluídos na elegibilidade
-    (SELECT COUNT(*) FROM screening_decisions sd
+    (SELECT COUNT(DISTINCT sd.article_id) FROM screening_decisions sd
      INNER JOIN articles a ON sd.article_id = a.id
      WHERE a.project_id = p.id AND sd.phase = 'eligibility'
-     AND sd.decision = 'exclude') AS excluded_eligibility,
+     AND sd.decision = 'exclude' AND a.status = 'excluded') AS excluded_eligibility,
 
     -- Incluídos
     (SELECT COUNT(*) FROM articles a WHERE a.project_id = p.id
