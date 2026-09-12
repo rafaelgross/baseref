@@ -1,11 +1,11 @@
 <?php
 /**
  * PRISMA-SLR — PubMedXmlParser.php
- * Parseia arquivos XML exportados diretamente do PubMed
- * (formato PubmedArticleSet / MedlineCitationSet).
+ * Parses XML files exported directly from PubMed
+ * (PubmedArticleSet / MedlineCitationSet format).
  *
- * Retorna o mesmo formato de array que BibTexParser para compatibilidade
- * com api/import.php.
+ * Returns the same array format as BibTexParser for compatibility
+ * with api/import.php.
  */
 
 class PubMedXmlParser
@@ -13,10 +13,10 @@ class PubMedXmlParser
     private array $log = [];
 
     /**
-     * Parseia conteúdo XML do PubMed.
+     * Parses PubMed XML content.
      *
-     * @param  string $content    Conteúdo bruto do arquivo .xml
-     * @param  string $sourceType sempre 'pubmed' neste parser
+     * @param  string $content    Raw content of the .xml file
+     * @param  string $sourceType always 'pubmed' in this parser
      * @return array ['entries' => [...], 'log' => [...]]
      */
     public function parse(string $content, string $sourceType = 'pubmed'): array
@@ -27,7 +27,7 @@ class PubMedXmlParser
         // Remove BOM
         $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
 
-        // Suprime avisos XML e carrega
+        // Suppress XML warnings and load
         libxml_use_internal_errors(true);
         $xml = simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NOERROR | LIBXML_NOWARNING);
 
@@ -39,7 +39,7 @@ class PubMedXmlParser
             return ['entries' => [], 'log' => $this->log];
         }
 
-        // Suporta tanto PubmedArticleSet quanto MedlineCitationSet
+        // Supports both PubmedArticleSet and MedlineCitationSet
         $rootTag = $xml->getName();
         $articles = [];
 
@@ -47,14 +47,14 @@ class PubMedXmlParser
             foreach ($xml->PubmedArticle as $pa) {
                 $articles[] = $pa;
             }
-            // Alguns exports têm PubmedBookArticle também
+            // Some exports also have PubmedBookArticle
             foreach ($xml->PubmedBookArticle as $pa) {
                 $articles[] = $pa;
             }
         } elseif ($rootTag === 'PubmedArticle') {
             $articles[] = $xml;
         } else {
-            // Tenta encontrar artigos em qualquer estrutura
+            // Try to find articles in any structure
             $articles = iterator_to_array($xml->children(), false);
         }
 
@@ -73,10 +73,10 @@ class PubMedXmlParser
         return ['entries' => $entries, 'log' => $this->log];
     }
 
-    // ── Parseia um único elemento <PubmedArticle> ───────────────────
+    // ── Parses a single <PubmedArticle> element ───────────────────
     private function parseArticle(SimpleXMLElement $pa): ?array
     {
-        // Navega para MedlineCitation
+        // Navigate to MedlineCitation
         $mc = $pa->MedlineCitation ?? $pa;
         if (!$mc) return null;
 
@@ -86,7 +86,7 @@ class PubMedXmlParser
         // ── PMID ──────────────────────────────────────────────────────
         $pmid = (string)($mc->PMID ?? '');
 
-        // ── Título ────────────────────────────────────────────────────
+        // ── Title ────────────────────────────────────────────────────
         $title = $this->xmlText($article->ArticleTitle);
         if (!$title) return null;
 
@@ -99,7 +99,7 @@ class PubMedXmlParser
         $vol    = (string)($ji->Volume ?? '');
         $issue  = (string)($ji->Issue  ?? '');
 
-        // Ano
+        // Year
         $year = null;
         if ($ji && $ji->PubDate) {
             $year = (string)($ji->PubDate->Year  ?? '') ?: null;
@@ -110,7 +110,7 @@ class PubMedXmlParser
             }
         }
 
-        // ── Páginas ───────────────────────────────────────────────────
+        // ── Pages ───────────────────────────────────────────────────
         $pages = (string)($article->Pagination->MedlinePgn ?? '');
 
         // ── DOI ───────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ class PubMedXmlParser
         foreach (($article->ELocationID ?? []) as $loc) {
             if ((string)$loc['EIdType'] === 'doi') { $doi = (string)$loc; break; }
         }
-        // Também busca em ArticleIdList
+        // Also search in ArticleIdList
         if (!$doi) {
             foreach (($pa->PubmedData->ArticleIdList->ArticleId ?? []) as $aid) {
                 if ((string)$aid['IdType'] === 'doi') { $doi = (string)$aid; break; }
@@ -135,7 +135,7 @@ class PubMedXmlParser
         }
         $abstract = trim($abstract);
 
-        // ── Autores ───────────────────────────────────────────────────
+        // ── Authors ───────────────────────────────────────────────────
         $authors      = [];
         $affiliations = [];
         foreach (($article->AuthorList->Author ?? []) as $au) {
@@ -153,7 +153,7 @@ class PubMedXmlParser
                 $authors[] = $name;
             }
 
-            // Afiliações
+            // Affiliations
             foreach (($au->AffiliationInfo->Affiliation ?? []) as $aff) {
                 $affText = (string)$aff;
                 if ($affText) {
@@ -170,14 +170,14 @@ class PubMedXmlParser
             if ($k) $kwAuthor[] = $k;
         }
 
-        // MeSH como keywords indexadas
+        // MeSH terms as indexed keywords
         $kwMesh = [];
         foreach (($mc->MeshHeadingList->MeshHeading ?? []) as $mh) {
             $k = trim((string)($mh->DescriptorName ?? ''));
             if ($k) $kwMesh[] = $k;
         }
 
-        // ── Tipo de documento ─────────────────────────────────────────
+        // ── Document type ─────────────────────────────────────────
         $docType = 'Journal Article';
         foreach (($article->PublicationTypeList->PublicationType ?? []) as $pt) {
             $t = (string)$pt;
@@ -198,7 +198,7 @@ class PubMedXmlParser
         elseif ($issnType === 'Electronic') $elecIssn = $issn;
         else $printIssn = $issn;
 
-        // Busca ISSN eletrônico separado
+        // Look for a separate electronic ISSN
         foreach (($article->Journal->children() ?? []) as $child) {
             if ($child->getName() === 'ISSN' && (string)$child['IssnType'] === 'Electronic') {
                 $elecIssn = (string)$child;
@@ -237,19 +237,19 @@ class PubMedXmlParser
         ];
     }
 
-    // ── Extrai texto limpo de um elemento XML (remove tags filhas) ───
+    // ── Extracts clean text from an XML element (strips child tags) ───
     private function xmlText(SimpleXMLElement|null $el): string
     {
         if ($el === null) return '';
-        // Pega texto incluindo filhos (e.g. <i>, <sub>, <sup> em títulos)
+        // Grabs text including children (e.g. <i>, <sub>, <sup> in titles)
         $dom  = dom_import_simplexml($el);
         return trim($dom->textContent ?? (string)$el);
     }
 
-    // ── Tenta extrair país da string de afiliação ────────────────────
+    // ── Tries to extract country from the affiliation string ────────────────────
     private function extractCountry(string $aff): string
     {
-        // Geralmente o país é o último token após a última vírgula ou ponto
+        // The country is usually the last token after the last comma or period
         $parts = preg_split('/[,;.]/', $aff);
         return trim(end($parts) ?: '');
     }

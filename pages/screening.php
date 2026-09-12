@@ -1,7 +1,7 @@
 <?php
 /**
- * PRISMA-SLR - Tela de Triagem (screening de título/abstract)
- * Reutilizada também para Elegibilidade, controlada pela variável $phase
+ * PRISMA-SLR - Screening Screen (title/abstract screening)
+ * Also reused for Eligibility, controlled by the $phase variable
  */
 $phase      = isset($_GET['phase']) ? $_GET['phase'] : 'screening';
 $isElig     = $phase === 'eligibility';
@@ -30,7 +30,7 @@ if (!$projectId): ?>
   </div>
 </div>
 
-<!-- Progresso + filtros rápidos clicáveis -->
+<!-- Progress + clickable quick filters -->
 <div class="card" style="margin-bottom:18px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <span class="text-sm font-medium" id="prog-text">Carregando...</span>
@@ -59,7 +59,7 @@ if (!$projectId): ?>
   </div>
 </div>
 
-<!-- Filtros rápidos -->
+<!-- Quick filters -->
 <div class="filters-bar" style="margin-bottom:16px">
   <div class="search-input" style="flex:2">
     <i class="fa fa-magnifying-glass"></i>
@@ -67,7 +67,7 @@ if (!$projectId): ?>
            placeholder="Buscar por título ou resumo..."
            oninput="debounceLoad()">
   </div>
-  <!-- scr-filter hidden — controlado pelos chips acima -->
+  <!-- scr-filter hidden — controlled by the chips above -->
   <select class="form-control" id="scr-filter" style="display:none">
     <option value="all">Todos</option>
     <option value="pending" selected>Pendentes</option>
@@ -81,13 +81,13 @@ if (!$projectId): ?>
   </select>
 </div>
 
-<!-- Container de artigos -->
+<!-- Articles container -->
 <div id="scr-container"></div>
 
-<!-- Paginação -->
+<!-- Pagination -->
 <div id="scr-pagination" style="display:flex;justify-content:center;gap:8px;padding:20px 0;flex-wrap:wrap"></div>
 
-<!-- Modal: resumo do artigo -->
+<!-- Modal: article abstract -->
 <div class="modal-overlay" id="abstract-modal">
   <div class="modal" style="max-width:680px">
     <div class="modal-header">
@@ -106,14 +106,18 @@ if (!$projectId): ?>
         <p style="font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Resumo</p>
         <p id="abs-modal-abstract" style="font-size:0.875rem;line-height:1.7;color:var(--text-primary)">—</p>
       </div>
-      <!-- Critérios do projeto (carregados dinamicamente) -->
+      <!-- Project criteria (loaded dynamically) -->
       <div id="abs-modal-criteria"></div>
+      <div id="abs-modal-ai-box"></div>
     </div>
     <div class="modal-footer" style="justify-content:space-between">
       <div style="display:flex;gap:8px" id="abs-modal-actions"></div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost btn-sm" id="btn-translate" onclick="translateAbstract()" title="Traduzir resumo para português">
           <i class="fa fa-language"></i> Traduzir
+        </button>
+        <button class="btn btn-ghost btn-sm" id="btn-ai-modal" style="display:none;color:var(--primary)" onclick="aiSuggestModal()" title="Sugestão da IA com base nos critérios do projeto">
+          <i class="fa fa-wand-magic-sparkles"></i> IA
         </button>
         <span id="abs-modal-doi-link"></span>
         <button class="btn btn-ghost" onclick="closeAbstractModal()">Fechar</button>
@@ -122,7 +126,7 @@ if (!$projectId): ?>
   </div>
 </div>
 
-<!-- Modal: avaliação por estrelas ao incluir -->
+<!-- Modal: star rating when including -->
 <div class="modal-overlay" id="include-modal">
   <div class="modal" style="max-width:420px">
     <div class="modal-header">
@@ -150,7 +154,7 @@ if (!$projectId): ?>
   </div>
 </div>
 
-<!-- Modal: motivo de exclusão -->
+<!-- Modal: exclusion reason -->
 <div class="modal-overlay" id="exclude-modal">
   <div class="modal" style="max-width:480px">
     <div class="modal-header">
@@ -179,6 +183,68 @@ if (!$projectId): ?>
 </div>
 
 <script>
+let AI_ENABLED = false;
+fetch('api/ai-screening.php?status=1').then(r => r.json())
+  .then(d => { AI_ENABLED = !!d.enabled; }).catch(() => {});
+
+async function aiSuggest(articleId) {
+  const btn = document.getElementById('btn-ai-' + articleId);
+  const box = document.getElementById('ai-box-' + articleId);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> IA'; }
+  try {
+    const r = await fetch('api/ai-screening.php', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ article_id: articleId }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.message);
+    const map = { include: ['Incluir', 'var(--accent-green, #00e5a0)'], exclude: ['Excluir', '#f87171'], uncertain: ['Incerto', '#fbbf24'] };
+    const [label, color] = map[d.decision] || ['?', 'var(--text-muted)'];
+    if (box) box.innerHTML = `
+      <div style="margin-top:10px;padding:10px 12px;border:1px dashed ${color};border-radius:8px;font-size:.8rem">
+        <i class="fa fa-wand-magic-sparkles" style="color:${color}"></i>
+        <strong style="color:${color}">Sugestão da IA: ${label}</strong>
+        <span class="text-muted">(confiança ${d.confidence}%)</span><br>
+        <span style="color:var(--text-muted)">${escHtml(d.rationale)}</span>
+        <div style="font-size:.66rem;color:var(--text-muted);margin-top:4px">Sugestão automática (${escHtml(d.model)}) — a decisão é sempre do revisor.</div>
+      </div>`;
+  } catch (e) {
+    if (box) box.innerHTML = `<div class="alert alert-error" style="margin-top:8px;font-size:.78rem">IA: ${escHtml(e.message)}</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa fa-wand-magic-sparkles"></i> IA'; }
+  }
+}
+
+async function aiSuggestModal() {
+  const btn = document.getElementById('btn-ai-modal');
+  const box = document.getElementById('abs-modal-ai-box');
+  const articleId = btn?.dataset.articleId;
+  if (!articleId) return;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> IA'; }
+  try {
+    const r = await fetch('api/ai-screening.php', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ article_id: parseInt(articleId) }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.message);
+    const map = { include: ['Incluir', 'var(--accent-green, #00e5a0)'], exclude: ['Excluir', '#f87171'], uncertain: ['Incerto', '#fbbf24'] };
+    const [label, color] = map[d.decision] || ['?', 'var(--text-muted)'];
+    if (box) box.innerHTML = `
+      <div style="margin-top:12px;padding:10px 14px;border:1px dashed ${color};border-radius:8px;font-size:.82rem">
+        <i class="fa fa-wand-magic-sparkles" style="color:${color}"></i>
+        <strong style="color:${color}"> Sugestão IA: ${label}</strong>
+        <span class="text-muted">(confiança ${d.confidence}%)</span><br>
+        <span style="color:var(--text-muted)">${escHtml(d.rationale)}</span>
+        <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px">Sugestão automática (${escHtml(d.model)}) — a decisão é sempre do revisor.</div>
+      </div>`;
+  } catch (e) {
+    if (box) box.innerHTML = `<div class="alert alert-error" style="margin-top:8px;font-size:.78rem">IA: ${escHtml(e.message)}</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa fa-wand-magic-sparkles"></i> IA'; }
+  }
+}
+
 const SCR_PROJECT_ID  = <?= $projectId ?>;
 const SCR_PHASE       = '<?= $phase ?>';
 let scrPage          = 1;
@@ -195,7 +261,7 @@ function askInclude(articleId) {
   pendingIncludeId = articleId;
   selectedRating   = 0;
 
-  // Renderiza as estrelas UMA VEZ ao abrir — eventos de hover/click só atualizam cores
+  // Renders the stars ONCE on open — hover/click events only update colors
   let html = '';
   for (let i = 1; i <= 5; i++) {
     html += `<i class="fa fa-star"
@@ -341,7 +407,7 @@ async function loadScreening(page = scrPage) {
 
 function updateProgress(d) {
   const articles = d.articles;
-  // Busca dados do sumário
+  // Fetches summary data
   fetch(`api/screening.php?project_id=${SCR_PROJECT_ID}&summary=1`)
     .then(r => r.json()).then(s => {
       const phase = s[SCR_PHASE === 'screening' ? 'screening' : 'eligibility'];
@@ -367,7 +433,7 @@ function renderList(articles, filter) {
     const dec = a.current_decision;
     const decBadge = dec === 'include'
       ? `<span class="badge badge-included">Incluído</span>${a.rating ? '<br><span style="white-space:nowrap">' + starsHtml(a.rating, '0.8rem') + '</span>' : ''}`
-      : dec === 'exclude' ? `<span class="badge badge-excluded">Excluído <small>(${escHtml(a.exclusion_reason||'')})</small></span>`
+      : dec === 'exclude' ? `<span class="badge badge-excluded">Excluído${a.exclusion_reason ? ` <small>(${escHtml(a.exclusion_reason)})</small>` : ''}</span>`
       : `<span class="badge badge-pending">Pendente</span>`;
     html += `<tr>
       <td>
@@ -381,12 +447,17 @@ function renderList(articles, filter) {
       <td><span class="badge badge-${a.source_type}">${a.source_type?.toUpperCase()}</span></td>
       <td>${decBadge}</td>
       <td>
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:6px;align-items:center">
           ${dec !== 'include' ? `<button class="btn btn-success btn-sm" onclick="askInclude(${a.id})" title="Incluir">
             <i class="fa fa-check"></i></button>` : ''}
           ${dec !== 'exclude' ? `<button class="btn btn-danger btn-sm" onclick="askExclude(${a.id})" title="Excluir">
             <i class="fa fa-ban"></i></button>` : ''}
+          ${dec === 'include' || dec === 'exclude' ? `<button class="btn btn-ghost btn-sm" onclick="undecide(${a.id})" title="Desfazer — volta para pendentes" style="color:var(--text-muted)">
+            <i class="fa fa-rotate-left"></i></button>` : ''}
+          ${AI_ENABLED ? `<button class="btn btn-ghost btn-sm" onclick="aiSuggest(${a.id})" title="Sugestão da IA" style="color:var(--primary)">
+            <i class="fa fa-wand-magic-sparkles"></i></button>` : ''}
         </div>
+        <div id="ai-box-${a.id}"></div>
       </td>
     </tr>`;
   });
@@ -428,8 +499,12 @@ function renderCards(articles, filter) {
             ${dec === 'exclude' || dec === 'include' ? `<button class="btn btn-ghost btn-sm text-muted" onclick="undecide(${a.id})" title="Desfazer decisão">
               <i class="fa fa-rotate-left"></i> Desfazer
             </button>` : ''}
+            ${AI_ENABLED ? `<button class="btn btn-ghost btn-sm" id="btn-ai-${a.id}" onclick="aiSuggest(${a.id})" title="Sugestão da IA com base nos critérios do projeto" style="color:var(--primary)">
+              <i class="fa fa-wand-magic-sparkles"></i> IA
+            </button>` : ''}
           </div>
         </div>
+        <div id="ai-box-${a.id}"></div>
       </div>`;
   });
   html += '</div>';
@@ -466,7 +541,7 @@ async function decide(articleId, decision, reasonId = null, notes = null, rating
 
 function askExclude(articleId) {
   pendingArticleId = articleId;
-  // Popula motivos
+  // Populates the reasons
   const sel = document.getElementById('exclude-reason');
   sel.innerHTML = '<option value="">— Selecione o motivo —</option>';
   reasons.forEach(r => {
@@ -488,7 +563,7 @@ function confirmExcludeDecision() {
   const reasonId  = document.getElementById('exclude-reason').value;
   const notes     = document.getElementById('exclude-notes').value;
   if (!reasonId) { showToast('Selecione o motivo de exclusão', 'warning'); return; }
-  const articleId = pendingArticleId; // salva ANTES de fechar o modal (closeExcludeModal zera pendingArticleId)
+  const articleId = pendingArticleId; // save BEFORE closing the modal (closeExcludeModal resets pendingArticleId)
   closeExcludeModal();
   decide(articleId, 'exclude', parseInt(reasonId), notes || null);
 }
@@ -507,7 +582,7 @@ function showAbstract(a) {
   document.getElementById('abs-modal-abstract').textContent =
     a.abstract ? a.abstract : 'Resumo não disponível para este artigo.';
 
-  // Botões de ação (incluir/excluir)
+  // Action buttons (include/exclude)
   const dec = a.current_decision;
   let actHtml = '';
   if (dec !== 'include') actHtml += `<button class="btn btn-success btn-sm" onclick="closeAbstractModal();askInclude(${a.id})"><i class="fa fa-check"></i> Incluir</button>`;
@@ -515,11 +590,19 @@ function showAbstract(a) {
   if (dec === 'include' || dec === 'exclude') actHtml += `<button class="btn btn-ghost btn-sm" onclick="undecide(${a.id});closeAbstractModal()"><i class="fa fa-rotate-left"></i> Desfazer</button>`;
   document.getElementById('abs-modal-actions').innerHTML = actHtml;
 
-  // Link DOI
+  // AI button in the modal
+  const btnAiModal = document.getElementById('btn-ai-modal');
+  if (btnAiModal) {
+    btnAiModal.style.display = AI_ENABLED ? '' : 'none';
+    btnAiModal.dataset.articleId = a.id;
+  }
+  document.getElementById('abs-modal-ai-box').innerHTML = '';
+
+  // DOI link
   document.getElementById('abs-modal-doi-link').innerHTML = a.doi
     ? `<a href="https://doi.org/${escAttr(a.doi)}" target="_blank" class="btn btn-ghost btn-sm"><i class="fa fa-link"></i> DOI</a>` : '';
 
-  // Painel de critérios de avaliação
+  // Evaluation criteria panel
   const critEl = document.getElementById('abs-modal-criteria');
   const inc = projectCriteria.inclusion;
   const exc = projectCriteria.exclusion;
@@ -583,7 +666,7 @@ async function translateAbstract() {
   const text   = absEl.textContent.trim();
   if (!text || text === 'Resumo não disponível para este artigo.') return;
 
-  // Toggle: se já está traduzido, volta ao original
+  // Toggle: if already translated, revert to original
   if (absEl.dataset.translated === '1') {
     absEl.textContent = absEl.dataset.original;
     absEl.dataset.translated = '0';
@@ -596,7 +679,7 @@ async function translateAbstract() {
   btn.disabled  = true;
 
   try {
-    // Proxy local PHP — evita CORS ao chamar API externa
+    // Local PHP proxy — avoids CORS issues when calling the external API
     const encoded = encodeURIComponent(text.substring(0, 1500));
     const res = await fetch(`api/translate.php?text=${encoded}`);
     const data = await res.json();
@@ -620,25 +703,26 @@ async function translateAbstract() {
 }
 
 async function undecide(articleId) {
-  // Remove a decisão simplesmente resubmetendo sem decisão — não há endpoint DELETE
-  // Workaround: API não tem DELETE de decisão, mas podemos marcar como 'uncertain'
+  // Deletes the decision → article goes back to the pending list
   try {
-    await fetch('api/screening.php', {
-      method: 'POST',
+    const r = await fetch('api/screening.php', {
+      method: 'DELETE',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ article_id: articleId, phase: SCR_PHASE, decision: 'uncertain' })
+      body: JSON.stringify({ article_id: articleId, phase: SCR_PHASE })
     });
-    showToast('Decisão desfeita (marcada como incerta)', 'info');
+    const d = await r.json();
+    if (d.error) throw new Error(d.message);
+    showToast('Decisão desfeita — artigo voltou para pendentes', 'success');
     loadScreening();
   } catch(e) {
     showToast('Erro: ' + e.message, 'error');
   }
 }
 
-// Carrega critérios do projeto e sincroniza motivos de exclusão na triagem
+// Loads the project criteria and syncs the exclusion reasons in screening
 async function loadProjectCriteria() {
   try {
-    // Carrega dados do projeto
+    // Loads project data
     const r = await fetch(`api/projects.php?id=${SCR_PROJECT_ID}`);
     const d = await r.json();
     if (d.error) return;
@@ -654,17 +738,17 @@ async function loadProjectCriteria() {
     projectCriteria.inclusion = parseCrit(d.inclusion_criteria);
     projectCriteria.exclusion = parseCrit(d.exclusion_criteria);
 
-    // Sincroniza exclusion_reasons da triagem com os critérios cadastrados
-    // Isso garante que o dropdown de exclusão reflita os critérios do projeto
+    // Syncs screening's exclusion_reasons with the registered criteria
+    // This ensures the exclusion dropdown reflects the project's criteria
     const syncR = await fetch(`api/projects.php?action=sync_reasons&id=${SCR_PROJECT_ID}`);
     const syncD = await syncR.json();
     if (syncD.success && syncD.reasons) {
-      reasons = syncD.reasons; // atualiza a lista global de motivos
+      reasons = syncD.reasons; // updates the global list of reasons
     }
   } catch(e) {}
 }
 
-// Inicializa chips com filtro padrão = pendentes
+// Initializes chips with the default filter = pending
 updateChips('pending');
 loadProjectCriteria();
 loadScreening();

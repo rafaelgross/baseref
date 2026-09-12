@@ -1,13 +1,13 @@
 <?php
 /**
  * PRISMA-SLR — login.php
- * Página de login com Google OAuth 2.0
+ * Login page with Google OAuth 2.0
  */
 require_once __DIR__ . '/config/auth.php';
 
-// Se já está logado, redireciona para o app
+// If already logged in, redirect to the app
 if (isLoggedIn()) {
-    header('Location: /prisma-slr/');
+    header('Location: /');
     exit;
 }
 
@@ -20,7 +20,15 @@ unset($_SESSION['login_error']);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — PRISMA-SLR</title>
+  <title>Entrar — BaseRef</title>
+  <script>
+    // Applies the theme saved by the landing page before the first paint (avoids flash)
+    (function(){
+      var t = 'light';
+      try { t = localStorage.getItem('prisma_theme') || 'light'; } catch(e) {}
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -36,6 +44,16 @@ unset($_SESSION['login_error']);
       --text:      #e8eaf0;
       --text-muted:#8b8fa8;
       --radius:    14px;
+      --box-shadow: 0 24px 80px rgba(0,0,0,.4);
+    }
+
+    [data-theme="light"] {
+      --bg:        #f6f9fc;
+      --bg-card:   #ffffff;
+      --border:    #e2e8f2;
+      --text:      #0f1b2d;
+      --text-muted:#5b6579;
+      --box-shadow: 0 24px 80px rgba(13,42,92,.14);
     }
 
     body {
@@ -46,6 +64,7 @@ unset($_SESSION['login_error']);
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 24px;
       background-image:
         radial-gradient(ellipse 800px 600px at 30% 20%, rgba(108,99,255,.12) 0%, transparent 60%),
         radial-gradient(ellipse 600px 400px at 70% 80%, rgba(108,99,255,.08) 0%, transparent 60%);
@@ -55,28 +74,58 @@ unset($_SESSION['login_error']);
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 48px 40px;
+      padding: clamp(28px, 4vw, 48px) clamp(20px, 4vw, 40px);
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       text-align: center;
-      box-shadow: 0 24px 80px rgba(0,0,0,.4);
+      box-shadow: var(--box-shadow);
     }
 
+    [data-theme="light"] .btn-google { border: 1px solid #dadce0; box-shadow: 0 1px 4px rgba(13,42,92,.08); }
+    [data-theme="light"] .error-msg  { color: #b91c1c; }
+
+    /* logos: one per theme, swapped via CSS (no flash) */
+    .logo img.logo-light { display: none; }
+    [data-theme="light"] .logo img.logo-dark  { display: none; }
+    [data-theme="light"] .logo img.logo-light { display: block; }
+
+    .theme-btn {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color .2s, border-color .2s;
+    }
+    .theme-btn:hover { color: var(--primary); border-color: var(--primary); }
+
     .logo {
-      width: 56px;
-      height: 56px;
-      background: linear-gradient(135deg, var(--primary), #a78bfa);
-      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 20px;
-      font-size: 24px;
-      color: #fff;
+    }
+    .logo img {
+      width: min(100%, 180px);
+      height: auto;
     }
 
-    h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
-    .subtitle { color: var(--text-muted); font-size: .875rem; margin-bottom: 36px; line-height: 1.5; }
+    h1 { font-size: clamp(1.35rem, 2vw, 1.6rem); font-weight: 700; margin-bottom: 6px; }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: clamp(.92rem, 2.5vw, 1rem);
+      margin-bottom: 36px;
+      line-height: 1.55;
+      text-wrap: balance;
+    }
 
     .btn-google {
       display: flex;
@@ -124,9 +173,10 @@ unset($_SESSION['login_error']);
     }
     .feature-item {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
-      font-size: .82rem;
+      font-size: .88rem;
+      line-height: 1.45;
       color: var(--text-muted);
     }
     .feature-item i {
@@ -141,27 +191,82 @@ unset($_SESSION['login_error']);
       border: 1px solid rgba(239,68,68,.3);
       color: #fca5a5;
       border-radius: 8px;
-      padding: 10px 14px;
-      font-size: .85rem;
+      padding: 12px 14px;
+      font-size: .9rem;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
       margin-bottom: 20px;
     }
 
     .footer-note {
       margin-top: 28px;
-      font-size: .75rem;
+      font-size: .8rem;
       color: var(--text-muted);
       line-height: 1.6;
+      text-wrap: balance;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        align-items: stretch;
+        padding: 16px;
+      }
+
+      .login-box {
+        margin: auto;
+        min-height: auto;
+        border-radius: 18px;
+      }
+
+      .logo {
+        margin-bottom: 16px;
+      }
+
+      .logo img {
+        width: min(100%, 160px);
+      }
+
+      .subtitle {
+        margin-bottom: 28px;
+      }
+
+      .btn-google {
+        padding: 14px 16px;
+        font-size: 1rem;
+      }
+
+      .divider {
+        margin: 24px 0;
+      }
+    }
+
+    @media (max-width: 420px) {
+      body {
+        padding: 12px;
+      }
+
+      .login-box {
+        padding: 24px 16px;
+      }
+
+      .features {
+        gap: 12px;
+      }
     }
   </style>
 </head>
 <body>
 
+<button class="theme-btn" id="themeBtn" aria-label="Alternar tema claro/escuro">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
 <div class="login-box">
   <div class="logo">
-    <i class="fa fa-diagram-project"></i>
+    <img class="logo-dark"  src="assets/img/baseref_dark.png"    alt="BaseRef" style="height:200px;width:auto;">
+    <img class="logo-light" src="assets/img/baseref_light-2.png" alt="BaseRef" style="height:200px;width:auto;">
   </div>
-  <h1>PRISMA-SLR</h1>
-  <p class="subtitle">Sistema de Revisão Sistemática da Literatura<br>baseado no protocolo PRISMA 2020</p>
+  <p class="subtitle">Plataforma de apoio à pesquisa e gestão de referências bibliográficas</p>
 
   <?php if ($error): ?>
     <div class="error-msg">
@@ -198,10 +303,18 @@ unset($_SESSION['login_error']);
   </div>
 
   <p class="footer-note">
-    Ao entrar, você concorda que seus dados de perfil do Google<br>
+    Ao entrar, você concorda que seus dados de perfil do Google
     (nome, e-mail e foto) serão armazenados neste sistema.
   </p>
 </div>
+
+<script>
+document.getElementById('themeBtn').addEventListener('click', function () {
+  var t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('prisma_theme', t); } catch (e) {}
+});
+</script>
 
 </body>
 </html>

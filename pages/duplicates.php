@@ -1,6 +1,6 @@
 <?php
 /**
- * PRISMA-SLR - Página: Duplicatas
+ * PRISMA-SLR - Page: Duplicates
  */
 if (!$projectId): ?>
 <div class="empty-state"><i class="fa fa-triangle-exclamation"></i>
@@ -146,7 +146,7 @@ async function loadDuplicates(status = currentDupStatus) {
     const r = await fetch(`api/duplicates.php?project_id=${DUP_PROJECT_ID}&status=${status}`);
     const d = await r.json();
 
-    // Atualiza stats
+    // Update stats
     const s = d.summary || {};
     const pending   = s.pending   || 0;
     const confirmed = s.confirmed || 0;
@@ -161,11 +161,11 @@ async function loadDuplicates(status = currentDupStatus) {
     const countEl = document.getElementById('tab-count-pending');
     if (countEl) countEl.textContent = pending;
 
-    // Botão confirmar todos só aparece se há pendentes
+    // "Confirm all" button only appears if there are pending items
     const btnAll = document.getElementById('btn-confirm-all');
     if (btnAll) btnAll.style.display = pending > 0 ? '' : 'none';
 
-    // Banner informativo
+    // Informational banner
     const banner = document.getElementById('info-banner');
     const bannerText = document.getElementById('info-banner-text');
     if (banner && bannerText && typeof unique === 'number') {

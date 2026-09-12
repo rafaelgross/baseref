@@ -1,6 +1,6 @@
 /**
- * PRISMA-SLR — Dicionário de traduções PT / EN / ES
- * Sem dependências externas. Funciona em todas as páginas.
+ * PRISMA-SLR — PT / EN / ES translation dictionary
+ * No external dependencies. Works on every page.
  */
 
 window.I18N = {
@@ -13,13 +13,13 @@ window.I18N = {
     'sidebar.active_project': 'Projeto Ativo',
     'sidebar.select_project': 'Selecione um projeto',
 
-    // Seções do menu
+    // Menu sections
     'nav.sec_overview':  'Visão Geral',
     'nav.sec_prisma':    'Processo PRISMA',
     'nav.sec_analysis':  'Análise',
     'nav.sec_data':      'Dados',
 
-    // Itens do menu
+    // Menu items
     'nav.dashboard':     'Dashboard',
     'nav.projects':      'Projetos',
     'nav.import':        'Importação',
@@ -33,7 +33,7 @@ window.I18N = {
     'nav.articles':      'Todos os Artigos',
     'nav.export':        'Exportação',
 
-    // Títulos das páginas (header)
+    // Page titles (header)
     'page.dashboard':     'Dashboard',
     'page.projects':      'Projetos',
     'page.import':        'Importação',
@@ -47,7 +47,7 @@ window.I18N = {
     'page.export':        'Exportação',
     'page.checklist':     'Checklist PRISMA',
 
-    // Badges de status
+    // Status badges
     'status.active':      'active',
     'status.draft':       'draft',
     'status.completed':   'completed',
@@ -139,8 +139,8 @@ window.I18N = {
 };
 
 /**
- * Aplica as traduções a todos os elementos com [data-i18n] na página.
- * Para nav items, preserva o ícone <i> antes do texto.
+ * Applies translations to every element with [data-i18n] on the page.
+ * For nav items, preserves the <i> icon before the text.
  */
 function applyI18n(lang) {
   var dict = window.I18N[lang] || window.I18N['pt'];
@@ -150,10 +150,10 @@ function applyI18n(lang) {
     var val = dict[key];
     if (!val) return;
 
-    // Se o elemento tem um ícone filho, preserva ele e troca só o texto
+    // If the element has a child icon, preserve it and swap only the text
     var icon = el.querySelector('i.fa, i.fas, i.far, i.fab');
     if (icon) {
-      // Guarda o HTML do ícone, reescreve o conteúdo
+      // Keep the icon's HTML, rewrite the content
       var iconHtml = icon.outerHTML;
       el.innerHTML = iconHtml + ' ' + val;
     } else {

@@ -1,16 +1,16 @@
 <?php
 /**
  * PRISMA-SLR — auth/logout.php
- * Encerra a sessão do usuário.
+ * Ends the user's session.
  */
 require_once __DIR__ . '/../config/auth.php';
 
 startSecureSession();
 
-// Limpa todos os dados da sessão
+// Clears all session data
 $_SESSION = [];
 
-// Apaga o cookie de sessão
+// Deletes the session cookie
 if (ini_get('session.use_cookies')) {
     $params = session_get_cookie_params();
     setcookie(session_name(), '', time() - 42000,
@@ -21,5 +21,5 @@ if (ini_get('session.use_cookies')) {
 
 session_destroy();
 
-header('Location: /prisma-slr/login.php');
+header('Location: /login.php');
 exit;

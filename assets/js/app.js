@@ -1,6 +1,6 @@
 /**
  * PRISMA-SLR — app.js
- * Funções globais compartilhadas por todas as páginas.
+ * Global functions shared across all pages.
  */
 
 'use strict';
@@ -181,6 +181,42 @@ document.addEventListener('keydown', (e) => {
     el.classList.toggle('active', el.dataset.page === page);
   });
 })();
+
+function toggleSidebar(forceOpen) {
+  const sidebar = document.getElementById('sidebar');
+  const toggle = document.getElementById('sidebar-toggle');
+  if (!sidebar) return;
+
+  const shouldOpen = typeof forceOpen === 'boolean'
+    ? forceOpen
+    : !sidebar.classList.contains('open');
+
+  sidebar.classList.toggle('open', shouldOpen);
+  document.body.classList.toggle('sidebar-open', shouldOpen && window.innerWidth <= 768);
+
+  if (toggle) {
+    toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+  }
+}
+
+function closeSidebar() {
+  toggleSidebar(false);
+}
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) {
+    closeSidebar();
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (window.innerWidth > 768) return;
+  const sidebar = document.getElementById('sidebar');
+  const toggle = document.getElementById('sidebar-toggle');
+  if (!sidebar || !sidebar.classList.contains('open')) return;
+  if (sidebar.contains(e.target) || (toggle && toggle.contains(e.target))) return;
+  closeSidebar();
+});
 
 /* ─── Auto-highlight table rows ──────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {

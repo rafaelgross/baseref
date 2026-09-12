@@ -1,6 +1,6 @@
 <?php
 /**
- * PRISMA-SLR - Página: Projetos
+ * PRISMA-SLR - Page: Projects
  */
 ?>
 <div class="page-header">
@@ -104,7 +104,7 @@
 <script>
 let editingProjectId = null;
 
-// ---- Critérios dinâmicos ----
+// ---- Dynamic criteria ----
 function addCriterion(type, value = '') {
   const list = document.getElementById(type + '-list');
   const empty = document.getElementById(type + '-empty');
@@ -129,7 +129,7 @@ function addCriterion(type, value = '') {
     </button>`;
   list.appendChild(row);
 
-  // Foca no input recém-adicionado
+  // Focus the newly added input
   row.querySelector('input').focus();
 }
 
@@ -159,7 +159,7 @@ function setCriteria(type, raw) {
   let items = [];
   if (raw) {
     try { items = JSON.parse(raw); } catch(_) {
-      // fallback: texto simples separado por nova linha
+      // fallback: plain text separated by newlines
       items = raw.split('\n').map(s => s.trim()).filter(Boolean);
     }
   }
@@ -173,7 +173,7 @@ function clearCriteria() {
     updateEmptyState(t);
   });
 }
-// ---- fim critérios ----
+// ---- end criteria ----
 
 function parseCriteria(raw) {
   if (!raw) return [];
@@ -339,7 +339,7 @@ async function saveProject(e) {
     closeProjectModal();
     loadProjects();
 
-    // Atualiza seletor de projetos
+    // Update project selector
     if (!id && res.id) {
       const sel = document.getElementById('project-select');
       const opt = document.createElement('option');

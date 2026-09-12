@@ -1,6 +1,6 @@
 <?php
 /**
- * PRISMA-SLR - Checklist PRISMA 2020
+ * PRISMA-SLR - PRISMA 2020 Checklist
  */
 if (!$projectId): ?>
 <div class="empty-state"><i class="fa fa-triangle-exclamation"></i>
@@ -37,7 +37,7 @@ if (!$projectId): ?>
 <script>
 const CHK_PROJECT_ID = <?= $projectId ?>;
 
-// Definição das seções PRISMA 2020
+// Definition of the PRISMA 2020 sections
 const PRISMA_SECTIONS = [
   { section: 'Título', items: [
     { n:1, text: 'Título — Identifique o relatório como revisão sistemática.' },
@@ -219,7 +219,7 @@ async function saveItem(n, silent = false) {
   }
 }
 
-// CSS adicional para checklist
+// Additional CSS for the checklist
 const style = document.createElement('style');
 style.textContent = `
   .checklist-item { background:var(--bg-card2); padding:14px; border-radius:8px;

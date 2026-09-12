@@ -1,11 +1,11 @@
 /**
  * PRISMA-SLR — prisma-flow.js
- * Utilitários para o diagrama PRISMA 2020 (complementa prisma-flow.php)
+ * Utilities for the PRISMA 2020 diagram (complements prisma-flow.php)
  */
 'use strict';
 
 /**
- * Imprime o diagrama PRISMA em uma nova aba
+ * Prints the PRISMA diagram in a new tab
  */
 function printPrismaFlow() {
   const svgEl = document.getElementById('prisma-svg');
@@ -22,7 +22,7 @@ function printPrismaFlow() {
 }
 
 /**
- * Copia os números do diagrama PRISMA formatados como texto
+ * Copies the PRISMA diagram numbers formatted as text
  */
 function copyFlowNumbers(data) {
   if (!data) { showToast('Carregue o diagrama primeiro', 'warning'); return; }

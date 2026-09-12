@@ -1,20 +1,20 @@
 /**
  * PRISMA-SLR — screening.js
- * Atalhos de teclado para triagem/elegibilidade (setas + teclas I/E/U)
+ * Keyboard shortcuts for screening/eligibility (arrows + I/E/U keys)
  */
 'use strict';
 
 (function initScreeningKeyboard() {
-  // Só ativa nas páginas de screening/eligibility
+  // Only active on the screening/eligibility pages
   const page = new URLSearchParams(window.location.search).get('page');
   if (page !== 'screening' && page !== 'eligibility') return;
 
   document.addEventListener('keydown', (e) => {
-    // Ignora quando o foco está em inputs/textareas
+    // Ignore when focus is on inputs/textareas
     const tag = document.activeElement?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-    // Atalhos para view card: navega entre artigos
+    // Shortcuts for card view: navigate between articles
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault();
       const btns = document.querySelectorAll('[onclick^="decide("]');
@@ -26,7 +26,7 @@
 })();
 
 /**
- * Exporta lista de artigos triados para CSV
+ * Exports the list of screened articles to CSV
  */
 async function exportScreeningCSV(phase) {
   const projectId = typeof SCR_PROJECT_ID !== 'undefined' ? SCR_PROJECT_ID : null;

@@ -1,6 +1,6 @@
 <?php
 /**
- * PRISMA-SLR - Artigos Incluídos
+ * PRISMA-SLR - Included Articles
  */
 if (!$projectId): ?>
 <div class="empty-state"><i class="fa fa-triangle-exclamation"></i>
@@ -121,7 +121,7 @@ function updateStats(d) {
 function populateYears(years) {
   const sel = document.getElementById('inc-year-filter');
   const cur = sel.value;
-  // Só popula uma vez
+  // Only populate once
   if (sel.querySelectorAll('option').length > 1) return;
   (years || []).forEach(y => {
     const o = document.createElement('option');

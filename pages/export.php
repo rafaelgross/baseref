@@ -1,6 +1,6 @@
 <?php
 /**
- * PRISMA-SLR - Exportação
+ * PRISMA-SLR - Export
  */
 if (!$projectId): ?>
 <div class="empty-state"><i class="fa fa-triangle-exclamation"></i>

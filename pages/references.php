@@ -1,7 +1,7 @@
 <?php
 /**
  * PRISMA-SLR — pages/references.php
- * Exportação de referências em ABNT NBR 6023:2018 ou APA 7ª ed.
+ * Reference export in ABNT NBR 6023:2018 or APA 7th ed.
  */
 if (!$projectId): ?>
 <div class="empty-state">
@@ -159,7 +159,7 @@ let currentScope    = 'included';
 let allArticles     = [];
 let lastRefs        = [];
 
-// ── Inicialização ───────────────────────────────────────────────
+// ── Initialization ─────────────────────────────────────────────
 async function loadArticles() {
   try {
     const r = await fetch(`api/articles.php?project_id=${REFS_PROJECT_ID}&status=included&per_page=500&page=1`);
@@ -193,7 +193,7 @@ function renderArticleList() {
   }).join('');
 }
 
-// ── Geração de referências ───────────────────────────────────────
+// ── Reference generation ───────────────────────────────────────
 async function generateRefs() {
   const checked = [...document.querySelectorAll('.art-chk:checked')].map(c => c.value);
   if (!checked.length) {
@@ -248,7 +248,7 @@ function renderRefs(refs) {
   document.getElementById('refs-output').innerHTML = html;
 }
 
-// ── Ações ────────────────────────────────────────────────────────
+// ── Actions ─────────────────────────────────────────────────────
 function copyRefs() {
   if (!lastRefs.length) return;
   const text = lastRefs.map((r, i) => (i + 1) + '. ' + r.reference).join('\n\n');
@@ -279,7 +279,7 @@ function downloadRefs() {
   URL.revokeObjectURL(url);
 }
 
-// ── Formato / escopo ─────────────────────────────────────────────
+// ── Format / scope ────────────────────────────────────────────────
 function setFormat(fmt) {
   currentFormat = fmt;
   ['abnt','apa'].forEach(f => {
@@ -287,7 +287,7 @@ function setFormat(fmt) {
     if (f === fmt) { btn.style.background = 'var(--primary)'; btn.style.color = '#fff'; }
     else           { btn.style.background = 'none'; btn.style.color = 'var(--text-muted)'; }
   });
-  // Se já havia referências geradas, regenera automaticamente
+  // If references were already generated, regenerate automatically
   if (lastRefs.length) generateRefs();
 }
 
@@ -295,11 +295,11 @@ document.getElementById('scope-select').addEventListener('change', function() {
   currentScope = this.value;
 });
 
-// ── Selecionar todos / nenhum ────────────────────────────────────
+// ── Select all / none ─────────────────────────────────────────────
 function selectAll()  { document.querySelectorAll('.art-chk').forEach(c => c.checked = true); }
 function selectNone() { document.querySelectorAll('.art-chk').forEach(c => c.checked = false); }
 
-// ── Utilidades ───────────────────────────────────────────────────
+// ── Utilities ──────────────────────────────────────────────────────
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -307,10 +307,10 @@ function truncate(s, n) {
   return s && s.length > n ? s.slice(0, n) + '…' : (s || '');
 }
 
-// Reage à mudança de idioma do diagrama (não necessário, mas mantém consistência)
+// Reacts to diagram language changes (not required, but keeps things consistent)
 document.addEventListener('prismaLangChanged', () => {});
 
-// Carrega ao inicializar
+// Load on initialization
 loadArticles();
 </script>
 

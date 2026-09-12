@@ -1,6 +1,6 @@
 <?php
 /**
- * PRISMA-SLR - Página: Lista de Artigos
+ * PRISMA-SLR - Page: Article List
  */
 if (!$projectId): ?>
 <div class="empty-state"><i class="fa fa-triangle-exclamation"></i>
@@ -13,6 +13,10 @@ if (!$projectId): ?>
     <p class="page-subtitle">Todos os artigos importados do projeto.</p>
   </div>
   <div style="display:flex;gap:10px">
+    <button class="btn btn-outline" id="btn-enrich" onclick="enrichProject()"
+            title="Completa abstract, citações e acesso aberto via OpenAlex (gratuito) usando o DOI de cada artigo">
+      <i class="fa fa-wand-magic-sparkles"></i> Enriquecer via OpenAlex
+    </button>
     <a href="?page=import&project_id=<?= $projectId ?>" class="btn btn-outline">
       <i class="fa fa-file-import"></i> Importar
     </a>
@@ -21,6 +25,31 @@ if (!$projectId): ?>
     </a>
   </div>
 </div>
+
+<script>
+async function enrichProject() {
+  const btn = document.getElementById('btn-enrich');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Consultando OpenAlex…';
+  try {
+    const r = await fetch('api/enrich.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: <?= $projectId ?> }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.message);
+    typeof showToast === 'function' && showToast(d.message, 'success');
+    loadArticles();
+  } catch (e) {
+    typeof showToast === 'function' ? showToast('Erro: ' + e.message, 'error') : alert(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+</script>
 
 <!-- Filtros -->
 <div class="card" style="margin-bottom:18px">
@@ -164,7 +193,7 @@ async function loadArticles(page = 1) {
     html += '</tbody></table></div>';
     container.innerHTML = html;
 
-    // Paginação
+    // Pagination
     buildPagination(d.page, d.last_page);
   } catch(e) {
     container.innerHTML = `<div class="alert alert-error"><i class="fa fa-triangle-exclamation"></i> Erro: ${e.message}</div>`;

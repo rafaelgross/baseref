@@ -1,11 +1,11 @@
 <?php
 /**
  * PRISMA-SLR — RisParser.php
- * Parseia arquivos .ris exportados por Mendeley, Zotero, EndNote,
+ * Parses .ris files exported by Mendeley, Zotero, EndNote,
  * Scopus (RIS), Web of Science (RIS), Embase, PubMed, etc.
  *
- * Retorna o mesmo formato de array que BibTexParser para compatibilidade
- * com api/import.php.
+ * Returns the same array format as BibTexParser for compatibility
+ * with api/import.php.
  */
 
 class RisParser
@@ -13,7 +13,7 @@ class RisParser
     private array $entries = [];
     private array $log     = [];
 
-    // Mapeamento TY → document_type legível
+    // TY → human-readable document_type mapping
     private const TYPE_MAP = [
         'JOUR' => 'Journal Article',
         'JFULL'=> 'Journal Article',
@@ -45,9 +45,9 @@ class RisParser
     ];
 
     /**
-     * Parseia conteúdo RIS.
+     * Parses RIS content.
      *
-     * @param  string $content    Conteúdo bruto do arquivo .ris
+     * @param  string $content    Raw content of the .ris file
      * @param  string $sourceType 'scopus'|'wos'|'pubmed'|'embase'|'other'|'auto'
      * @return array ['entries' => [...], 'log' => [...]]
      */
@@ -56,17 +56,17 @@ class RisParser
         $this->entries = [];
         $this->log     = [];
 
-        // Remove BOM e normaliza quebras de linha
+        // Remove BOM and normalize line breaks
         $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
         $content = str_replace("\r\n", "\n", $content);
         $content = str_replace("\r", "\n", $content);
 
-        // Detecta fonte automaticamente
+        // Auto-detect source
         if ($sourceType === 'auto') {
             $sourceType = $this->detectSource($content);
         }
 
-        // Divide em blocos por ER (End of Reference)
+        // Split into blocks by ER (End of Reference)
         $blocks = $this->splitBlocks($content);
         $this->log[] = ['type' => 'info', 'msg' => sprintf('%d blocos RIS encontrados (fonte: %s)', count($blocks), $sourceType)];
 
@@ -83,7 +83,7 @@ class RisParser
         return ['entries' => $this->entries, 'log' => $this->log];
     }
 
-    // ── Divide o conteúdo em blocos (um por referência) ─────────────
+    // ── Splits the content into blocks (one per reference) ─────────────
     private function splitBlocks(string $content): array
     {
         $blocks = [];
@@ -92,7 +92,7 @@ class RisParser
 
         foreach ($lines as $line) {
             $trimmed = rtrim($line);
-            // Linha ER marca o fim de uma referência
+            // ER line marks the end of a reference
             if (preg_match('/^ER\s*[-–]\s*/', $trimmed)) {
                 if (!empty($current)) {
                     $blocks[] = implode("\n", $current);
@@ -102,7 +102,7 @@ class RisParser
             }
             $current[] = $trimmed;
         }
-        // Último bloco sem ER
+        // Last block without ER
         if (!empty(array_filter($current))) {
             $blocks[] = implode("\n", $current);
         }
@@ -110,24 +110,24 @@ class RisParser
         return array_filter($blocks, fn($b) => trim($b) !== '');
     }
 
-    // ── Parseia um único bloco RIS ───────────────────────────────────
+    // ── Parses a single RIS block ───────────────────────────────────
     private function parseBlock(string $block, string $sourceType): ?array
     {
         $tags   = $this->extractTags($block);
         if (empty($tags)) return null;
 
-        // Título
+        // Title
         $title = $this->firstOf($tags, ['TI', 'T1', 'CT', 'BT']);
         if (!$title) return null;
 
-        // Tipo de documento
+        // Document type
         $tyRaw  = strtoupper(trim($this->firstOf($tags, ['TY']) ?? 'JOUR'));
         $docType = self::TYPE_MAP[$tyRaw] ?? 'Journal Article';
 
-        // Journal / Periódico
+        // Journal
         $journal = $this->firstOf($tags, ['JO', 'JF', 'JA', 'J2', 'T2', 'BT', 'SE']);
 
-        // Ano — RIS usa PY ou Y1 (formato YYYY ou YYYY/MM/DD/)
+        // Year — RIS uses PY or Y1 (format YYYY or YYYY/MM/DD/)
         $yearRaw = $this->firstOf($tags, ['PY', 'Y1', 'DA', 'Y2']);
         $year    = null;
         if ($yearRaw) {
@@ -135,7 +135,7 @@ class RisParser
             $year = $m[1] ?? null;
         }
 
-        // Páginas
+        // Pages
         $sp    = trim($this->firstOf($tags, ['SP']) ?? '');
         $ep    = trim($this->firstOf($tags, ['EP']) ?? '');
         $pages = '';
@@ -146,7 +146,7 @@ class RisParser
         // DOI
         $doi = $this->firstOf($tags, ['DO', 'M3']);
         if ($doi && !preg_match('/^10\./', $doi)) {
-            // M3 pode conter outros tipos; valida prefixo DOI
+            // M3 may contain other types; validate the DOI prefix
             if ($this->firstOf($tags, ['DO'])) $doi = $this->firstOf($tags, ['DO']);
             elseif (!preg_match('/^10\./', $doi)) $doi = null;
         }
@@ -165,7 +165,7 @@ class RisParser
             }
         }
 
-        // Autores
+        // Authors
         $authors = $tags['AU'] ?? $tags['A1'] ?? $tags['A2'] ?? [];
         $authors = array_map('trim', $authors);
         $authors = array_filter($authors);
@@ -177,9 +177,9 @@ class RisParser
         // Abstract
         $abstract = implode(' ', array_merge($tags['AB'] ?? [], $tags['N2'] ?? []));
 
-        // IDs externos
+        // External IDs
         $pubmedId = $this->firstOf($tags, ['AN', 'C7', 'M1']);
-        // Tenta extrair PMID real se vier de PubMed
+        // Try to extract the real PMID if it comes from PubMed
         if ($sourceType === 'pubmed' && isset($tags['AN'])) {
             $pubmedId = preg_replace('/\D/', '', $tags['AN'][0] ?? '');
         }
@@ -193,13 +193,13 @@ class RisParser
         // Language
         $lang = $this->firstOf($tags, ['LA', 'LG']) ?? 'English';
 
-        // Número do artigo (sem páginas, e.g. Embase)
+        // Article number (no pages, e.g. Embase)
         $articleNumber = $this->firstOf($tags, ['C7', 'M2']);
 
-        // Source key único
+        // Unique source key
         $sourceKey = $this->firstOf($tags, ['ID', 'RN', 'CN', 'RI']) ?? 'RIS_' . substr(md5($title . ($year ?? '')), 0, 8);
 
-        // Afiliações
+        // Affiliations
         $affiliations = [];
         foreach (($tags['AD'] ?? $tags['C1'] ?? []) as $aff) {
             $affiliations[] = ['institution' => trim($aff), 'country' => ''];
@@ -245,7 +245,7 @@ class RisParser
         ];
     }
 
-    // ── Extrai pares tag => [valores] do bloco ───────────────────────
+    // ── Extracts tag => [values] pairs from the block ───────────────────────
     private function extractTags(string $block): array
     {
         $tags  = [];
@@ -253,8 +253,8 @@ class RisParser
         $curVal = '';
 
         foreach (explode("\n", $block) as $line) {
-            // Linha de tag: 2 chars, espaços/hífen, valor
-            // Exemplos: "TI  - Title here", "AU  - Smith, J", "KW  -keyword"
+            // Tag line: 2 chars, spaces/hyphen, value
+            // Examples: "TI  - Title here", "AU  - Smith, J", "KW  -keyword"
             if (preg_match('/^([A-Z][A-Z0-9])\s*[-–]\s*(.*)/u', $line, $m)) {
                 if ($curTag !== null) {
                     $tags[$curTag][] = rtrim($curVal);
@@ -262,7 +262,7 @@ class RisParser
                 $curTag = $m[1];
                 $curVal = $m[2];
             } elseif ($curTag !== null && (str_starts_with($line, '  ') || str_starts_with($line, "\t"))) {
-                // Continuação de valor (linha indentada)
+                // Value continuation (indented line)
                 $curVal .= ' ' . trim($line);
             }
         }

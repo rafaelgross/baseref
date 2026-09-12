@@ -1,15 +1,15 @@
 <?php
 /**
  * PRISMA-SLR — auth/google.php
- * Inicia o fluxo de autenticação OAuth 2.0 com o Google.
- * Redireciona o usuário para a tela de consentimento do Google.
+ * Starts the OAuth 2.0 authentication flow with Google.
+ * Redirects the user to Google's consent screen.
  */
 require_once __DIR__ . '/../config/auth.php';
 
-// Gera e salva o state CSRF
+// Generates and saves the CSRF state
 $state = generateOAuthState();
 
-// Monta a URL de autorização
+// Builds the authorization URL
 $params = http_build_query([
     'client_id'     => GOOGLE_CLIENT_ID,
     'redirect_uri'  => GOOGLE_REDIRECT_URI,
@@ -17,7 +17,7 @@ $params = http_build_query([
     'scope'         => GOOGLE_SCOPES,
     'state'         => $state,
     'access_type'   => 'online',
-    'prompt'        => 'select_account',  // permite trocar de conta
+    'prompt'        => 'select_account',  // allows switching accounts
 ]);
 
 header('Location: ' . GOOGLE_AUTH_URL . '?' . $params);
