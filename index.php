@@ -1,21 +1,27 @@
 <?php
 /**
  * PRISMA-SLR - index.php
- * Ponto de entrada / roteador principal
+ * Main entry point / router
  */
 
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/config/auth.php';
 
-// Exige autenticação — redireciona para login.php se não logado
-requireLogin();
+// Unauthenticated visitors see the public landing page (presentation + login).
+// Authenticated users proceed to the app as usual.
+if (!isLoggedIn()) {
+    require __DIR__ . '/landing.php';
+    exit;
+}
 $user = currentUser();
 
-// ----- Roteamento -----
+// ----- Routing -----
 $validPages = [
     'dashboard', 'projects', 'import', 'articles',
     'duplicates', 'screening', 'eligibility', 'included',
+    'agreement', 'quality', 'pico',
     'prisma-flow', 'bibliometrics', 'export', 'checklist', 'references',
+    'admin',
 ];
 
 $page      = $_GET['page']       ?? 'dashboard';
@@ -23,26 +29,45 @@ $projectId = (int) ($_GET['project_id'] ?? 0);
 
 if (!in_array($page, $validPages)) $page = 'dashboard';
 
-// ----- Dados do projeto atual (só do usuário logado) -----
+// ----- Current project data (from the logged-in user, or any project if admin) -----
+$isAdmin = ($user['role'] ?? '') === 'admin';
 $currentProject = null;
 if ($projectId) {
     try {
-        $stmt = getDB()->prepare("SELECT id, title, status FROM projects WHERE id = ? AND user_id = ?");
-        $stmt->execute([$projectId, $user['id']]);
+        if ($isAdmin) {
+            $stmt = getDB()->prepare("SELECT id, title, status FROM projects WHERE id = ?");
+            $stmt->execute([$projectId]);
+        } else {
+            $stmt = getDB()->prepare("
+                SELECT id, title, status FROM projects
+                WHERE id = ? AND (user_id = ?
+                      OR id IN (SELECT project_id FROM project_members WHERE user_id = ?))");
+            $stmt->execute([$projectId, $user['id'], $user['id']]);
+        }
         $currentProject = $stmt->fetch();
         if (!$currentProject) { $projectId = 0; }
     } catch (Throwable) { $projectId = 0; }
 }
 
-// ----- Lista de projetos do usuário logado -----
+// ----- List of the logged-in user's projects -----
 $projectList = [];
 try {
-    $stmt = getDB()->prepare("SELECT id, title FROM projects WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
-    $stmt->execute([$user['id']]);
+    $stmt = getDB()->prepare("
+        SELECT id, title FROM projects
+        WHERE user_id = ?
+           OR id IN (SELECT project_id FROM project_members WHERE user_id = ?)
+        ORDER BY created_at DESC LIMIT 50");
+    $stmt->execute([$user['id'], $user['id']]);
     $projectList = $stmt->fetchAll();
 } catch (Throwable) {}
 
-// ----- Labels das páginas -----
+// Admin accessing another user's project via URL: ensures it
+// appears in the selector, since it isn't among the admin's own projects.
+if ($isAdmin && $currentProject && !in_array($projectId, array_column($projectList, 'id'))) {
+    array_unshift($projectList, ['id' => $currentProject['id'], 'title' => $currentProject['title']]);
+}
+
+// ----- Page labels -----
 $pageLabels = [
     'dashboard'    => 'Dashboard',
     'projects'     => 'Projetos',
@@ -52,11 +77,15 @@ $pageLabels = [
     'screening'    => 'Triagem',
     'eligibility'  => 'Elegibilidade',
     'included'     => 'Incluídos',
+    'agreement'    => 'Concordância entre Revisores',
+    'quality'      => 'Avaliação de Qualidade',
+    'pico'         => 'Extração PICO',
     'prisma-flow'  => 'Diagrama PRISMA',
     'bibliometrics'=> 'Bibliometria',
     'export'       => 'Exportação',
     'checklist'    => 'Checklist PRISMA',
     'references'   => 'Referências',
+    'admin'        => 'Administração',
 ];
 
 $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
@@ -66,8 +95,8 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= htmlspecialchars($pageTitle) ?> — PRISMA-SLR</title>
-  <meta name="description" content="Sistema de Revisão Sistemática da Literatura baseado no protocolo PRISMA 2020">
+  <title><?= htmlspecialchars($pageTitle) ?> — BaseRef</title>
+  <meta name="description" content="BaseRef — Plataforma de apoio à pesquisa e gestão de referências bibliográficas">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -78,32 +107,27 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=<?= @filemtime(__DIR__ . '/assets/css/style.css') ?>">
 
-  <!-- GTranslate (gtranslate.io) - tradução PT / EN / ES -->
+  <!-- GTranslate (gtranslate.io) - PT / EN / ES translation -->
   <style>
   .goog-te-banner-frame { display:none !important; }
   body { top: 0px !important; }
   .skiptranslate > iframe { display:none !important; }
-  /* Motor do gtranslate posicionado fora da tela para inicializar corretamente */
-  #gtranslate-motor {
-    position: fixed;
-    left: -9999px;
-    top: -9999px;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    opacity: 0;
-    pointer-events: none;
-  }
+  /* Styling for the gtranslate widget to match the theme */
+  .gtranslate_wrapper { display:inline-flex; gap:4px; align-items:center; }
+  .gtranslate_wrapper a.glink { display:inline-flex; align-items:center; padding:2px; border-radius:5px; transition:opacity .15s; opacity:.55; }
+  .gtranslate_wrapper a.glink.gt-current-lang { opacity:1; background:var(--bg-card); border:1px solid var(--border); }
+  .gtranslate_wrapper a.glink:hover { opacity:1; }
+  .gtranslate_wrapper img { display:block; }
   </style>
   <script>
   window.gtranslateSettings = {
     "default_language": "pt",
     "languages": ["pt","en","es"],
-    "wrapper_selector": "#gtranslate-motor",
-    "alt_flags": {"pt":"brazil"},
-    "flag_size": 18,
+    "wrapper_selector": ".gtranslate_wrapper",
+    "alt_flags": {"pt":"brazil","en":"usa"},
+    "flag_size": 24,
     "flag_style": "3d",
   };
   </script>
@@ -113,14 +137,19 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <!-- vis.js Network -->
   <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- WordCloud2.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
   <!-- FileSaver.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <!-- D3.js + TopoJSON (choropleth map) -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 </head>
 <body>
 
-<!-- Aplica tema salvo ANTES de renderizar para evitar flash -->
+<!-- Apply the saved theme BEFORE rendering to avoid a flash -->
 <script>
 (function(){
   var t = localStorage.getItem('prisma-theme') || 'dark';
@@ -132,15 +161,12 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
      SIDEBAR
      ================================================ -->
 <aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <img src="assets/img/logo.svg" alt="Logo PRISMA-SLR">
-    <div>
-      <div class="sidebar-logo-text">PRISMA-SLR</div>
-      <div class="sidebar-logo-sub" data-i18n="app.subtitle">Revisão Sistemática</div>
-    </div>
+  <div class="sidebar-logo" style="padding:14px 16px 10px;border-bottom:1px solid var(--border)">
+    <img src="assets/img/baseref_dark.png" alt="BaseRef" id="sidebarLogo"
+         style="width:100%;max-width:180px;height:auto;display:block;transition:opacity .2s">
   </div>
 
-  <!-- Seletor de Projeto -->
+  <!-- Project Selector -->
   <div class="sidebar-project">
     <label for="project-select"><i class="fa fa-folder" style="margin-right:4px"></i> <span data-i18n="sidebar.active_project">Projeto Ativo</span></label>
     <select id="project-select" onchange="switchProject(this.value)">
@@ -153,7 +179,7 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
     </select>
   </div>
 
-  <!-- Navegação -->
+  <!-- Navigation -->
   <nav class="sidebar-nav">
     <div class="nav-section-title" data-i18n="nav.sec_overview">Visão Geral</div>
     <?= navItem('dashboard', $page, $projectId, 'fa-house',          'Dashboard',       'nav.dashboard') ?>
@@ -165,6 +191,9 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
     <?= navItem('screening',    $page, $projectId, 'fa-magnifying-glass', 'Triagem',        'nav.screening') ?>
     <?= navItem('eligibility',  $page, $projectId, 'fa-check-double',     'Elegibilidade',  'nav.eligibility') ?>
     <?= navItem('included',     $page, $projectId, 'fa-circle-check',     'Incluídos',      'nav.included') ?>
+    <?= navItem('agreement',    $page, $projectId, 'fa-people-arrows',    'Concordância (κ)', '') ?>
+    <?= navItem('quality',      $page, $projectId, 'fa-clipboard-check',  'Qualidade/Viés',   '') ?>
+    <?= navItem('pico',         $page, $projectId, 'fa-table-cells',      'Extração PICO',    '') ?>
 
     <div class="nav-section-title" style="margin-top:6px" data-i18n="nav.sec_analysis">Análise</div>
     <?= navItem('bibliometrics', $page, $projectId, 'fa-chart-bar',      'Bibliometria',       'nav.bibliometrics') ?>
@@ -175,9 +204,61 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
     <?= navItem('articles',    $page, $projectId, 'fa-book',        'Todos os Artigos', 'nav.articles') ?>
     <?= navItem('references',  $page, $projectId, 'fa-quote-right', 'Referências',      'nav.references') ?>
     <?= navItem('export',      $page, $projectId, 'fa-upload',      'Exportação',       'nav.export') ?>
+
+    <?php if (($user['role'] ?? '') === 'admin'): ?>
+    <div class="nav-section-title" style="margin-top:6px">Sistema</div>
+    <?= navItem('admin', $page, $projectId, 'fa-shield-halved', 'Administração', '') ?>
+    <?php endif; ?>
+
+    <div class="nav-section-title" style="margin-top:6px">Suporte</div>
+
+    <!-- Help menu with submenu -->
+    <div id="ajudaMenu">
+      <button onclick="toggleAjudaMenu()"
+        style="width:100%;display:flex;align-items:center;gap:10px;background:transparent;border:none;
+               -webkit-appearance:none;appearance:none;
+               cursor:pointer;padding:8px 12px;border-radius:8px;color:var(--text-muted);
+               font-size:.875rem;font-weight:500;text-align:left;transition:background .15s,color .15s"
+        onmouseover="this.style.background='var(--primary-dim)';this.style.color='var(--primary)'"
+        onmouseout="if(!document.getElementById('ajudaSubmenu').classList.contains('open')){this.style.background='';this.style.color='var(--text-muted)'}">
+        <i class="fa fa-circle-question" style="width:18px;text-align:center"></i>
+        <span style="flex:1">Ajuda</span>
+        <i class="fa fa-chevron-down" id="ajudaChevron" style="font-size:.65rem;transition:transform .2s"></i>
+      </button>
+      <div id="ajudaSubmenu" style="overflow:hidden;max-height:0;transition:max-height .25s ease">
+        <button onclick="openVideoModal()"
+          style="width:100%;display:flex;align-items:center;gap:10px;background:transparent;border:none;
+                 -webkit-appearance:none;appearance:none;
+                 cursor:pointer;padding:7px 12px 7px 40px;border-radius:8px;color:var(--text-muted);
+                 font-size:.84rem;font-weight:500;text-align:left;transition:background .15s,color .15s"
+          onmouseover="this.style.background='rgba(239,68,68,.1)';this.style.color='#ef4444'"
+          onmouseout="this.style.background='';this.style.color='var(--text-muted)'">
+          <i class="fa fa-circle-play" style="color:#ef4444;width:16px;text-align:center"></i> Tutorial em Vídeo
+        </button>
+        <a href="TUTORIAL.pdf" target="_blank" rel="noopener"
+          style="display:flex;align-items:center;gap:10px;padding:7px 12px 7px 40px;border-radius:8px;
+                 color:var(--text-muted);font-size:.84rem;font-weight:500;text-decoration:none;transition:background .15s,color .15s"
+          onmouseover="this.style.background='var(--primary-dim)';this.style.color='var(--primary)'"
+          onmouseout="this.style.background='';this.style.color='var(--text-muted)'">
+          <i class="fa fa-file-pdf" style="color:#ef4444;width:16px;text-align:center"></i> Tutorial em PDF
+        </a>
+      </div>
+    </div>
+    <script>
+    function toggleAjudaMenu(){
+      var sub=document.getElementById('ajudaSubmenu');
+      var chev=document.getElementById('ajudaChevron');
+      var btn=document.querySelector('#ajudaMenu button');
+      var open=sub.classList.toggle('open');
+      sub.style.maxHeight=open?sub.scrollHeight+'px':'0';
+      chev.style.transform=open?'rotate(180deg)':'rotate(0deg)';
+      btn.style.background=open?'var(--primary-dim)':'';
+      btn.style.color=open?'var(--primary)':'var(--text-muted)';
+    }
+    </script>
   </nav>
 
-  <!-- Usuário logado -->
+  <!-- Logged-in user -->
   <div class="sidebar-footer">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
       <?php if (!empty($user['picture'])): ?>
@@ -203,27 +284,50 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
       <i class="fa fa-right-from-bracket"></i> Sair
     </a>
     <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;font-size:0.68rem;color:var(--text-muted)">
-      PRISMA-SLR v1.0 · PRISMA 2020
+      BaseRef v1.0 · PRISMA 2020
     </div>
   </div>
 </aside>
 
+<button type="button" class="sidebar-backdrop" id="sidebar-backdrop" aria-label="Fechar menu"
+        onclick="closeSidebar()"></button>
+
 <!-- ================================================
-     CONTEÚDO PRINCIPAL
+     MAIN CONTENT
      ================================================ -->
 <div class="main">
+  <?php if (isImpersonating()): $impersonator = impersonatorInfo(); ?>
+  <div id="impersonation-banner" style="flex-shrink:0;display:flex;align-items:center;
+       justify-content:center;gap:14px;flex-wrap:wrap;background:#ca8a04;color:#1c1300;
+       padding:8px 16px;font-size:.82rem;font-weight:600">
+    <span><i class="fa fa-user-secret"></i> Visualizando como <?= htmlspecialchars($user['name']) ?> (<?= htmlspecialchars($user['email']) ?>)
+      — logado como <?= htmlspecialchars($impersonator['email'] ?? '') ?></span>
+    <button type="button" onclick="stopImpersonation()"
+            style="background:#1c1300;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:700;font-size:.78rem">
+      <i class="fa fa-arrow-left"></i> Voltar ao admin
+    </button>
+  </div>
+  <script>
+  function stopImpersonation() {
+    fetch('api/admin.php?action=stop_impersonate', { method: 'POST' })
+      .then(r => r.json())
+      .then(() => { window.location.href = '?page=admin'; })
+      .catch(() => { window.location.href = '?page=admin'; });
+  }
+  </script>
+  <?php endif; ?>
   <!-- Header -->
   <header class="header">
-    <button class="btn btn-ghost btn-sm" id="sidebar-toggle" style="display:none"
-            onclick="document.getElementById('sidebar').classList.toggle('open')">
+    <button class="btn btn-ghost btn-sm" id="sidebar-toggle" onclick="toggleSidebar()"
+            aria-label="Abrir menu lateral" aria-controls="sidebar" aria-expanded="false">
       <i class="fa fa-bars"></i>
     </button>
 
     <div class="header-title">
       <?php if ($currentProject): ?>
-        <span class="text-muted text-sm"><i class="fa fa-folder" style="color:var(--primary)"></i>
+        <span class="header-project-context text-muted text-sm"><i class="fa fa-folder" style="color:var(--primary)"></i>
           <?= htmlspecialchars($currentProject['title']) ?></span>
-        <span style="color:var(--text-muted);margin:0 8px">›</span>
+        <span class="header-separator" style="color:var(--text-muted);margin:0 8px">›</span>
       <?php endif; ?>
       <span data-i18n="page.<?= $page ?>"><?= htmlspecialchars($pageTitle) ?></span>
     </div>
@@ -233,18 +337,15 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
         <span class="badge badge-<?= $currentProject['status'] ?>"><?= $currentProject['status'] ?></span>
       <?php endif; ?>
 
-      <!-- Seletor de idioma PRISMA (PT / EN / ES) -->
-      <div id="prisma-lang-switcher" style="display:inline-flex;gap:2px;align-items:center;background:var(--bg-card);border:1px solid var(--border);border-radius:7px;padding:2px 3px" title="Idioma do diagrama PRISMA">
-        <button onclick="setPrismaLang('pt')" id="lang-btn-pt" class="lang-btn active-lang" style="border:none;background:none;cursor:pointer;padding:2px 6px;border-radius:5px;font-size:11px;font-weight:600;color:var(--text-primary)">🇧🇷 PT</button>
-        <button onclick="setPrismaLang('en')" id="lang-btn-en" class="lang-btn" style="border:none;background:none;cursor:pointer;padding:2px 6px;border-radius:5px;font-size:11px;font-weight:600;color:var(--text-muted)">🇺🇸 EN</button>
-        <button onclick="setPrismaLang('es')" id="lang-btn-es" class="lang-btn" style="border:none;background:none;cursor:pointer;padding:2px 6px;border-radius:5px;font-size:11px;font-weight:600;color:var(--text-muted)">🇪🇸 ES</button>
-      </div>
+      <!-- gtranslate.io translation widget (PT / EN / ES) -->
+      <div class="gtranslate_wrapper" title="Idioma"></div>
+
 
       <a href="?page=projects" class="btn btn-ghost btn-sm" title="Gerenciar Projetos">
         <i class="fa fa-folder-open"></i>
       </a>
 
-      <!-- Botão de tema claro/escuro -->
+      <!-- Light/dark theme toggle button -->
       <button class="btn btn-ghost btn-sm" id="theme-toggle" onclick="toggleTheme()"
               title="Alternar tema claro/escuro" style="min-width:36px;justify-content:center">
         <i class="fa fa-moon" id="theme-icon"></i>
@@ -252,10 +353,10 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
     </div>
   </header>
 
-  <!-- Conteúdo da Página -->
+  <!-- Page Content -->
   <main class="content">
     <?php
-    // Carrega a página
+    // Load the page
     $pageFile = __DIR__ . '/pages/' . $page . '.php';
     if (file_exists($pageFile)) {
         include $pageFile;
@@ -270,14 +371,57 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
-<!-- Motor gtranslate.io (fora da tela, necessário para inicializar) -->
-<div id="gtranslate-motor"></div>
+<!-- ================================================
+     MODAL: Video Tutorial
+     ================================================ -->
+<div id="video-modal" style="display:none;position:fixed;inset:0;z-index:9999;
+     background:rgba(0,0,0,.75);align-items:center;justify-content:center"
+     onclick="if(event.target===this)closeVideoModal()">
+  <div style="position:relative;width:min(860px,96vw);background:var(--bg-card);
+              border-radius:16px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.6)">
+    <!-- Modal header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:16px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <i class="fa fa-circle-play" style="color:#ef4444;font-size:1.2rem"></i>
+        <span style="font-weight:700;font-size:.95rem">Tutorial em Vídeo — BaseRef</span>
+      </div>
+      <button onclick="closeVideoModal()"
+              style="background:none;border:none;cursor:pointer;color:var(--text-muted);
+                     font-size:1.2rem;padding:4px;border-radius:6px;line-height:1"
+              title="Fechar">
+        <i class="fa fa-xmark"></i>
+      </button>
+    </div>
+    <!-- YouTube iframe -->
+    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden">
+      <iframe id="video-iframe"
+              src=""
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none">
+      </iframe>
+    </div>
+    <!-- Footer -->
+    <div style="padding:12px 20px;border-top:1px solid var(--border);
+                display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:.78rem;color:var(--text-muted)">
+        Aprenda a usar o BaseRef passo a passo
+      </span>
+      <a href="https://youtu.be/B_sD4ZO_xMU" target="_blank" rel="noopener"
+         class="btn btn-ghost btn-sm" style="font-size:.78rem">
+        <i class="fa fa-arrow-up-right-from-square"></i> Abrir no YouTube
+      </a>
+    </div>
+  </div>
+</div>
+
 
 
 <!-- ================================================
      SCRIPTS
      ================================================ -->
-<!-- Configuração global JS -->
+<!-- Global JS configuration -->
 <script>
 const APP = {
   projectId:   <?= $projectId ?>,
@@ -288,23 +432,30 @@ const APP = {
 };
 </script>
 
-<script src="assets/js/app.js"></script>
+<?php
+// Cache-busting based on the file's mtime (forces reload after edits)
+$jsVer = fn($f) => '?v=' . @filemtime(__DIR__ . '/' . $f);
+?>
+<script src="assets/js/app.js<?= $jsVer('assets/js/app.js') ?>"></script>
 
-<!-- Scripts específicos por página -->
+<!-- Page-specific scripts -->
 <?php if ($page === 'dashboard'): ?>
-<script src="assets/js/dashboard.js"></script>
+<script src="assets/js/dashboard.js<?= $jsVer('assets/js/dashboard.js') ?>"></script>
 <?php elseif ($page === 'import'): ?>
-<script src="assets/js/import.js"></script>
+<script src="assets/js/import.js<?= $jsVer('assets/js/import.js') ?>"></script>
 <?php elseif ($page === 'screening' || $page === 'eligibility'): ?>
-<script src="assets/js/screening.js"></script>
+<script src="assets/js/screening.js<?= $jsVer('assets/js/screening.js') ?>"></script>
 <?php elseif ($page === 'bibliometrics'): ?>
-<script src="assets/js/bibliometrics.js"></script>
+<!-- SheetJS — generates .xlsx files in the browser to export each chart's data -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="assets/js/bib-i18n.js<?= $jsVer('assets/js/bib-i18n.js') ?>"></script>
+<script src="assets/js/bibliometrics.js<?= $jsVer('assets/js/bibliometrics.js') ?>"></script>
 <?php elseif ($page === 'prisma-flow'): ?>
-<script src="assets/js/prisma-flow.js"></script>
+<script src="assets/js/prisma-flow.js<?= $jsVer('assets/js/prisma-flow.js') ?>"></script>
 <?php endif; ?>
 
 <script>
-// ----- Tema claro / escuro -----
+// ----- Light / dark theme -----
 function applyTheme(theme) {
   if (theme === 'light') {
     document.body.classList.add('theme-light');
@@ -315,6 +466,8 @@ function applyTheme(theme) {
     document.getElementById('theme-icon').className = 'fa-solid fa-moon';
     document.getElementById('theme-toggle').title   = 'Mudar para tema claro';
   }
+  var logo = theme === 'light' ? 'assets/img/baseref_light-2.png' : 'assets/img/baseref_dark.png';
+  ['sidebarLogo','dashLogo'].forEach(function(id){var el=document.getElementById(id);if(el)el.src=logo;});
   localStorage.setItem('prisma-theme', theme);
 }
 
@@ -323,39 +476,25 @@ function toggleTheme() {
   applyTheme(current === 'dark' ? 'light' : 'dark');
 }
 
-// ----- Idioma PRISMA (PT / EN / ES) -----
+// ----- PRISMA language (PT / EN / ES) — synced with gtranslate.io -----
 window.PRISMA_LANG = localStorage.getItem('prisma-lang') || 'pt';
 
-function setPrismaLang(lang, _retry) {
+function setPrismaLang(lang) {
   window.PRISMA_LANG = lang;
   localStorage.setItem('prisma-lang', lang);
-
-  // Atualiza estilo dos botões
-  ['pt','en','es'].forEach(function(l) {
-    var btn = document.getElementById('lang-btn-' + l);
-    if (!btn) return;
-    if (l === lang) {
-      btn.style.background = 'var(--primary)';
-      btn.style.color      = '#fff';
-    } else {
-      btn.style.color      = 'var(--text-muted)';
-      btn.style.background = 'none';
-    }
-  });
-
-  // Traduz toda a página via gtranslate.io (funciona online)
-  if (typeof doGTranslate === 'function') {
-    doGTranslate('pt|' + lang);
-  } else if (!_retry || _retry < 20) {
-    // flags.js carregando com defer — aguarda e tenta de novo
-    setTimeout(function(){ setPrismaLang(lang, (_retry||0) + 1); }, 300);
-  }
-
-  // Redesenha o diagrama SVG na página prisma-flow
+  // Redraws the SVG diagram on the prisma-flow page (and any other listener)
   document.dispatchEvent(new CustomEvent('prismaLangChanged', { detail: { lang } }));
 }
 
-// Sincroniza tema e idioma ao carregar
+// Intercepts clicks on the gtranslate flags to also update PRISMA_LANG
+document.addEventListener('click', function(e) {
+  var flag = e.target.closest('.gtranslate_wrapper a.glink[data-gt-lang]');
+  if (!flag) return;
+  var lang = flag.getAttribute('data-gt-lang');
+  if (lang) setPrismaLang(lang);
+});
+
+// Sync theme on load
 document.addEventListener('DOMContentLoaded', function() {
   var saved = localStorage.getItem('prisma-theme') || 'dark';
   applyTheme(saved);
@@ -363,20 +502,39 @@ document.addEventListener('DOMContentLoaded', function() {
   var savedLang = localStorage.getItem('prisma-lang') || 'pt';
   window.PRISMA_LANG = savedLang;
 
-  // Botões: aplica visual imediatamente
-  ['pt','en','es'].forEach(function(l) {
-    var btn = document.getElementById('lang-btn-' + l);
-    if (!btn) return;
-    if (l === savedLang) { btn.style.background = 'var(--primary)'; btn.style.color = '#fff'; }
-    else                 { btn.style.color = 'var(--text-muted)'; btn.style.background = 'none'; }
-  });
-
-  // Aplica tradução da página após gtranslate carregar
+  // Restore saved language: clicks the matching flag once the widget loads
   if (savedLang !== 'pt') {
-    setPrismaLang(savedLang, 0);
+    var tries = 0;
+    var iv = setInterval(function() {
+      var flag = document.querySelector('.gtranslate_wrapper a.glink[data-gt-lang="' + savedLang + '"]');
+      if (flag) {
+        clearInterval(iv);
+        flag.click();
+      } else if (++tries > 30) {
+        clearInterval(iv);
+      }
+    }, 200);
   }
 
   if (typeof initPage === 'function') initPage();
+});
+
+// ----- Video tutorial modal -----
+function openVideoModal() {
+  var modal = document.getElementById('video-modal');
+  document.getElementById('video-iframe').src =
+    'https://www.youtube.com/embed/B_sD4ZO_xMU?autoplay=1&rel=0';
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeVideoModal() {
+  var modal = document.getElementById('video-modal');
+  modal.style.display = 'none';
+  document.getElementById('video-iframe').src = '';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeVideoModal();
 });
 </script>
 
@@ -384,7 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </html>
 
 <?php
-// ----- Função helper: gera item de navegação -----
+// ----- Helper function: generates a navigation item -----
 function navItem(string $pg, string $current, int $projectId, string $icon, string $label, string $i18nKey = ''): string
 {
     $active   = $pg === $current ? ' active' : '';
