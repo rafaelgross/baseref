@@ -1,140 +1,152 @@
-# PRISMA-SLR
+# BaseRef
 
-**Sistema web open source para gestão de Revisões Sistemáticas da Literatura** baseado no protocolo **PRISMA 2020**.
+**Open-source web system for managing Systematic Literature Reviews** based on the **PRISMA 2020** protocol.
 
-![PRISMA-SLR Screenshot](assets/img/logo.svg)
+![BaseRef](assets/img/baseref_light-2.png)
 
-## Funcionalidades
+## Features
 
-- **Projetos** — Gerencie múltiplas revisões simultaneamente
-- **Importação** — Suporte a arquivos `.bib` do Scopus e Web of Science
-- **Deduplicação** — Detecção automática de artigos duplicados por DOI e similaridade de título
-- **Triagem** — Avaliação de título/resumo com decisões de inclusão/exclusão e motivos configuráveis
-- **Elegibilidade** — Avaliação de texto completo
-- **Diagrama PRISMA 2020** — Gerado automaticamente com exportação PNG/SVG
-- **Bibliometria** — 12 gráficos + redes de co-autoria e co-ocorrência de keywords
-- **Exportação** — CSV, BibTeX e JSON para todos os escopos
-- **Checklist PRISMA 2020** — 27 itens para garantir conformidade do relatório
+- **Projects** — Manage multiple reviews simultaneously
+- **Import** — Supports `.bib` (BibTeX), `.ris`, PubMed XML, and Scopus CSV files from Scopus and Web of Science
+- **Deduplication** — Automatic duplicate detection by DOI and title similarity
+- **Screening** — Title/abstract assessment with include/exclude decisions and configurable exclusion reasons
+- **Eligibility** — Full-text assessment
+- **Multi-reviewer agreement** — Dual-blind screening mode with Cohen's kappa and consensus resolution for disagreements
+- **AI-assisted screening** — Optional include/exclude/uncertain suggestions (Groq, Gemini, or Anthropic) to support — never replace — the human reviewer's decision
+- **OpenAlex enrichment** — Fills missing abstracts, citation counts, and open-access status from imported DOIs
+- **PRISMA 2020 diagram** — Automatically generated with PNG/SVG export
+- **Bibliometrics** — 30+ charts and networks (Lotka's and Bradford's laws, co-authorship, keyword co-occurrence, thematic maps, country collaboration, h/g/m indices, and more), filterable by dataset and exportable to XLSX per chart
+- **PICO(C) extraction** — Structured data extraction for included studies
+- **Quality/risk-of-bias assessment** — CASP, JBI, or a custom instrument
+- **Export** — CSV, BibTeX, and JSON for every scope
+- **PRISMA 2020 checklist** — 27 items to ensure reporting compliance
+- **Admin panel** — Usage overview and "view as user" support for troubleshooting
 
-## Tecnologias
+## Technology
 
 - **Backend**: PHP 8+ / MySQL
-- **Frontend**: HTML5, CSS3, JavaScript (sem framework)
-- **Gráficos**: Chart.js 4, vis.js 9, wordcloud2.js
-- **Servidor local**: MAMP (macOS/Windows), XAMPP ou qualquer servidor PHP+MySQL
+- **Frontend**: HTML5, CSS3, JavaScript (no framework)
+- **Charts**: Chart.js 4, vis.js 9, D3.js, wordcloud2.js
+- **Local server**: MAMP (macOS/Windows), XAMPP, or any PHP+MySQL server
 
-## Instalação (MAMP)
+## Installation (MAMP)
 
-### Pré-requisitos
-- [MAMP](https://www.mamp.info/) instalado e rodando
-- PHP 8.0+ e MySQL 8.0+
+### Requirements
+- [MAMP](https://www.mamp.info/) installed and running
+- PHP 8.0+ and MySQL 8.0+
 
-### Passo a passo
+### Steps
 
-1. **Clone o repositório** na pasta `htdocs` do MAMP:
+1. **Clone the repository** into MAMP's `htdocs` folder:
    ```bash
    cd /Applications/MAMP/htdocs
-   git clone https://github.com/SEU_USUARIO/prisma-slr.git
-   cd prisma-slr
+   git clone https://github.com/rafaelgross/baseref.git
+   cd baseref
    ```
 
-2. **Configure o banco de dados** em `config/database.php`:
+2. **Configure the database** in `config/database.php` (copy `config/database.example.php` and fill in your own values):
    ```php
    define('DB_HOST', '127.0.0.1');
-   define('DB_PORT', '8889');      // Padrão MAMP = 8889
-   define('DB_NAME', 'prisma_slr');
+   define('DB_PORT', '8889');      // MAMP default = 8889
+   define('DB_NAME', 'baseref');
    define('DB_USER', 'root');
    define('DB_PASS', 'root');
    ```
 
-3. **Crie o banco de dados** via phpMyAdmin (MAMP → Open WebStart → phpMyAdmin):
-   - Crie o banco `prisma_slr` (charset: `utf8mb4`)
-   - Importe o arquivo `sql/schema.sql`
+3. **Create the database** via phpMyAdmin (MAMP → Open WebStart → phpMyAdmin):
+   - Create the `baseref` database (charset: `utf8mb4`)
+   - Import the `sql/schema.sql` file
 
-   **Ou via terminal:**
+   **Or via terminal:**
    ```bash
    /Applications/MAMP/Library/bin/mysql -u root -proot -P 8889 -h 127.0.0.1 \
-     -e "CREATE DATABASE IF NOT EXISTS prisma_slr CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-   /Applications/MAMP/Library/bin/mysql -u root -proot -P 8889 -h 127.0.0.1 prisma_slr \
+     -e "CREATE DATABASE IF NOT EXISTS baseref CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   /Applications/MAMP/Library/bin/mysql -u root -proot -P 8889 -h 127.0.0.1 baseref \
      < sql/schema.sql
    ```
 
-4. **Acesse no navegador:**
-   ```
-   http://localhost:8888/prisma-slr/
-   ```
-   > Porta padrão do MAMP = 8888. Ajuste conforme sua configuração.
+4. **Configure Google OAuth** in `config/auth.php` (copy `config/auth.example.php`) with your own Google Client ID/Secret.
 
-## Instalação (XAMPP / outros)
+5. **Open in your browser:**
+   ```
+   http://localhost:8888/baseref/
+   ```
+   > MAMP's default port is 8888. Adjust as needed for your setup.
 
-Configure `config/database.php` com:
+## Installation (XAMPP / other)
+
+Configure `config/database.php` with:
 ```php
-define('DB_PORT', '3306');    // porta padrão MySQL
-define('DB_USER', 'root');    // ou seu usuário
-define('DB_PASS', '');        // ou sua senha
+define('DB_PORT', '3306');    // default MySQL port
+define('DB_USER', 'root');    // or your own user
+define('DB_PASS', '');        // or your own password
 ```
 
-## Uso Básico
+## Basic Usage
 
-1. **Criar projeto** → Projetos → Novo Projeto
-2. **Importar referências** → Importar → arraste arquivos `.bib` do Scopus ou WoS
-3. **Dedupliquem** → Duplicatas → Detectar (ajuste threshold se necessário)
-4. **Triagem** → Triagem → avalie título/resumo artigo por artigo
-5. **Elegibilidade** → Elegibilidade → avalie texto completo
-6. **Visualizar resultados** → Diagrama PRISMA / Bibliometria
-7. **Exportar** → Exportar → CSV, BibTeX ou JSON
-8. **Checklist** → Checklist PRISMA 2020 → 27 itens para o relatório
+1. **Create a project** → Projects → New Project
+2. **Import references** → Import → drop `.bib`/`.ris`/`.xml`/`.csv` files from Scopus, Web of Science, or PubMed
+3. **Deduplicate** → Duplicates → Detect (adjust the threshold if needed)
+4. **Screening** → Screening → assess title/abstract article by article
+5. **Eligibility** → Eligibility → assess full text
+6. **View results** → PRISMA Diagram / Bibliometrics
+7. **Export** → Export → CSV, BibTeX, or JSON
+8. **Checklist** → PRISMA 2020 Checklist → 27 items for the report
 
-## Formatos Suportados
+## Supported Formats
 
-### Scopus (`.bib`)
-- Campos: `EID`, `affiliations`, `author_keywords`, `note` (cited by), `source`
-- Auto-detectado por padrão
+### Scopus (`.bib` or `.csv`)
+- Fields: `EID`, `affiliations`, `author_keywords`, `note` (cited by), `source`
+- Auto-detected by default
 
 ### Web of Science (`.bib`)
-- Campos: `Unique-ID`, `Times-Cited`, `Keywords-Plus`, `Affiliation`, `Web-of-Science-Index`
-- Auto-detectado por padrão
+- Fields: `Unique-ID`, `Times-Cited`, `Keywords-Plus`, `Affiliation`, `Web-of-Science-Index`
+- Auto-detected by default
 
-## Estrutura do Projeto
+### PubMed (`.xml`)
+- Standard PubMed/MEDLINE XML export
+
+## Project Structure
 
 ```
-prisma-slr/
-├── api/               # Endpoints REST (PHP)
+baseref/
+├── api/               # REST endpoints (PHP)
 │   ├── projects.php
 │   ├── import.php
 │   ├── articles.php
 │   ├── duplicates.php
 │   ├── screening.php
+│   ├── kappa.php
 │   ├── prisma-flow.php
 │   ├── bibliometrics.php
 │   └── export.php
 ├── assets/
-│   ├── css/style.css  # Design system completo
+│   ├── css/style.css  # Complete design system
 │   ├── js/            # Scripts
-│   └── img/           # Imagens
+│   └── img/           # Images
 ├── config/
-│   └── database.php   # Configuração do banco
+│   └── database.example.php  # Database configuration template
 ├── lib/
-│   └── BibTexParser.php  # Parser BibTeX customizado
-├── pages/             # Páginas PHP (inclusas via index.php)
+│   └── BibTexParser.php  # Custom BibTeX/RIS/XML/CSV parsers
+├── pages/             # PHP pages (included via index.php)
 ├── sql/
-│   └── schema.sql     # Esquema do banco de dados
-└── index.php          # Roteador principal
+│   └── schema.sql     # Database schema
+└── index.php          # Main router
 ```
 
-## Licença
+## License
 
-MIT © 2024 — Veja [LICENSE](LICENSE)
+MIT © 2024 — See [LICENSE](LICENSE)
 
-## Citação
+## Citation
 
-Se usar este software em sua pesquisa, por favor cite:
+If you use this software in your research, please cite:
 
 ```
-PRISMA-SLR: Sistema web para gestão de Revisões Sistemáticas da Literatura.
-GitHub: https://github.com/SEU_USUARIO/prisma-slr
+BaseRef: Open-source web system for managing Systematic Literature Reviews.
+GitHub: https://github.com/rafaelgross/baseref
 ```
 
 ---
 
-Desenvolvido para apoiar pesquisadores na condução de revisões sistemáticas da literatura de acordo com o protocolo PRISMA 2020.
+Built to support researchers conducting systematic literature reviews in accordance with the PRISMA 2020 protocol.
