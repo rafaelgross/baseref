@@ -1,533 +1,533 @@
-# Manual do Usuário — BaseRef
+# BaseRef User Manual
 
-**Plataforma web para Revisões Sistemáticas da Literatura seguindo o protocolo PRISMA 2020**
+**A web platform for conducting Systematic Literature Reviews following the PRISMA 2020 protocol**
 
-Versão 1.0 · https://baseref.com.br
-
----
-
-## Sumário
-
-1. [O que é o BaseRef?](#1-o-que-é-o-baseref)
-2. [Primeiros passos](#2-primeiros-passos)
-3. [Visão geral do fluxo de trabalho](#3-visão-geral-do-fluxo-de-trabalho)
-4. [Projetos](#4-projetos)
-5. [Extração PICO](#5-extração-pico)
-6. [Importação de referências](#6-importação-de-referências)
-7. [Deduplicação](#7-deduplicação)
-8. [Triagem (título e resumo)](#8-triagem-título-e-resumo)
-9. [Triagem assistida por IA](#9-triagem-assistida-por-ia)
-10. [Elegibilidade (texto completo)](#10-elegibilidade-texto-completo)
-11. [Concordância entre revisores](#11-concordância-entre-revisores)
-12. [Avaliação de qualidade e risco de viés](#12-avaliação-de-qualidade-e-risco-de-viés)
-13. [Diagrama PRISMA 2020](#13-diagrama-prisma-2020)
-14. [Bibliometria](#14-bibliometria)
-15. [Referências formatadas](#15-referências-formatadas)
-16. [Exportação](#16-exportação)
-17. [Checklist PRISMA 2020](#17-checklist-prisma-2020)
-18. [Perguntas frequentes](#18-perguntas-frequentes)
-19. [Suporte e como citar](#19-suporte-e-como-citar)
+Version 1.0 · https://baseref.com.br
 
 ---
 
-## 1. O que é o BaseRef?
+## Table of Contents
 
-O **BaseRef** é uma plataforma web gratuita e de código aberto (licença MIT) que apoia pesquisadores na condução de **Revisões Sistemáticas da Literatura (RSL)** seguindo o protocolo **PRISMA 2020** — o padrão internacional mais adotado para o relato de revisões sistemáticas.
-
-Com o BaseRef você pode:
-
-- Importar referências das principais bases (Scopus, Web of Science, PubMed, Embase, IEEE Xplore e outras)
-- Detectar e resolver artigos duplicados automaticamente
-- Triar títulos e resumos, com sugestão de inclusão/exclusão assistida por IA
-- Avaliar elegibilidade por texto completo com motivos padronizados
-- Trabalhar com dois ou mais revisores e medir a concordância (kappa de Cohen)
-- Avaliar qualidade metodológica e risco de viés (CASP, JBI ou instrumento próprio)
-- Gerar automaticamente o Diagrama de Fluxo PRISMA 2020 e exportá-lo em SVG ou PNG
-- Analisar bibliometria com gráficos, mapas e redes de coautoria
-- Gerar referências formatadas em ABNT NBR 6023:2018 e APA 7ª edição
-- Exportar os dados em CSV, BibTeX ou JSON
-- Acompanhar os 27 itens do Checklist PRISMA 2020
-
-Todo o trabalho fica salvo na nuvem e é isolado por usuário: cada pesquisador vê apenas os próprios projetos e aqueles em que foi convidado como colaborador.
-
----
-
-## 2. Primeiros passos
-
-### Acesso
-
-1. Acesse **https://baseref.com.br**.
-2. Clique em **Entrar com Google**.
-3. Autorize o acesso à sua conta Google.
-
-Não há cadastro de senha: a autenticação é feita por **Google OAuth 2.0**, e nenhuma senha é armazenada pela plataforma. A sessão expira automaticamente após algumas horas de inatividade — basta entrar novamente.
-
-### A tela do sistema
-
-- **Menu lateral (esquerda)** — seletor de projeto ativo e todas as etapas da revisão, agrupadas em *Visão Geral*, *Processo PRISMA*, *Análise*, *Dados* e *Suporte*.
-- **Cabeçalho (topo)** — nome do projeto ativo, seletor de idioma (PT / EN / ES) e alternância entre tema claro e escuro.
-- **Área central** — a etapa em que você está trabalhando.
-
-### Ajuda dentro do sistema
-
-No menu lateral, em **Suporte → Ajuda**, você encontra:
-
-- **Tutorial em Vídeo** — abre o vídeo de demonstração da plataforma em uma janela sobre a tela.
-- **Tutorial em PDF** — abre este manual.
-
-> **Dica:** o idioma da interface (PT / EN / ES) e o tema claro/escuro ficam salvos no seu navegador e são reaplicados no próximo acesso.
+1. [What is BaseRef?](#1-what-is-baseref)
+2. [Getting Started](#2-getting-started)
+3. [Workflow Overview](#3-workflow-overview)
+4. [Projects](#4-projects)
+5. [PICO Extraction](#5-pico-extraction)
+6. [Importing References](#6-importing-references)
+7. [Deduplication](#7-deduplication)
+8. [Screening (Title and Abstract)](#8-screening-title-and-abstract)
+9. [AI-Assisted Screening](#9-ai-assisted-screening)
+10. [Eligibility (Full Text)](#10-eligibility-full-text)
+11. [Reviewer Agreement](#11-reviewer-agreement)
+12. [Quality and Risk-of-Bias Assessment](#12-quality-and-risk-of-bias-assessment)
+13. [PRISMA 2020 Flow Diagram](#13-prisma-2020-flow-diagram)
+14. [Bibliometrics](#14-bibliometrics)
+15. [Formatted References](#15-formatted-references)
+16. [Export](#16-export)
+17. [PRISMA 2020 Checklist](#17-prisma-2020-checklist)
+18. [Frequently Asked Questions](#18-frequently-asked-questions)
+19. [Support and How to Cite](#19-support-and-how-to-cite)
 
 ---
 
-## 3. Visão geral do fluxo de trabalho
+## 1. What is BaseRef?
 
-Uma revisão sistemática no BaseRef segue as etapas abaixo, nesta ordem:
+**BaseRef** is a free, open-source (MIT license) web platform that supports researchers in conducting **Systematic Literature Reviews (SLRs)** following the **PRISMA 2020** protocol — the most widely adopted international standard for reporting systematic reviews.
+
+With BaseRef you can:
+
+- Import references from major databases (Scopus, Web of Science, PubMed, Embase, IEEE Xplore, and others)
+- Automatically detect and resolve duplicate articles
+- Screen titles and abstracts, with AI-assisted include/exclude suggestions
+- Assess full-text eligibility using standardized exclusion reasons
+- Work with two or more reviewers and measure agreement (Cohen's kappa)
+- Assess methodological quality and risk of bias (CASP, JBI, or a custom instrument)
+- Automatically generate the PRISMA 2020 flow diagram and export it as SVG or PNG
+- Analyze bibliometrics with charts, maps, and co-authorship networks
+- Generate formatted references in ABNT NBR 6023:2018 and APA 7th edition
+- Export data as CSV, BibTeX, or JSON
+- Track the 27 items of the PRISMA 2020 checklist
+
+All work is saved in the cloud and is user-isolated: each researcher sees only their own projects and those they've been invited to collaborate on.
+
+---
+
+## 2. Getting Started
+
+### Access
+
+1. Go to **https://baseref.com.br**.
+2. Click **Sign in with Google**.
+3. Authorize access to your Google account.
+
+There is no password registration: authentication is handled via **Google OAuth 2.0**, and no password is stored by the platform. The session expires automatically after a few hours of inactivity — simply sign in again.
+
+### The system screen
+
+- **Side menu (left)** — active project selector and all review stages, grouped into *Overview*, *PRISMA Process*, *Analysis*, *Data*, and *Support*.
+- **Header (top)** — active project name, language selector (PT / EN / ES), and light/dark theme toggle.
+- **Main area** — the stage you're currently working on.
+
+### In-app help
+
+In the side menu, under **Support → Help**, you'll find:
+
+- **Video Tutorial** — opens the platform's demonstration video in an on-screen window.
+- **PDF Tutorial** — opens this manual.
+
+> **Tip:** the interface language (PT / EN / ES) and the light/dark theme are saved in your browser and reapplied the next time you visit.
+
+---
+
+## 3. Workflow Overview
+
+A systematic review in BaseRef follows the steps below, in this order:
 
 ```
-[1]  Criar o projeto e definir critérios
+[1]  Create the project and define criteria
       ↓
-[2]  Estruturar a pergunta (PICO)
+[2]  Structure the question (PICO)
       ↓
-[3]  Importar referências (.bib / .ris / .xml / .csv / .txt)
+[3]  Import references (.bib / .ris / .xml / .csv / .txt)
       ↓
-[4]  Detectar e resolver duplicatas
+[4]  Detect and resolve duplicates
       ↓
-[5]  Triagem — título e resumo
+[5]  Screening — title and abstract
       ↓
-[6]  Elegibilidade — texto completo
+[6]  Eligibility — full text
       ↓
-[7]  Concordância entre revisores (kappa)
+[7]  Reviewer agreement (kappa)
       ↓
-[8]  Avaliação de qualidade / risco de viés
+[8]  Quality / risk-of-bias assessment
       ↓
-[9]  Diagrama PRISMA 2020
+[9]  PRISMA 2020 flow diagram
       ↓
-[10] Bibliometria
+[10] Bibliometrics
       ↓
-[11] Referências e exportação
+[11] References and export
       ↓
-[12] Checklist PRISMA 2020
+[12] PRISMA 2020 checklist
 ```
 
-O **Dashboard** mostra, em tempo real, quantos artigos foram identificados, quantas duplicatas foram removidas e quantos artigos estão em cada fase.
+The **Dashboard** shows, in real time, how many articles have been identified, how many duplicates have been removed, and how many articles are in each phase.
 
-> **Dica:** as etapas 7, 8 e 10 são opcionais, mas fortemente recomendadas — a maioria dos periódicos exige o relato de concordância entre revisores e de avaliação de qualidade.
-
----
-
-## 4. Projetos
-
-Cada projeto é uma revisão independente: possui suas próprias referências, decisões, critérios e colaboradores. Você pode manter várias revisões em andamento ao mesmo tempo sem risco de mistura de dados.
-
-### Criar um projeto
-
-1. Acesse **Projetos** no menu lateral.
-2. Clique em **Novo Projeto**.
-3. Preencha os campos:
-   - **Título** (obrigatório) — o nome da sua revisão.
-   - **Descrição** — informações adicionais sobre o estudo.
-   - **Objetivo / Questão de Pesquisa** — a pergunta que a revisão pretende responder.
-   - **Período de Busca — Início / Fim** — o recorte temporal da busca (ex.: 2013 a 2024).
-   - **Critérios de inclusão** e **critérios de exclusão** — escreva-os de forma clara e objetiva.
-4. Clique em **Criar**.
-
-> **Importante:** os critérios de inclusão e exclusão não são apenas documentação — são eles que a **triagem assistida por IA** utiliza para sugerir decisões. Quanto mais específicos, melhores as sugestões.
-
-### Selecionar o projeto ativo
-
-No topo do menu lateral há o seletor **Projeto Ativo**. Todas as etapas (importação, triagem, diagrama, bibliometria) sempre se referem ao projeto selecionado ali.
-
-### Colaboradores
-
-Para revisões com mais de um avaliador:
-
-1. Abra o **Dashboard** (ou a área de colaboradores do projeto).
-2. Informe o **e-mail do colaborador** e confirme.
-3. O colaborador passa a ver o projeto na própria conta.
-
-> **Importante:** o colaborador precisa ter feito login ao menos uma vez no BaseRef com aquele e-mail antes de ser adicionado.
+> **Tip:** steps 7, 8, and 10 are optional but strongly recommended — most journals require reporting of reviewer agreement and quality assessment.
 
 ---
 
-## 5. Extração PICO
+## 4. Projects
 
-O framework **PICO** ajuda a estruturar a pergunta de pesquisa e a padronizar a extração de dados dos estudos incluídos.
+Each project is an independent review: it has its own references, decisions, criteria, and collaborators. You can keep several reviews in progress at the same time without any risk of mixing data.
 
-1. Acesse **Extração PICO** no menu lateral.
-2. Selecione o projeto ativo.
-3. Para cada artigo, registre:
-   - **P — População** — quem foi estudado.
-   - **I — Intervenção** — o que foi aplicado, analisado ou proposto.
-   - **C — Comparação** — o comparador ou grupo de controle, quando houver.
-   - **O — Desfecho (Outcome)** — os resultados medidos.
-   - **Contexto** — ambiente, país, setor ou cenário do estudo.
+### Creating a project
 
-Os dados PICO acompanham o artigo e podem ser conferidos junto com as demais informações do projeto, servindo de base para a síntese dos resultados no manuscrito.
+1. Go to **Projects** in the side menu.
+2. Click **New Project**.
+3. Fill in the fields:
+   - **Title** (required) — the name of your review.
+   - **Description** — additional information about the study.
+   - **Objective / Research Question** — the question the review aims to answer.
+   - **Search Period — Start / End** — the time frame of the search (e.g., 2013 to 2024).
+   - **Inclusion criteria** and **exclusion criteria** — write them clearly and objectively.
+4. Click **Create**.
+
+> **Important:** the inclusion and exclusion criteria are not just documentation — they are what the **AI-assisted screening** uses to suggest decisions. The more specific they are, the better the suggestions.
+
+### Selecting the active project
+
+At the top of the side menu is the **Active Project** selector. All stages (import, screening, diagram, bibliometrics) always refer to the project selected there.
+
+### Collaborators
+
+For reviews with more than one reviewer:
+
+1. Open the **Dashboard** (or the project's collaborators area).
+2. Enter the **collaborator's email** and confirm.
+3. The collaborator will then see the project in their own account.
+
+> **Important:** the collaborator needs to have logged into BaseRef at least once with that email before being added.
 
 ---
 
-## 6. Importação de referências
+## 5. PICO Extraction
 
-### Formatos suportados
+The **PICO** framework helps structure the research question and standardize data extraction from included studies.
 
-| Formato | Extensão | Bases compatíveis |
+1. Go to **PICO Extraction** in the side menu.
+2. Select the active project.
+3. For each article, record:
+   - **P — Population** — who was studied.
+   - **I — Intervention** — what was applied, analyzed, or proposed.
+   - **C — Comparison** — the comparator or control group, if any.
+   - **O — Outcome** — the results measured.
+   - **Context** — the setting, country, sector, or scenario of the study.
+
+The PICO data travels with the article and can be reviewed alongside the project's other information, serving as the basis for synthesizing results in the manuscript.
+
+---
+
+## 6. Importing References
+
+### Supported formats
+
+| Format | Extension | Compatible databases |
 |---------|----------|-------------------|
 | BibTeX | `.bib` | Scopus, Web of Science, IEEE Xplore, Mendeley, Zotero |
 | RIS | `.ris` | Mendeley, Zotero, EndNote, PubMed, Embase |
-| PubMed XML | `.xml` | PubMed (exportação MEDLINE XML) |
-| CSV / texto | `.csv`, `.txt` | Exportações tabulares e listas simples |
+| PubMed XML | `.xml` | PubMed (MEDLINE XML export) |
+| CSV / text | `.csv`, `.txt` | Tabular exports and simple lists |
 
-O tamanho máximo por arquivo é de **50 MB**.
+The maximum file size is **50 MB**.
 
-### Como importar
+### How to import
 
-1. Acesse **Importação** no menu lateral.
-2. Escolha o formato do arquivo nas abas: **BibTeX**, **RIS**, **PubMed XML** ou **CSV/Texto**.
-3. Arraste o arquivo para a área indicada, ou clique nela para selecionar.
-4. Preencha o **Nome da Fonte** (ex.: `Scopus 2024`, `WoS — dezembro/2023`).
-5. Selecione a **Base de dados** de origem.
-6. Informe a **Data da busca** — esse dado é exigido pelo relato PRISMA.
-7. Clique em **Importar**.
+1. Go to **Import** in the side menu.
+2. Choose the file format from the tabs: **BibTeX**, **RIS**, **PubMed XML**, or **CSV/Text**.
+3. Drag the file into the indicated area, or click it to select a file.
+4. Fill in the **Source Name** (e.g., `Scopus 2024`, `WoS — December 2023`).
+5. Select the source **Database**.
+6. Enter the **Search Date** — this is required by PRISMA reporting.
+7. Click **Import**.
 
-Ao final, o sistema informa quantos registros foram encontrados, quantos foram importados e se houve erros de leitura em algum registro.
+When finished, the system reports how many records were found, how many were imported, and whether any records had reading errors.
 
-### Como exportar de cada base
+### How to export from each database
 
-**Scopus** — faça a busca, selecione os resultados → `Export` → `BibTeX` → marque todos os campos.
+**Scopus** — run the search, select the results → `Export` → `BibTeX` → check all fields.
 
-**Web of Science** — selecione os registros → `Export` → `BibTeX` (ou `RIS Format`) → exporte todos os campos.
+**Web of Science** — select the records → `Export` → `BibTeX` (or `RIS Format`) → export all fields.
 
-**PubMed** — faça a busca, selecione os resultados → `Send to` → `File` → formato `PubMed` ou `XML` → `Create file`.
+**PubMed** — run the search, select the results → `Send to` → `File` → format `PubMed` or `XML` → `Create file`.
 
-**Embase e demais bases** — exporte em `RIS`.
+**Embase and other databases** — export as `RIS`.
 
-**Mendeley / Zotero / EndNote** — exporte a pasta desejada em `BibTeX` ou `RIS`.
+**Mendeley / Zotero / EndNote** — export the desired folder as `BibTeX` or `RIS`.
 
-> **Dica:** importe cada base em um arquivo separado, com nome de fonte próprio. O BaseRef registra a origem de cada referência, e o Diagrama PRISMA precisa dessa informação para relatar quantos registros vieram de cada base.
+> **Tip:** import each database into a separate file, with its own source name. BaseRef records the origin of each reference, and the PRISMA diagram needs this information to report how many records came from each database.
 
-### Histórico de importações
+### Import history
 
-A própria tela de importação lista os arquivos já processados, com nome, base, data da busca, quantidade de artigos e data em que foram importados.
-
----
-
-## 7. Deduplicação
-
-Ao importar de várias bases é normal que o mesmo artigo apareça mais de uma vez. Esta etapa identifica e resolve esses casos.
-
-### Como detectar
-
-1. Acesse **Duplicatas** no menu lateral.
-2. Clique em **Detectar Duplicatas**.
-3. Aguarde o processamento (em bases grandes pode levar alguns segundos).
-
-A detecção usa dois critérios:
-
-- **DOI idêntico** — correspondência exata do identificador.
-- **Similaridade de título** — comparação textual, com grau de similaridade exibido para cada par.
-
-### Revisando os pares
-
-Cada par suspeito é exibido lado a lado. Para cada um você pode:
-
-- **Confirmar como duplicata** — o registro secundário é marcado como duplicado e sai das etapas seguintes.
-- **Rejeitar** — os dois registros são mantidos como estudos distintos.
-- **Confirmar todos os pendentes** — aceita de uma vez todos os pares detectados (use com cautela, especialmente quando a similaridade for baixa).
-
-### Redefinir
-
-O botão **Redefinir** apaga os resultados da deduplicação e permite executar o processo novamente — útil após importar novas bases.
-
-> **Importante:** artigos marcados como duplicata não aparecem na Triagem, na Elegibilidade nem nos gráficos bibliométricos, mas são contabilizados corretamente no Diagrama PRISMA como "registros removidos antes da triagem".
+The import screen itself lists the files already processed, with name, database, search date, number of articles, and the date they were imported.
 
 ---
 
-## 8. Triagem (título e resumo)
+## 7. Deduplication
 
-Nesta fase você avalia cada artigo lendo **título e resumo** e decide se ele segue para a avaliação de texto completo.
+When importing from multiple databases, it's normal for the same article to appear more than once. This step identifies and resolves those cases.
 
-### Como triar
+### How to detect
 
-1. Acesse **Triagem** no menu lateral.
-2. Para cada artigo, escolha:
-   - **Incluir** — o artigo passa para a Elegibilidade.
-   - **Excluir** — informe o **motivo da exclusão** (obrigatório) e, se quiser, uma observação.
-   - **Desfazer** — devolve o artigo para a lista de pendentes.
-3. A barra no topo mostra o progresso da triagem.
+1. Go to **Duplicates** in the side menu.
+2. Click **Detect Duplicates**.
+3. Wait for processing (this can take a few seconds for large databases).
 
-### Recursos da tela
+Detection uses two criteria:
 
-- **Busca** — localize artigos por título ou resumo.
-- **Filtros rápidos** — *Pendentes*, *Incluídos*, *Excluídos* e *Todos*.
-- **Resumo completo** — clique no título do artigo para ler o resumo integral.
-- **Tradução do resumo** — botão que traduz o resumo para português, útil em artigos em outros idiomas.
-- **Classificação de relevância** — atribua de 1 a 5 estrelas (*pouco relevante* a *altamente relevante*) para priorizar a leitura do texto completo.
-- **Sugestão da IA** — veja a recomendação automática antes de decidir (detalhado na seção seguinte).
+- **Identical DOI** — an exact match of the identifier.
+- **Title similarity** — textual comparison, with a similarity score shown for each pair.
 
-> **Dica:** os motivos de exclusão são reaproveitados no Diagrama PRISMA e na exportação. Padronize a lista de motivos no início da revisão e mantenha-a estável até o fim.
+### Reviewing pairs
 
----
+Each suspected pair is shown side by side. For each one you can:
 
-## 9. Triagem assistida por IA
+- **Confirm as duplicate** — the secondary record is marked as a duplicate and removed from subsequent steps.
+- **Reject** — both records are kept as distinct studies.
+- **Confirm all pending** — accepts all detected pairs at once (use with caution, especially when similarity is low).
 
-O BaseRef pode analisar título e resumo de um artigo e sugerir **incluir** ou **excluir**, sempre com base nos **critérios de inclusão e exclusão cadastrados no projeto** e no objetivo da revisão.
+### Reset
 
-### Como usar
+The **Reset** button clears the deduplication results and lets you run the process again — useful after importing new databases.
 
-1. Preencha, no projeto, o objetivo e os critérios de inclusão e exclusão.
-2. Na Triagem, acione a **sugestão da IA** para o artigo.
-3. Leia a recomendação e a justificativa apresentada.
-4. **A decisão final é sempre sua** — a sugestão não altera o status do artigo automaticamente.
-
-> **Importante:** a sugestão da IA é um apoio à leitura, não uma substituição do revisor. Para fins de publicação, relate no manuscrito que houve apoio de IA na triagem e que todas as decisões foram conferidas por revisores humanos.
+> **Important:** articles marked as duplicates do not appear in Screening, Eligibility, or the bibliometric charts, but they are correctly counted in the PRISMA diagram as "records removed before screening."
 
 ---
 
-## 10. Elegibilidade (texto completo)
+## 8. Screening (Title and Abstract)
 
-Os artigos incluídos na triagem avançam para esta fase, na qual você avalia o **texto completo**.
+In this phase you assess each article by reading its **title and abstract** and decide whether it proceeds to full-text assessment.
 
-1. Acesse **Elegibilidade** no menu lateral.
-2. Obtenha o texto completo do artigo (pelo DOI, pelo portal da revista ou pelo repositório da sua instituição).
-3. Escolha:
-   - **Incluir** — o artigo integra o corpus final da revisão.
-   - **Excluir** — informe o motivo (critério de exclusão de texto completo).
+### How to screen
 
-A interface é idêntica à da Triagem, com os mesmos filtros, busca e observações. Os motivos de exclusão registrados aqui aparecem no bloco "textos completos excluídos, com motivos" do Diagrama PRISMA — exatamente como o protocolo exige.
+1. Go to **Screening** in the side menu.
+2. For each article, choose:
+   - **Include** — the article moves on to Eligibility.
+   - **Exclude** — provide the **reason for exclusion** (required) and, optionally, a comment.
+   - **Undo** — returns the article to the pending list.
+3. The progress bar at the top shows screening progress.
+
+### Screen features
+
+- **Search** — find articles by title or abstract.
+- **Quick filters** — *Pending*, *Included*, *Excluded*, and *All*.
+- **Full abstract** — click the article title to read the full abstract.
+- **Abstract translation** — a button that translates the abstract into Portuguese, useful for articles in other languages.
+- **Relevance rating** — assign 1 to 5 stars (*low relevance* to *highly relevant*) to prioritize full-text reading.
+- **AI suggestion** — view the automatic recommendation before deciding (detailed in the next section).
+
+> **Tip:** exclusion reasons are reused in the PRISMA diagram and in exports. Standardize your list of reasons at the start of the review and keep it stable until the end.
 
 ---
 
-## 11. Concordância entre revisores
+## 9. AI-Assisted Screening
 
-Revisões sistemáticas de qualidade costumam ser conduzidas por **dois ou mais revisores independentes**. Esta tela mede o grau de acordo entre eles.
+BaseRef can analyze an article's title and abstract and suggest **include** or **exclude**, always based on the **inclusion and exclusion criteria registered in the project** and the review's objective.
 
-### Modos de revisão
+### How to use it
 
-- **Revisor único (padrão)** — apenas um avaliador decide; não há cálculo de concordância.
-- **Dupla-cega (2 ou mais revisores independentes)** — cada revisor avalia sem ver a decisão do outro.
+1. Fill in the project's objective and inclusion/exclusion criteria.
+2. In Screening, trigger the **AI suggestion** for the article.
+3. Read the recommendation and the rationale provided.
+4. **The final decision is always yours** — the suggestion does not automatically change the article's status.
 
-### Como configurar
+> **Important:** the AI suggestion is a reading aid, not a replacement for the reviewer. For publication purposes, report in the manuscript that AI assistance was used during screening and that all decisions were verified by human reviewers.
 
-1. Acesse **Concordância (κ)** no menu lateral.
-2. Selecione o modo **Dupla-cega**.
-3. Adicione os revisores pelo e-mail (o revisor precisa já ter feito login no BaseRef).
-4. Escolha a fase a analisar: **Triagem (título/resumo)** ou **Elegibilidade (texto completo)**.
+---
 
-### O que a tela mostra
+## 10. Eligibility (Full Text)
 
-- **Kappa de Cohen (κ)** — índice de concordância entre dois revisores, descontando o acerto ao acaso. O cálculo exige **pelo menos dois revisores com decisões registradas** na fase escolhida.
-- **Matriz de concordância** — cruzamento das decisões do Revisor 1 (R1) e do Revisor 2 (R2).
-- **Conflitos pendentes** — artigos em que os revisores discordaram, para resolução por consenso ou por um terceiro avaliador.
+Articles included during screening move on to this phase, in which you assess the **full text**.
 
-### Como interpretar o kappa
+1. Go to **Eligibility** in the side menu.
+2. Obtain the article's full text (via DOI, the journal's website, or your institution's repository).
+3. Choose:
+   - **Include** — the article becomes part of the review's final corpus.
+   - **Exclude** — provide the reason (full-text exclusion criterion).
 
-| Valor de κ | Interpretação usual |
+The interface is identical to Screening, with the same filters, search, and comments. Exclusion reasons recorded here appear in the "full-text articles excluded, with reasons" block of the PRISMA diagram — exactly as the protocol requires.
+
+---
+
+## 11. Reviewer Agreement
+
+High-quality systematic reviews are typically conducted by **two or more independent reviewers**. This screen measures the degree of agreement between them.
+
+### Review modes
+
+- **Single reviewer (default)** — only one reviewer decides; no agreement is calculated.
+- **Double-blind (2 or more independent reviewers)** — each reviewer assesses without seeing the other's decision.
+
+### How to configure
+
+1. Go to **Agreement (κ)** in the side menu.
+2. Select **Double-blind** mode.
+3. Add reviewers by email (the reviewer must have already logged into BaseRef).
+4. Choose the phase to analyze: **Screening (title/abstract)** or **Eligibility (full text)**.
+
+### What the screen shows
+
+- **Cohen's kappa (κ)** — an index of agreement between two reviewers, discounting agreement by chance. The calculation requires **at least two reviewers with recorded decisions** in the chosen phase.
+- **Agreement matrix** — a cross-tabulation of decisions by Reviewer 1 (R1) and Reviewer 2 (R2).
+- **Pending conflicts** — articles on which reviewers disagreed, for resolution by consensus or by a third reviewer.
+
+### How to interpret kappa
+
+| κ value | Typical interpretation |
 |------------|---------------------|
-| < 0,00 | Sem concordância |
-| 0,00 – 0,20 | Concordância leve |
-| 0,21 – 0,40 | Concordância razoável |
-| 0,41 – 0,60 | Concordância moderada |
-| 0,61 – 0,80 | Concordância substancial |
-| 0,81 – 1,00 | Concordância quase perfeita |
+| < 0.00 | No agreement |
+| 0.00 – 0.20 | Slight agreement |
+| 0.21 – 0.40 | Fair agreement |
+| 0.41 – 0.60 | Moderate agreement |
+| 0.61 – 0.80 | Substantial agreement |
+| 0.81 – 1.00 | Almost perfect agreement |
 
-> **Dica:** relate no manuscrito o valor de κ obtido, a fase em que foi calculado e como os conflitos foram resolvidos. É uma exigência frequente dos avaliadores de periódicos.
-
----
-
-## 12. Avaliação de qualidade e risco de viés
-
-Após definir o corpus final, avalie a qualidade metodológica de cada estudo incluído.
-
-### Escolher o instrumento
-
-1. Acesse **Qualidade/Viés** no menu lateral.
-2. Selecione o instrumento:
-   - **CASP** — 10 itens (*Critical Appraisal Skills Programme*).
-   - **JBI** — 8 itens (*Joanna Briggs Institute*).
-   - **Personalizado** — crie suas próprias perguntas com o campo **Nova pergunta...**.
-3. Confirme.
-
-> **Importante:** trocar de instrumento **apaga todas as respostas já registradas**. Defina o instrumento antes de começar a avaliar.
-
-### Avaliar os estudos
-
-Para cada artigo incluído, responda item a item. As respostas possíveis são **sim**, **não** e **não claro** (*unclear*), e a tela consolida o total de cada categoria por estudo.
-
-### Exportar
-
-O botão de exportação gera um **CSV** com todas as respostas por artigo e por item — pronto para virar a tabela de avaliação de qualidade do seu artigo ou o material suplementar.
+> **Tip:** report in the manuscript the κ value obtained, the phase in which it was calculated, and how conflicts were resolved. This is frequently required by journal reviewers.
 
 ---
 
-## 13. Diagrama PRISMA 2020
+## 12. Quality and Risk-of-Bias Assessment
 
-O diagrama de fluxo é gerado **automaticamente** a partir dos números reais do projeto — não é preenchido à mão.
+After defining the final corpus, assess the methodological quality of each included study.
 
-### Como visualizar
+### Choosing the instrument
 
-1. Acesse **Diagrama PRISMA** no menu lateral.
-2. O fluxograma é exibido já com os números atuais do projeto.
+1. Go to **Quality/Bias** in the side menu.
+2. Select the instrument:
+   - **CASP** — 10 items (*Critical Appraisal Skills Programme*).
+   - **JBI** — 8 items (*Joanna Briggs Institute*).
+   - **Custom** — create your own questions using the **New question...** field.
+3. Confirm.
 
-### Estrutura do diagrama
+> **Important:** switching instruments **erases all previously recorded answers**. Choose the instrument before you start assessing.
+
+### Assessing the studies
+
+For each included article, answer item by item. The possible answers are **yes**, **no**, and **unclear**, and the screen consolidates the total for each category per study.
+
+### Export
+
+The export button generates a **CSV** with all answers by article and by item — ready to become the quality assessment table in your paper or as supplementary material.
+
+---
+
+## 13. PRISMA 2020 Flow Diagram
+
+The flow diagram is generated **automatically** from the project's actual numbers — it is not filled in by hand.
+
+### How to view it
+
+1. Go to **PRISMA Diagram** in the side menu.
+2. The flowchart is displayed with the project's current numbers already in place.
+
+### Diagram structure
 
 ```
-Identificação
-  └── Registros identificados por base de dados
-  └── Registros removidos antes da triagem (duplicatas)
-Triagem
-  └── Registros triados
-  └── Registros excluídos (com motivos)
-Elegibilidade
-  └── Textos completos avaliados
-  └── Textos completos excluídos (com motivos)
-Incluídos
-  └── Estudos incluídos na revisão
+Identification
+  └── Records identified from databases
+  └── Records removed before screening (duplicates)
+Screening
+  └── Records screened
+  └── Records excluded (with reasons)
+Eligibility
+  └── Full-text articles assessed
+  └── Full-text articles excluded (with reasons)
+Included
+  └── Studies included in the review
 ```
 
-### Idioma
+### Language
 
-O diagrama acompanha o idioma selecionado no cabeçalho (**PT / EN / ES**) — troque a bandeira e o fluxograma é redesenhado com os rótulos traduzidos, pronto para submissão em periódico nacional ou internacional.
+The diagram follows the language selected in the header (**PT / EN / ES**) — switch the flag and the flowchart is redrawn with translated labels, ready for submission to a national or international journal.
 
-### Exportar
+### Export
 
-- **SVG** — formato vetorial, editável no Inkscape, Illustrator ou Figma; é a melhor opção para submissão.
-- **PNG** — imagem em 150 dpi ou 300 dpi. A exportação em **300 dpi** atende à exigência da maioria dos periódicos.
+- **SVG** — a vector format, editable in Inkscape, Illustrator, or Figma; the best option for submission.
+- **PNG** — an image at 150 dpi or 300 dpi. Exporting at **300 dpi** meets the requirements of most journals.
 
-> **Dica:** se os números não corresponderem ao esperado, verifique a deduplicação e as decisões pendentes de triagem — o diagrama sempre reflete o estado atual dos dados.
+> **Tip:** if the numbers don't match what you expect, check the deduplication and pending screening decisions — the diagram always reflects the current state of the data.
 
 ---
 
-## 14. Bibliometria
+## 14. Bibliometrics
 
-A área de bibliometria analisa visualmente o corpus da revisão.
+The bibliometrics area visually analyzes the review's corpus.
 
-1. Acesse **Bibliometria** no menu lateral.
-2. Os gráficos são carregados automaticamente.
+1. Go to **Bibliometrics** in the side menu.
+2. The charts load automatically.
 
-### Análises disponíveis
+### Available analyses
 
-| # | Análise | O que mostra |
+| # | Analysis | What it shows |
 |---|---------|--------------|
-| 1 | Publicações por ano | Evolução temporal da produção |
-| 2 | Artigos por base de dados | Distribuição por fonte de busca |
-| 3 | Top periódicos | Revistas com mais publicações |
-| 4 | Top autores | Autores mais produtivos |
-| 5 | Top instituições | Afiliações mais frequentes |
-| 6 | Top países | Ranking e mapa mundial |
-| 7 | Distribuição de citações | Histograma de citações por artigo |
-| 8 | Artigos mais citados | Estudos de maior impacto |
-| 9 | Nuvem de palavras-chave | Termos mais frequentes |
-| 10 | Co-ocorrência de keywords | Rede de termos relacionados |
-| 11 | Rede de coautoria | Colaboração entre autores |
-| 12 | Áreas temáticas | Classificação por área de conhecimento |
+| 1 | Publications by year | Temporal evolution of output |
+| 2 | Articles by database | Distribution by search source |
+| 3 | Top journals | Journals with the most publications |
+| 4 | Top authors | Most productive authors |
+| 5 | Top institutions | Most frequent affiliations |
+| 6 | Top countries | Ranking and world map |
+| 7 | Citation distribution | Histogram of citations per article |
+| 8 | Most-cited articles | Studies with the greatest impact |
+| 9 | Keyword cloud | Most frequent terms |
+| 10 | Keyword co-occurrence | Network of related terms |
+| 11 | Co-authorship network | Collaboration between authors |
+| 12 | Thematic areas | Classification by field of knowledge |
 
-Os gráficos podem ser salvos como imagem para uso direto no manuscrito.
+Charts can be saved as images for direct use in the manuscript.
 
-> **Nota:** as análises consideram os artigos **incluídos** na revisão. Metadados ausentes na base de origem (como afiliação ou citações) podem limitar alguns gráficos.
+> **Note:** the analyses consider the articles **included** in the review. Metadata missing from the source database (such as affiliation or citations) may limit some charts.
 
 ---
 
-## 15. Referências formatadas
+## 15. Formatted References
 
-O BaseRef gera a lista de referências já formatada a partir dos metadados dos artigos.
+BaseRef generates a reference list already formatted from the articles' metadata.
 
-1. Acesse **Referências** no menu lateral.
-2. Escolha o escopo: **Apenas incluídos** ou **Todos (exceto duplicatas)**.
-3. Clique em **Selecionar Artigos** e marque os que deseja.
-4. Clique em **Gerar Referências**.
-5. Escolha a norma:
+1. Go to **References** in the side menu.
+2. Choose the scope: **Included only** or **All (except duplicates)**.
+3. Click **Select Articles** and check the ones you want.
+4. Click **Generate References**.
+5. Choose the style:
    - **ABNT NBR 6023:2018**
-   - **APA 7ª edição**
-6. Copie a lista pronta para o seu editor de texto.
+   - **APA 7th edition**
+6. Copy the ready-made list into your text editor.
 
-> **Importante:** confira sempre as referências geradas. A formatação depende da qualidade dos metadados exportados pela base de origem — nomes de autores abreviados ou títulos em caixa alta na origem exigem ajuste manual.
+> **Important:** always check the generated references. Formatting depends on the quality of the metadata exported from the source database — abbreviated author names or all-caps titles in the source require manual adjustment.
 
 ---
 
-## 16. Exportação
+## 16. Export
 
-1. Acesse **Exportação** no menu lateral.
-2. Escolha o **escopo**:
-   - **Todos os artigos** — tudo o que foi importado, exceto duplicatas.
-   - **Aprovados na triagem** — artigos que passaram para a elegibilidade.
-   - **Artigos incluídos** — o corpus final da revisão.
-   - **Artigos excluídos** — descartados, com os respectivos motivos.
-3. Escolha o formato: **CSV**, **BibTeX** ou **JSON**.
+1. Go to **Export** in the side menu.
+2. Choose the **scope**:
+   - **All articles** — everything imported, except duplicates.
+   - **Approved in screening** — articles that moved on to eligibility.
+   - **Included articles** — the review's final corpus.
+   - **Excluded articles** — discarded articles, with their reasons.
+3. Choose the format: **CSV**, **BibTeX**, or **JSON**.
 
-### Quando usar cada formato
+### When to use each format
 
-| Formato | Ideal para |
+| Format | Best for |
 |---------|------------|
-| CSV | Análises em Excel, Google Sheets, R ou Python; material suplementar |
-| BibTeX | Importar no Mendeley, Zotero ou LaTeX |
-| JSON | Backup completo dos metadados e integração com outros sistemas |
+| CSV | Analysis in Excel, Google Sheets, R, or Python; supplementary material |
+| BibTeX | Importing into Mendeley, Zotero, or LaTeX |
+| JSON | Full metadata backup and integration with other systems |
 
-> **Dica:** exportar os artigos excluídos em CSV, com os motivos, é a forma mais simples de montar o apêndice "estudos excluídos e razões" exigido por muitos periódicos.
-
----
-
-## 17. Checklist PRISMA 2020
-
-O checklist reúne os **27 itens** que o relato de uma revisão sistemática deve contemplar segundo o PRISMA 2020.
-
-1. Acesse **Checklist PRISMA** no menu lateral.
-2. Para cada item, registre a situação e informe a **página ou seção** do seu manuscrito onde ele é atendido (ex.: `p. 5, Seção 2.1`).
-3. Use o campo de **comentários** para observações adicionais.
-4. Acompanhe a barra **Progresso do Checklist**.
-
-O checklist preenchido costuma ser solicitado como documento de submissão pelos periódicos, junto com o diagrama de fluxo.
+> **Tip:** exporting the excluded articles as CSV, with reasons, is the simplest way to build the "excluded studies and reasons" appendix required by many journals.
 
 ---
 
-## 18. Perguntas frequentes
+## 17. PRISMA 2020 Checklist
 
-**O BaseRef é gratuito?**
-Sim. É 100% gratuito e open source, sob licença MIT.
+The checklist covers the **27 items** that the report of a systematic review must address according to PRISMA 2020.
 
-**Preciso instalar alguma coisa?**
-Não. O BaseRef funciona inteiramente no navegador. Seus dados ficam salvos na nuvem, isolados por usuário.
+1. Go to **PRISMA Checklist** in the side menu.
+2. For each item, record its status and indicate the **page or section** of your manuscript where it is addressed (e.g., `p. 5, Section 2.1`).
+3. Use the **comments** field for additional notes.
+4. Track the **Checklist Progress** bar.
 
-**Posso importar o mesmo arquivo duas vezes?**
-Pode, mas o sistema não bloqueia a reimportação. Se isso acontecer, execute novamente a detecção de duplicatas.
-
-**Alterei uma decisão de triagem de um artigo que já estava na elegibilidade. O que acontece?**
-O artigo sai do escopo da elegibilidade e todos os números do Diagrama PRISMA são recalculados automaticamente.
-
-**Como faço uma revisão com dois avaliadores independentes?**
-Adicione o segundo revisor como colaborador do projeto, ative o modo **Dupla-cega** na tela de Concordância e resolva os conflitos apontados. O kappa de Cohen é calculado automaticamente.
-
-**O Diagrama PRISMA pode ser editado manualmente?**
-Não. Os números vêm das decisões registradas no sistema. Para alterá-los, ajuste os dados na triagem, na elegibilidade ou na deduplicação.
-
-**Em que resolução devo exportar o diagrama?**
-Prefira **SVG**. Se o periódico exigir imagem rasterizada, use **PNG a 300 dpi**.
-
-**A IA decide sozinha quais artigos entram?**
-Não. Ela apenas sugere, com base nos critérios que você cadastrou. A decisão é sempre do revisor.
-
-**Como faço backup dos meus dados?**
-Exporte o projeto em **JSON** (contém todos os metadados) e, se quiser, também em CSV e BibTeX. Guarde os arquivos junto com o material da pesquisa.
-
-**Em quais idiomas o sistema funciona?**
-Português, inglês e espanhol — inclusive o Diagrama PRISMA.
+The completed checklist is often requested as a submission document by journals, along with the flow diagram.
 
 ---
 
-## 19. Suporte e como citar
+## 18. Frequently Asked Questions
 
-### Suporte
+**Is BaseRef free?**
+Yes. It is 100% free and open source, under the MIT license.
 
-Dúvidas sobre a plataforma, sobre revisões sistemáticas ou sobre o protocolo PRISMA 2020:
+**Do I need to install anything?**
+No. BaseRef runs entirely in the browser. Your data is saved in the cloud, isolated per user.
+
+**Can I import the same file twice?**
+You can, but the system does not block re-importing. If this happens, run duplicate detection again.
+
+**I changed a screening decision for an article that was already in eligibility. What happens?**
+The article is removed from the eligibility scope, and all the PRISMA diagram numbers are automatically recalculated.
+
+**How do I conduct a review with two independent reviewers?**
+Add the second reviewer as a project collaborator, enable **Double-blind** mode on the Agreement screen, and resolve any flagged conflicts. Cohen's kappa is calculated automatically.
+
+**Can the PRISMA diagram be edited manually?**
+No. The numbers come from the decisions recorded in the system. To change them, adjust the data in screening, eligibility, or deduplication.
+
+**What resolution should I use to export the diagram?**
+Prefer **SVG**. If the journal requires a rasterized image, use **PNG at 300 dpi**.
+
+**Does the AI decide on its own which articles are included?**
+No. It only suggests, based on the criteria you registered. The decision is always the reviewer's.
+
+**How do I back up my data?**
+Export the project as **JSON** (contains all metadata) and, if you'd like, also as CSV and BibTeX. Keep the files together with your research materials.
+
+**What languages does the system support?**
+Portuguese, English, and Spanish — including the PRISMA diagram.
+
+---
+
+## 19. Support and How to Cite
+
+### Support
+
+Questions about the platform, about systematic reviews, or about the PRISMA 2020 protocol:
 **rafaelgross123@gmail.com**
 
-### Como citar o BaseRef
+### How to cite BaseRef
 
-> GROSS, Rafael; GONÇALVES, Rodrigo Franco. **BaseRef**: plataforma de apoio à pesquisa e gestão de referências bibliográficas. Versão 1.0.0 [software]. Zenodo, 2026. DOI: 10.5281/zenodo.21119457. Disponível em: <https://baseref.com.br/>.
+> GROSS, Rafael; GONÇALVES, Rodrigo Franco. **BaseRef**: a platform supporting research and bibliographic reference management. Version 1.0.0 [software]. Zenodo, 2026. DOI: 10.5281/zenodo.21119457. Available at: <https://baseref.com.br/>.
 
-### Referência do protocolo
+### Protocol reference
 
 > PAGE, M. J. et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. **BMJ**, v. 372, n. 71, 2021. DOI: 10.1136/bmj.n71.
 
 ---
 
-*BaseRef · Distribuído sob licença MIT · https://baseref.com.br*
+*BaseRef · Distributed under the MIT license · https://baseref.com.br*
