@@ -1,10 +1,11 @@
 # PRISMA-SLR — .gitignore
 
 # ─── Configuração local (não commitar credenciais) ───────────
-# IMPORTANTE: renomeie auth.php para auth.example.php antes de commitar
-# O arquivo auth.php contém seu Client ID e Client Secret do Google
+# auth.php tem o Client ID/Secret do Google OAuth; database.php tem a senha
+# do MySQL. Versões de exemplo sem segredos: config/*.example.php
 config/auth.php
 config/database.php
+config/database.local.php
 config/*.local.php
 .env
 .env.local

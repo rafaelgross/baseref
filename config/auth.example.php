@@ -150,3 +150,87 @@ function fetchGoogleUserInfo(string $accessToken): ?array
     $data = json_decode($response, true);
     return isset($data['email']) ? $data : null;
 }
+
+// ─── Impersonation (admin views/edits as another user) ────────────────────────
+function startImpersonation(int $targetUserId): bool
+{
+    startSecureSession();
+    $stmt = getDB()->prepare('SELECT id, email, name, picture, role FROM users WHERE id = ?');
+    $stmt->execute([$targetUserId]);
+    $target = $stmt->fetch();
+    if (!$target) return false;
+
+    // Stores the admin's real identity so they can return to it later
+    $_SESSION['impersonator'] = [
+        'id'      => $_SESSION['user_id'],
+        'email'   => $_SESSION['user_email']   ?? '',
+        'name'    => $_SESSION['user_name']    ?? '',
+        'picture' => $_SESSION['user_picture'] ?? '',
+        'role'    => $_SESSION['user_role']    ?? 'user',
+    ];
+
+    $_SESSION['user_id']      = (int) $target['id'];
+    $_SESSION['user_email']   = $target['email'];
+    $_SESSION['user_name']    = $target['name'];
+    $_SESSION['user_picture'] = $target['picture'];
+    $_SESSION['user_role']    = $target['role'];
+
+    error_log(sprintf(
+        '[IMPERSONATE] admin %s (#%d) started viewing as %s (#%d)',
+        $_SESSION['impersonator']['email'], $_SESSION['impersonator']['id'],
+        $target['email'], $target['id']
+    ));
+
+    return true;
+}
+
+function stopImpersonation(): bool
+{
+    startSecureSession();
+    if (empty($_SESSION['impersonator'])) return false;
+
+    $orig = $_SESSION['impersonator'];
+    $_SESSION['user_id']      = $orig['id'];
+    $_SESSION['user_email']   = $orig['email'];
+    $_SESSION['user_name']    = $orig['name'];
+    $_SESSION['user_picture'] = $orig['picture'];
+    $_SESSION['user_role']    = $orig['role'];
+    unset($_SESSION['impersonator']);
+
+    return true;
+}
+
+function isImpersonating(): bool
+{
+    startSecureSession();
+    return !empty($_SESSION['impersonator']);
+}
+
+function impersonatorInfo(): ?array
+{
+    startSecureSession();
+    return $_SESSION['impersonator'] ?? null;
+}
+
+function normalizeProfilePictureUrl(?string $picture, int $maxLength = 500): string
+{
+    $picture = trim((string) $picture);
+    if ($picture === '') return '';
+
+    $parts = parse_url($picture);
+    if ($parts === false || empty($parts['scheme']) || empty($parts['host'])) {
+        return '';
+    }
+
+    $normalized = $parts['scheme'] . '://' . $parts['host'];
+    if (!empty($parts['port'])) {
+        $normalized .= ':' . $parts['port'];
+    }
+    $normalized .= $parts['path'] ?? '';
+
+    if (strlen($normalized) > $maxLength) {
+        return '';
+    }
+
+    return filter_var($normalized, FILTER_VALIDATE_URL) ? $normalized : '';
+}
