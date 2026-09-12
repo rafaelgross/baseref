@@ -1,0 +1,323 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2024//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_240101.dtd">
+<PubmedArticleSet>
+
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE" Owner="NLM">
+      <PMID Version="1">12890435</PMID>
+      <Article PubModel="Print">
+        <Journal>
+          <ISSN IssnType="Print">1356-689X</ISSN>
+          <JournalIssue CitedMedium="Print">
+            <Volume>8</Volume>
+            <Issue>2</Issue>
+            <PubDate><Year>2003</Year><Month>May</Month></PubDate>
+          </JournalIssue>
+          <Title>Manual therapy</Title>
+          <ISOAbbreviation>Man Ther</ISOAbbreviation>
+        </Journal>
+        <ArticleTitle>A systematic review of physiotherapy for spondylolysis and spondylolisthesis.</ArticleTitle>
+        <Pagination><MedlinePgn>80-91</MedlinePgn></Pagination>
+        <Abstract>
+          <AbstractText>The purpose of this systematic review was to assess the evidence concerning the effectiveness of physiotherapy intervention in the treatment of low back pain related to spondylolysis and spondylolisthesis. A literature search of published and unpublished articles resulted in the retrieval of 71 potential studies on the subject area. Fifty-two of the 71 articles were studies, and these studies were reviewed using preset relevance criteria. Given the inclusion and exclusion criteria chosen for this systematic review, there were very few acceptable studies and only two studies met the relevance criteria for the critical appraisal. Both studies provide evidence to suggest that specific exercise interventions, alone or in combination with other treatments, have a positive effect on low-back pain due to spondylolysis and spondylolisthesis; however, the type of exercise used was different in the two studies. In this review, very few prospective studies were found that examined the efficacy of physiotherapy on the topic area; therefore, few conclusions can be made, and further research is warranted.</AbstractText>
+        </Abstract>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>McNeely</LastName>
+            <ForeName>Margaret L</ForeName>
+            <Initials>ML</Initials>
+            <AffiliationInfo>
+              <Affiliation>Department of Physical Therapy, Faculty of Rehabilitation Medicine, University of Alberta, Canada. dmcneely@planet.eon.net</Affiliation>
+            </AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Torrance</LastName>
+            <ForeName>G</ForeName>
+            <Initials>G</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Magee</LastName>
+            <ForeName>D J</ForeName>
+            <Initials>DJ</Initials>
+          </Author>
+        </AuthorList>
+        <Language>eng</Language>
+        <PublicationTypeList>
+          <PublicationType UI="D016428">Journal Article</PublicationType>
+          <PublicationType UI="D000078882">Systematic Review</PublicationType>
+        </PublicationTypeList>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName UI="D015081" MajorTopicYN="Y">Exercise Therapy</DescriptorName>
+          <QualifierName UI="Q000379" MajorTopicYN="Y">methods</QualifierName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D017116" MajorTopicYN="N">Low Back Pain</DescriptorName>
+          <QualifierName UI="Q000209" MajorTopicYN="N">etiology</QualifierName>
+          <QualifierName UI="Q000628" MajorTopicYN="Y">therapy</QualifierName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D011586" MajorTopicYN="N">Prospective Studies</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D013101" MajorTopicYN="N">Spondylolisthesis</DescriptorName>
+          <QualifierName UI="Q000534" MajorTopicYN="Y">rehabilitation</QualifierName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D013122" MajorTopicYN="N">Spondylolysis</DescriptorName>
+          <QualifierName UI="Q000534" MajorTopicYN="N">rehabilitation</QualifierName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D016896" MajorTopicYN="N">Treatment Outcome</DescriptorName>
+        </MeshHeading>
+      </MeshHeadingList>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">12890435</ArticleId>
+        <ArticleId IdType="doi">10.1016/s1356-689x(02)00066-8</ArticleId>
+        <ArticleId IdType="pii">S1356689X02000668</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE" Owner="NLM">
+      <PMID Version="1">16298014</PMID>
+      <Article PubModel="Print-Electronic">
+        <Journal>
+          <ISSN IssnType="Print">0168-8278</ISSN>
+          <JournalIssue CitedMedium="Print">
+            <Volume>44</Volume>
+            <Issue>1</Issue>
+            <PubDate><Year>2006</Year><Month>Jan</Month></PubDate>
+          </JournalIssue>
+          <Title>Journal of hepatology</Title>
+          <ISOAbbreviation>J Hepatol</ISOAbbreviation>
+        </Journal>
+        <ArticleTitle>Natural history and prognostic indicators of survival in cirrhosis: a systematic review of 118 studies.</ArticleTitle>
+        <Pagination><MedlinePgn>217-31</MedlinePgn></Pagination>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>D'Amico</LastName>
+            <ForeName>Gennaro</ForeName>
+            <Initials>G</Initials>
+            <AffiliationInfo>
+              <Affiliation>Gastroenterology Unit, Ospedale Cervello and University of Palermo, Italy. gedamico@libero.it</Affiliation>
+            </AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Garcia-Tsao</LastName>
+            <ForeName>Guadalupe</ForeName>
+            <Initials>G</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Pagliaro</LastName>
+            <ForeName>Luigi</ForeName>
+            <Initials>L</Initials>
+          </Author>
+        </AuthorList>
+        <Language>eng</Language>
+        <PublicationTypeList>
+          <PublicationType UI="D016428">Journal Article</PublicationType>
+          <PublicationType UI="D000078882">Systematic Review</PublicationType>
+        </PublicationTypeList>
+        <ArticleDate DateType="Electronic">
+          <Year>2005</Year><Month>11</Month><Day>09</Day>
+        </ArticleDate>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D008103" MajorTopicYN="Y">Liver Cirrhosis</DescriptorName>
+          <QualifierName UI="Q000209" MajorTopicYN="N">etiology</QualifierName>
+          <QualifierName UI="Q000401" MajorTopicYN="N">mortality</QualifierName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D011379" MajorTopicYN="N">Prognosis</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D016019" MajorTopicYN="N">Survival Rate</DescriptorName>
+          <QualifierName UI="Q000639" MajorTopicYN="N">trends</QualifierName>
+        </MeshHeading>
+      </MeshHeadingList>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">16298014</ArticleId>
+        <ArticleId IdType="doi">10.1016/j.jhep.2005.10.013</ArticleId>
+        <ArticleId IdType="pii">S0168-8278(05)00684-7</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE" Owner="NLM">
+      <PMID Version="1">14684649</PMID>
+      <Article PubModel="Print">
+        <Journal>
+          <ISSN IssnType="Electronic">1756-1833</ISSN>
+          <JournalIssue CitedMedium="Internet">
+            <Volume>327</Volume>
+            <Issue>7429</Issue>
+            <PubDate><Year>2003</Year><Month>Dec</Month><Day>20</Day></PubDate>
+          </JournalIssue>
+          <Title>BMJ (Clinical research ed.)</Title>
+          <ISOAbbreviation>BMJ</ISOAbbreviation>
+        </Journal>
+        <ArticleTitle>Parachute use to prevent death and major trauma related to gravitational challenge: systematic review of randomised controlled trials.</ArticleTitle>
+        <Pagination><MedlinePgn>1459-61</MedlinePgn></Pagination>
+        <Abstract>
+          <AbstractText Label="OBJECTIVES">To determine whether parachutes are effective in preventing major trauma related to gravitational challenge.</AbstractText>
+          <AbstractText Label="DESIGN">Systematic review of randomised controlled trials.</AbstractText>
+          <AbstractText Label="DATA SOURCES">Medline, Web of Science, Embase, and the Cochrane Library databases; appropriate internet sites and citation lists.</AbstractText>
+          <AbstractText Label="STUDY SELECTION">Studies showing the effects of using a parachute during free fall.</AbstractText>
+          <AbstractText Label="MAIN OUTCOME MEASURE">Death or major trauma, defined as an injury severity score &gt; 15.</AbstractText>
+          <AbstractText Label="RESULTS">We were unable to identify any randomised controlled trials of parachute intervention.</AbstractText>
+          <AbstractText Label="CONCLUSIONS">As with many interventions intended to prevent ill health, the effectiveness of parachutes has not been subjected to rigorous evaluation by using randomised controlled trials. Advocates of evidence based medicine have criticised the adoption of interventions evaluated by using only observational data. We think that everyone might benefit if the most radical protagonists of evidence based medicine organised and participated in a double blind, randomised, placebo controlled, crossover trial of the parachute.</AbstractText>
+        </Abstract>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>Smith</LastName>
+            <ForeName>Gordon C S</ForeName>
+            <Initials>GC</Initials>
+            <AffiliationInfo>
+              <Affiliation>Department of Obstetrics and Gynaecology, Cambridge University, Cambridge CB2 2QQ. gcss2@cam.ac.uk</Affiliation>
+            </AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Pell</LastName>
+            <ForeName>Jill P</ForeName>
+            <Initials>JP</Initials>
+          </Author>
+        </AuthorList>
+        <Language>eng</Language>
+        <PublicationTypeList>
+          <PublicationType UI="D016428">Journal Article</PublicationType>
+          <PublicationType UI="D000078882">Systematic Review</PublicationType>
+        </PublicationTypeList>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName UI="D000048" MajorTopicYN="N">Accidents, Aviation</DescriptorName>
+          <QualifierName UI="Q000517" MajorTopicYN="Y">prevention &amp; control</QualifierName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D003645" MajorTopicYN="N">Death, Sudden</DescriptorName>
+          <QualifierName UI="Q000517" MajorTopicYN="Y">prevention &amp; control</QualifierName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D011485" MajorTopicYN="Y">Protective Devices</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D016032" MajorTopicYN="N">Randomized Controlled Trials as Topic</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D014947" MajorTopicYN="N">Wounds and Injuries</DescriptorName>
+          <QualifierName UI="Q000517" MajorTopicYN="Y">prevention &amp; control</QualifierName>
+        </MeshHeading>
+      </MeshHeadingList>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">14684649</ArticleId>
+        <ArticleId IdType="doi">10.1136/bmj.327.7429.1459</ArticleId>
+        <ArticleId IdType="pmc">PMC300808</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE" Owner="NLM">
+      <PMID Version="1">15976161</PMID>
+      <Article PubModel="Print">
+        <Journal>
+          <ISSN IssnType="Electronic">1473-0480</ISSN>
+          <JournalIssue CitedMedium="Internet">
+            <Volume>39</Volume>
+            <Issue>7</Issue>
+            <PubDate><Year>2005</Year><Month>Jul</Month></PubDate>
+          </JournalIssue>
+          <Title>British journal of sports medicine</Title>
+          <ISOAbbreviation>Br J Sports Med</ISOAbbreviation>
+        </Journal>
+        <ArticleTitle>A systematic review and meta-analysis of clinical trials on physical interventions for lateral epicondylalgia.</ArticleTitle>
+        <Pagination><MedlinePgn>411-22</MedlinePgn></Pagination>
+        <Abstract>
+          <AbstractText>A systematic review of the literature on the effectiveness of physical interventions for lateral epicondylalgia (tennis elbow) was carried out. Seventy six randomised controlled trials were identified, 28 of which satisfied the minimum criteria for meta-analysis. The evidence suggests that extracorporeal shock wave therapy is not beneficial in the treatment of tennis elbow. There is a lack of evidence for the long term benefit of physical interventions in general. However, further research with long term follow up into manipulation and exercise as treatments is indicated.</AbstractText>
+        </Abstract>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>Bisset</LastName>
+            <ForeName>L</ForeName>
+            <Initials>L</Initials>
+            <AffiliationInfo>
+              <Affiliation>Division of Physiotherapy, University of Queensland, St Lucia, QLD 4072, Australia.</Affiliation>
+            </AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Paungmali</LastName>
+            <ForeName>A</ForeName>
+            <Initials>A</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Vicenzino</LastName>
+            <ForeName>B</ForeName>
+            <Initials>B</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Beller</LastName>
+            <ForeName>E</ForeName>
+            <Initials>E</Initials>
+          </Author>
+        </AuthorList>
+        <Language>eng</Language>
+        <PublicationTypeList>
+          <PublicationType UI="D016428">Journal Article</PublicationType>
+          <PublicationType UI="D017418">Meta-Analysis</PublicationType>
+          <PublicationType UI="D000078882">Systematic Review</PublicationType>
+        </PublicationTypeList>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName UI="D015針" MajorTopicYN="N">Acupuncture Therapy</DescriptorName>
+          <QualifierName UI="Q000379" MajorTopicYN="N">methods</QualifierName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D015081" MajorTopicYN="N">Exercise Therapy</DescriptorName>
+          <QualifierName UI="Q000379" MajorTopicYN="N">methods</QualifierName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D016032" MajorTopicYN="N">Randomized Controlled Trials as Topic</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D013716" MajorTopicYN="Y">Tennis Elbow</DescriptorName>
+          <QualifierName UI="Q000628" MajorTopicYN="Y">therapy</QualifierName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D016896" MajorTopicYN="N">Treatment Outcome</DescriptorName>
+        </MeshHeading>
+      </MeshHeadingList>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">15976161</ArticleId>
+        <ArticleId IdType="doi">10.1136/bjsm.2004.016170</ArticleId>
+        <ArticleId IdType="pmc">PMC1725258</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+
+</PubmedArticleSet>

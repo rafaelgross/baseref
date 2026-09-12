@@ -1,0 +1,385 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2024//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_240101.dtd">
+<PubmedArticleSet>
+
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE" Owner="NLM">
+      <PMID Version="1">37001234</PMID>
+      <Article PubModel="Electronic">
+        <Journal>
+          <ISSN IssnType="Electronic">1553-7358</ISSN>
+          <JournalIssue CitedMedium="Internet">
+            <Volume>19</Volume>
+            <Issue>3</Issue>
+            <PubDate><Year>2023</Year><Month>Mar</Month></PubDate>
+          </JournalIssue>
+          <Title>PLOS Computational Biology</Title>
+          <ISOAbbreviation>PLoS Comput Biol</ISOAbbreviation>
+        </Journal>
+        <ArticleTitle>Machine learning approaches for systematic literature reviews in biomedical research: a comprehensive analysis</ArticleTitle>
+        <Abstract>
+          <AbstractText>Systematic literature reviews (SLRs) are essential for synthesizing evidence in biomedical research. However, the manual screening process is time-consuming and prone to human error. This study evaluates machine learning (ML) approaches to automate title and abstract screening in SLRs. We analyzed 42 studies published between 2015 and 2023, comparing performance metrics of supervised, semi-supervised, and active learning methods. Results indicate that active learning combined with transformer-based models achieved the highest recall (0.97) with a workload reduction of 62%. Our findings support the integration of ML tools into systematic review workflows to improve efficiency without compromising completeness.</AbstractText>
+        </Abstract>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>Chen</LastName>
+            <ForeName>Wei</ForeName>
+            <Initials>W</Initials>
+            <AffiliationInfo>
+              <Affiliation>Department of Biomedical Informatics, Stanford University, Stanford, CA, USA.</Affiliation>
+            </AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Patel</LastName>
+            <ForeName>Riya</ForeName>
+            <Initials>R</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Müller</LastName>
+            <ForeName>Hans</ForeName>
+            <Initials>H</Initials>
+          </Author>
+        </AuthorList>
+        <Language>eng</Language>
+        <PublicationTypeList>
+          <PublicationType UI="D016428">Journal Article</PublicationType>
+          <PublicationType UI="D016454">Review</PublicationType>
+        </PublicationTypeList>
+        <ArticleDate DateType="Electronic">
+          <Year>2023</Year><Month>03</Month><Day>15</Day>
+        </ArticleDate>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName UI="D008433" MajorTopicYN="Y">Machine Learning</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D000078882" MajorTopicYN="Y">Systematic Reviews as Topic</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D001690" MajorTopicYN="N">Biomedical Research</DescriptorName>
+        </MeshHeading>
+      </MeshHeadingList>
+      <KeywordList Owner="NOTNLM">
+        <Keyword MajorTopicYN="N">machine learning</Keyword>
+        <Keyword MajorTopicYN="N">systematic review</Keyword>
+        <Keyword MajorTopicYN="N">text mining</Keyword>
+        <Keyword MajorTopicYN="N">active learning</Keyword>
+        <Keyword MajorTopicYN="N">evidence synthesis</Keyword>
+      </KeywordList>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">37001234</ArticleId>
+        <ArticleId IdType="doi">10.1371/journal.pcbi.1010234</ArticleId>
+        <ArticleId IdType="pmc">PMC10023456</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE" Owner="NLM">
+      <PMID Version="1">36887654</PMID>
+      <Article PubModel="Print-Electronic">
+        <Journal>
+          <ISSN IssnType="Print">0277-6715</ISSN>
+          <JournalIssue CitedMedium="Print">
+            <Volume>42</Volume>
+            <Issue>8</Issue>
+            <PubDate><Year>2023</Year><Month>Apr</Month></PubDate>
+          </JournalIssue>
+          <Title>Statistics in Medicine</Title>
+          <ISOAbbreviation>Stat Med</ISOAbbreviation>
+        </Journal>
+        <ArticleTitle>PRISMA 2020 compliance in randomized controlled trials: a meta-epidemiological study</ArticleTitle>
+        <Abstract>
+          <AbstractText>The PRISMA 2020 statement provides updated guidance for reporting systematic reviews. This meta-epidemiological study assessed compliance with PRISMA 2020 among 500 systematic reviews published in high-impact medical journals from 2021 to 2023. Overall compliance was 58.4% (95% CI: 54.1–62.7). Items most frequently omitted were search strategy documentation (item 7), risk of bias assessment (item 12), and certainty of evidence (item 15). Journals requiring PRISMA checklists at submission showed significantly higher compliance scores (p &lt; 0.001). These findings highlight the need for stronger editorial policies and author education regarding PRISMA 2020 requirements.</AbstractText>
+        </Abstract>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>Santos</LastName>
+            <ForeName>Ana Paula</ForeName>
+            <Initials>AP</Initials>
+            <AffiliationInfo>
+              <Affiliation>Universidade de São Paulo, Faculdade de Medicina, São Paulo, Brasil.</Affiliation>
+            </AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Thompson</LastName>
+            <ForeName>James R</ForeName>
+            <Initials>JR</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Oliveira</LastName>
+            <ForeName>Carlos M</ForeName>
+            <Initials>CM</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Kim</LastName>
+            <ForeName>Soo-Yeon</ForeName>
+            <Initials>SY</Initials>
+          </Author>
+        </AuthorList>
+        <Language>eng</Language>
+        <PublicationTypeList>
+          <PublicationType UI="D016428">Journal Article</PublicationType>
+        </PublicationTypeList>
+        <ArticleDate DateType="Electronic">
+          <Year>2023</Year><Month>01</Month><Day>28</Day>
+        </ArticleDate>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName UI="D000078882" MajorTopicYN="Y">Systematic Reviews as Topic</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D016032" MajorTopicYN="N">Randomized Controlled Trials as Topic</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D012106" MajorTopicYN="N">Research Design</DescriptorName>
+        </MeshHeading>
+      </MeshHeadingList>
+      <KeywordList Owner="NOTNLM">
+        <Keyword MajorTopicYN="N">PRISMA 2020</Keyword>
+        <Keyword MajorTopicYN="N">reporting guidelines</Keyword>
+        <Keyword MajorTopicYN="N">meta-epidemiology</Keyword>
+        <Keyword MajorTopicYN="N">systematic review quality</Keyword>
+      </KeywordList>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">36887654</ArticleId>
+        <ArticleId IdType="doi">10.1002/sim.9712</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE" Owner="NLM">
+      <PMID Version="1">36543210</PMID>
+      <Article PubModel="Electronic">
+        <Journal>
+          <ISSN IssnType="Electronic">1471-2288</ISSN>
+          <JournalIssue CitedMedium="Internet">
+            <Volume>22</Volume>
+            <Issue>1</Issue>
+            <PubDate><Year>2022</Year><Month>Dec</Month></PubDate>
+          </JournalIssue>
+          <Title>BMC Medical Research Methodology</Title>
+          <ISOAbbreviation>BMC Med Res Methodol</ISOAbbreviation>
+        </Journal>
+        <ArticleTitle>Automation tools for systematic review screening: a comparative evaluation of Rayyan, Covidence, and Abstrackr</ArticleTitle>
+        <Abstract>
+          <AbstractText>Systematic review software tools can streamline the screening process. We conducted a head-to-head comparison of Rayyan, Covidence, and Abstrackr across 12 systematic review teams. Outcome measures included time-to-completion, inter-rater agreement (Cohen's kappa), user satisfaction, and error rates. Rayyan showed the highest user satisfaction score (8.4/10) and lowest learning curve. Covidence performed best for inter-rater agreement (kappa = 0.82). Abstrackr's machine learning assistance reduced screening time by 41% compared to manual-only approaches. All three tools were significantly faster than manual screening using spreadsheets (p &lt; 0.05). Selection of tool should be guided by team size, budget constraints, and desired ML assistance level.</AbstractText>
+        </Abstract>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>Okonkwo</LastName>
+            <ForeName>Chidi</ForeName>
+            <Initials>C</Initials>
+            <AffiliationInfo>
+              <Affiliation>Centre for Evidence-Based Medicine, University of Oxford, Oxford, UK.</Affiliation>
+            </AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Fernandez</LastName>
+            <ForeName>Laura</ForeName>
+            <Initials>L</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Nakamura</LastName>
+            <ForeName>Yuki</ForeName>
+            <Initials>Y</Initials>
+          </Author>
+        </AuthorList>
+        <Language>eng</Language>
+        <PublicationTypeList>
+          <PublicationType UI="D016428">Journal Article</PublicationType>
+          <PublicationType UI="D003160">Comparative Study</PublicationType>
+        </PublicationTypeList>
+        <ArticleDate DateType="Electronic">
+          <Year>2022</Year><Month>12</Month><Day>05</Day>
+        </ArticleDate>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName UI="D000078882" MajorTopicYN="Y">Systematic Reviews as Topic</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D008433" MajorTopicYN="N">Machine Learning</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D012984" MajorTopicYN="N">Software</DescriptorName>
+        </MeshHeading>
+      </MeshHeadingList>
+      <KeywordList Owner="NOTNLM">
+        <Keyword MajorTopicYN="N">systematic review software</Keyword>
+        <Keyword MajorTopicYN="N">screening tools</Keyword>
+        <Keyword MajorTopicYN="N">Rayyan</Keyword>
+        <Keyword MajorTopicYN="N">Covidence</Keyword>
+        <Keyword MajorTopicYN="N">evidence synthesis</Keyword>
+      </KeywordList>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">36543210</ArticleId>
+        <ArticleId IdType="doi">10.1186/s12874-022-01823-4</ArticleId>
+        <ArticleId IdType="pmc">PMC9742156</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE" Owner="NLM">
+      <PMID Version="1">35912378</PMID>
+      <Article PubModel="Print">
+        <Journal>
+          <ISSN IssnType="Print">0895-4356</ISSN>
+          <JournalIssue CitedMedium="Print">
+            <Volume>149</Volume>
+            <PubDate><Year>2022</Year><Month>Sep</Month></PubDate>
+          </JournalIssue>
+          <Title>Journal of Clinical Epidemiology</Title>
+          <ISOAbbreviation>J Clin Epidemiol</ISOAbbreviation>
+        </Journal>
+        <ArticleTitle>Inter-rater reliability in systematic review screening: impact of training, topic familiarity, and dual vs single reviewer strategies</ArticleTitle>
+        <Abstract>
+          <AbstractText>Inter-rater reliability (IRR) during title/abstract screening significantly impacts systematic review quality. We investigated factors influencing IRR across 28 research teams conducting systematic reviews in clinical medicine. Teams using structured training protocols achieved kappa values ≥ 0.70 in 89% of cases, compared to 54% in untrained teams. Topic familiarity was positively associated with IRR (r = 0.61, p &lt; 0.001). Dual-reviewer screening strategies consistently outperformed single-reviewer approaches in sensitivity (0.98 vs 0.87). We recommend mandatory calibration exercises before screening and periodic recalibration during large-scale reviews to maintain acceptable IRR throughout the process.</AbstractText>
+        </Abstract>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>Bergström</LastName>
+            <ForeName>Anna</ForeName>
+            <Initials>A</Initials>
+            <AffiliationInfo>
+              <Affiliation>Karolinska Institutet, Department of Global Public Health, Stockholm, Sweden.</Affiliation>
+            </AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Costa</LastName>
+            <ForeName>Ricardo</ForeName>
+            <Initials>R</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Walsh</LastName>
+            <ForeName>Michael T</ForeName>
+            <Initials>MT</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Park</LastName>
+            <ForeName>Ji-Hoon</ForeName>
+            <Initials>JH</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Ali</LastName>
+            <ForeName>Fatima</ForeName>
+            <Initials>F</Initials>
+          </Author>
+        </AuthorList>
+        <Language>eng</Language>
+        <PublicationTypeList>
+          <PublicationType UI="D016428">Journal Article</PublicationType>
+        </PublicationTypeList>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName UI="D000078882" MajorTopicYN="Y">Systematic Reviews as Topic</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D015233" MajorTopicYN="Y">Observer Variation</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D015203" MajorTopicYN="N">Reproducibility of Results</DescriptorName>
+        </MeshHeading>
+      </MeshHeadingList>
+      <KeywordList Owner="NOTNLM">
+        <Keyword MajorTopicYN="N">inter-rater reliability</Keyword>
+        <Keyword MajorTopicYN="N">Cohen kappa</Keyword>
+        <Keyword MajorTopicYN="N">screening</Keyword>
+        <Keyword MajorTopicYN="N">systematic review methodology</Keyword>
+        <Keyword MajorTopicYN="N">dual reviewer</Keyword>
+      </KeywordList>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">35912378</ArticleId>
+        <ArticleId IdType="doi">10.1016/j.jclinepi.2022.05.019</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE" Owner="NLM">
+      <PMID Version="1">35234567</PMID>
+      <Article PubModel="Electronic">
+        <Journal>
+          <ISSN IssnType="Electronic">2046-4053</ISSN>
+          <JournalIssue CitedMedium="Internet">
+            <Volume>11</Volume>
+            <Issue>1</Issue>
+            <PubDate><Year>2022</Year><Month>Feb</Month></PubDate>
+          </JournalIssue>
+          <Title>Systematic Reviews</Title>
+          <ISOAbbreviation>Syst Rev</ISOAbbreviation>
+        </Journal>
+        <ArticleTitle>Bibliometric analysis of systematic review methodology research: trends from 2000 to 2021</ArticleTitle>
+        <Abstract>
+          <AbstractText>We conducted a bibliometric analysis of 4,821 articles on systematic review methodology published between 2000 and 2021. Publication output grew 8.3-fold over the period. The top productive countries were the USA (28.4%), UK (16.1%), and Australia (11.3%). Co-authorship network analysis identified three major research clusters: statistical methods, reporting guidelines, and technology-assisted reviews. Keyword co-occurrence analysis revealed increasing interest in network meta-analysis, living systematic reviews, and artificial intelligence applications. The Cochrane Collaboration and the EQUATOR Network were the most influential organizations. Our findings map the intellectual structure of systematic review methodology research and identify emerging trends for future investigation.</AbstractText>
+        </Abstract>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>Rossi</LastName>
+            <ForeName>Marco</ForeName>
+            <Initials>M</Initials>
+            <AffiliationInfo>
+              <Affiliation>Università degli Studi di Milano, Department of Clinical Sciences and Community Health, Milan, Italy.</Affiliation>
+            </AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Zhang</LastName>
+            <ForeName>Lihua</ForeName>
+            <Initials>L</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Andersen</LastName>
+            <ForeName>Mette K</ForeName>
+            <Initials>MK</Initials>
+          </Author>
+        </AuthorList>
+        <Language>eng</Language>
+        <PublicationTypeList>
+          <PublicationType UI="D016428">Journal Article</PublicationType>
+        </PublicationTypeList>
+        <ArticleDate DateType="Electronic">
+          <Year>2022</Year><Month>02</Month><Day>18</Day>
+        </ArticleDate>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName UI="D000078882" MajorTopicYN="Y">Systematic Reviews as Topic</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D001699" MajorTopicYN="Y">Bibliometrics</DescriptorName>
+        </MeshHeading>
+        <MeshHeading>
+          <DescriptorName UI="D016454" MajorTopicYN="N">Review Literature as Topic</DescriptorName>
+        </MeshHeading>
+      </MeshHeadingList>
+      <KeywordList Owner="NOTNLM">
+        <Keyword MajorTopicYN="N">bibliometrics</Keyword>
+        <Keyword MajorTopicYN="N">systematic review</Keyword>
+        <Keyword MajorTopicYN="N">VOSviewer</Keyword>
+        <Keyword MajorTopicYN="N">co-authorship network</Keyword>
+        <Keyword MajorTopicYN="N">evidence-based medicine</Keyword>
+      </KeywordList>
+    </MedlineCitation>
+    <PubmedData>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">35234567</ArticleId>
+        <ArticleId IdType="doi">10.1186/s13643-022-01920-z</ArticleId>
+        <ArticleId IdType="pmc">PMC8857672</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+
+</PubmedArticleSet>

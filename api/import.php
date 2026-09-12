@@ -1,17 +1,19 @@
 <?php
 /**
- * PRISMA-SLR - API: Importação de arquivos .bib
+ * PRISMA-SLR - API: .bib file import
  * POST /api/import.php
- *   - Multipart/form-data: file (arquivo .bib), project_id, source_name, source_type, search_string, search_date
+ *   - Multipart/form-data: file (.bib file), project_id, source_name, source_type, search_string, search_date
  *
- * GET /api/import.php?project_id=N  → listar fontes do projeto
- * DELETE /api/import.php?source_id=N → excluir fonte e seus artigos
+ * GET /api/import.php?project_id=N  → list the project's sources
+ * DELETE /api/import.php?source_id=N → delete a source and its articles
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/api_guard.php';
 require_once __DIR__ . '/../lib/BibTexParser.php';
 require_once __DIR__ . '/../lib/RisParser.php';
 require_once __DIR__ . '/../lib/PubMedXmlParser.php';
+require_once __DIR__ . '/../lib/CsvParser.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -19,6 +21,8 @@ header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
+
+requireApiAuth();
 
 $pdo    = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
@@ -29,6 +33,7 @@ switch ($method) {
 
 case 'GET':
     $projectId = isset($_GET['project_id']) ? (int) $_GET['project_id'] : null;
+    if ($projectId) requireProjectAccess(getDB(), (int) $projectId);
     if (!$projectId) jsonResponse(['error' => true, 'message' => 'project_id obrigatório'], 422);
 
     $stmt = $pdo->prepare("
@@ -49,7 +54,7 @@ case 'DELETE':
     $sourceId = isset($_GET['source_id']) ? (int) $_GET['source_id'] : null;
     if (!$sourceId) jsonResponse(['error' => true, 'message' => 'source_id obrigatório'], 422);
 
-    // Excluir artigos vinculados e depois a fonte
+    // Delete linked articles first, then the source
     $pdo->prepare("DELETE FROM articles WHERE source_id = ?")->execute([$sourceId]);
     $pdo->prepare("DELETE FROM search_sources WHERE id = ?")->execute([$sourceId]);
 
@@ -58,8 +63,9 @@ case 'DELETE':
 
 // -----------------------------------------------------------------
 case 'POST':
-    // Validação básica
+    // Basic validation
     $projectId  = isset($_POST['project_id'])  ? (int) $_POST['project_id']  : 0;
+    if ($projectId) requireProjectAccess(getDB(), (int) $projectId);
     $sourceName = trim($_POST['source_name']   ?? 'Desconhecida');
     $sourceType = trim($_POST['source_type']   ?? 'other');
     $searchStr  = trim($_POST['search_string'] ?? '');
@@ -67,14 +73,14 @@ case 'POST':
 
     if (!$projectId) jsonResponse(['error' => true, 'message' => 'project_id obrigatório'], 422);
 
-    // Verifica projeto
+    // Verify project
     $stmt = $pdo->prepare("SELECT id FROM projects WHERE id = ?");
     $stmt->execute([$projectId]);
     if (!$stmt->fetch()) {
         jsonResponse(['error' => true, 'message' => 'Projeto não encontrado'], 404);
     }
 
-    // Verifica upload
+    // Verify upload
     if (empty($_FILES['file'])) {
         jsonResponse(['error' => true, 'message' => 'Arquivo .bib não enviado'], 422);
     }
@@ -84,14 +90,14 @@ case 'POST':
         jsonResponse(['error' => true, 'message' => 'Erro no upload: código ' . $file['error']], 422);
     }
 
-    // Valida extensão
+    // Validate extension
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    $allowedExts = ['bib', 'txt', 'ris', 'xml'];
+    $allowedExts = ['bib', 'txt', 'ris', 'xml', 'csv'];
     if (!in_array($ext, $allowedExts)) {
-        jsonResponse(['error' => true, 'message' => 'Extensão não suportada. Use .bib, .ris, .xml ou .txt'], 422);
+        jsonResponse(['error' => true, 'message' => 'Extensão não suportada. Use .bib, .ris, .xml, .csv ou .txt'], 422);
     }
 
-    // Limita tamanho: 50 MB
+    // Limit size: 50 MB
     if ($file['size'] > 50 * 1024 * 1024) {
         jsonResponse(['error' => true, 'message' => 'Arquivo muito grande (máx. 50 MB)'], 422);
     }
@@ -101,14 +107,17 @@ case 'POST':
         jsonResponse(['error' => true, 'message' => 'Não foi possível ler o arquivo'], 500);
     }
 
-    // Seleciona parser conforme extensão (auto-detect para .txt)
-    if ($ext === 'ris') {
+    // Select parser based on extension (auto-detect for .txt)
+    if ($ext === 'csv') {
+        $parser = new CsvParser();
+        $sourceType = 'scopus'; // CSV is the Scopus export format
+    } elseif ($ext === 'ris') {
         $parser = new RisParser();
     } elseif ($ext === 'xml') {
         $parser = new PubMedXmlParser();
-        $sourceType = 'pubmed'; // XML é sempre PubMed
+        $sourceType = 'pubmed'; // XML is always PubMed
     } elseif ($ext === 'txt') {
-        // Auto-detect: RIS começa com "TY  -", BibTeX começa com "@"
+        // Auto-detect: RIS starts with "TY  -", BibTeX starts with "@"
         $preview = ltrim(preg_replace('/^\xEF\xBB\xBF/', '', $content));
         if (preg_match('/^TY\s*[-–]/m', $preview)) {
             $parser = new RisParser();
@@ -131,7 +140,7 @@ case 'POST':
         ], 422);
     }
 
-    // Cria registro de fonte
+    // Create the source record
     $pdo->beginTransaction();
     try {
         $stmtSrc = $pdo->prepare("
@@ -146,7 +155,7 @@ case 'POST':
         ]);
         $sourceId = (int) $pdo->lastInsertId();
 
-        // ----- Insere cada artigo -----
+        // ----- Insert each article -----
         $stmtArt = $pdo->prepare("
             INSERT INTO articles
                 (project_id, source_id, source_type, source_key,
@@ -170,6 +179,12 @@ case 'POST':
 
         $importedCount = 0;
         $errors        = [];
+
+        // In-memory cache of authors already resolved in this import (normalized_name => id).
+        // In academic databases the same author appears in many articles; without this, each
+        // occurrence would cost 1 INSERT IGNORE + 1 SELECT on the database — the main bottleneck
+        // for large files (Cloudflare drops the connection after ~100s of origin being stalled).
+        $authorIdCache = [];
 
         foreach ($entries as $entry) {
             if (empty($entry['title'])) {
@@ -207,18 +222,26 @@ case 'POST':
             $articleId = (int) $pdo->lastInsertId();
             $importedCount++;
 
-            // Autores
+            // Authors
             foreach (($entry['authors'] ?? []) as $pos => $authorName) {
                 $normalized = normalizeAuthorName($authorName);
-                $stmtAuthor->execute([$authorName, $normalized]);
-                $stmtGetAuthor->execute([$normalized]);
-                $authorRow = $stmtGetAuthor->fetch();
-                if ($authorRow) {
-                    $stmtArtAut->execute([$articleId, $authorRow['id'], $pos + 1]);
+
+                if (isset($authorIdCache[$normalized])) {
+                    $authorId = $authorIdCache[$normalized];
+                } else {
+                    $stmtAuthor->execute([$authorName, $normalized]);
+                    $stmtGetAuthor->execute([$normalized]);
+                    $authorRow = $stmtGetAuthor->fetch();
+                    $authorId  = $authorRow['id'] ?? null;
+                    $authorIdCache[$normalized] = $authorId;
+                }
+
+                if ($authorId) {
+                    $stmtArtAut->execute([$articleId, $authorId, $pos + 1]);
                 }
             }
 
-            // Palavras-chave do autor
+            // Author keywords
             foreach (($entry['keywords_author'] ?? []) as $kw) {
                 if (!empty($kw)) $stmtKw->execute([$articleId, $kw, 'author']);
             }
@@ -226,14 +249,18 @@ case 'POST':
             foreach (($entry['keywords_plus'] ?? []) as $kw) {
                 if (!empty($kw)) $stmtKw->execute([$articleId, $kw, 'plus']);
             }
+            // Indexed keywords (Scopus Index Keywords / MeSH)
+            foreach (($entry['keywords_indexed'] ?? []) as $kw) {
+                if (!empty($kw)) $stmtKw->execute([$articleId, $kw, 'indexed']);
+            }
 
-            // Afiliações
+            // Affiliations
             foreach (($entry['affiliations'] ?? []) as $aff) {
                 $stmtAff->execute([$articleId, $aff['institution'] ?? '', $aff['country'] ?? '']);
             }
         }
 
-        // Atualiza total importado na fonte
+        // Update the total imported count on the source
         $pdo->prepare("UPDATE search_sources SET total_imported = ? WHERE id = ?")->execute([$importedCount, $sourceId]);
 
         $pdo->commit();
@@ -261,7 +288,7 @@ default:
 }
 
 // -----------------------------------------------------------------
-// Converte para inteiro ou retorna null (evita string vazia em campos INT do MySQL)
+// Converts to integer or returns null (avoids an empty string in MySQL INT fields)
 // -----------------------------------------------------------------
 function intOrNull(mixed $val): ?int
 {
@@ -269,14 +296,14 @@ function intOrNull(mixed $val): ?int
     return (int) $val;
 }
 
-// Normaliza nome do autor para deduplicação
+// Normalizes the author name for deduplication
 // -----------------------------------------------------------------
 function normalizeAuthorName(string $name): string
 {
     $name = mb_strtolower(trim($name));
-    // Remove caracteres diacríticos
+    // Remove diacritical characters
     $name = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name);
-    // Remove pontuação exceto hífen
+    // Remove punctuation except hyphen
     $name = preg_replace('/[^a-z\s\-]/', '', $name);
     $name = preg_replace('/\s+/', ' ', $name);
     return trim($name);

@@ -1,14 +1,15 @@
 <?php
 /**
- * PRISMA-SLR - API: Detecção e Gestão de Duplicatas
+ * PRISMA-SLR - API: Duplicate Detection and Management
  *
- * GET    /api/duplicates.php?project_id=N          → listar pares pendentes
- * POST   /api/duplicates.php                        → detectar duplicatas (aciona algoritmo)
- * PUT    /api/duplicates.php?id=N                   → confirmar/rejeitar par
- * DELETE /api/duplicates.php?id=N                   → remover par
+ * GET    /api/duplicates.php?project_id=N          → list pending pairs
+ * POST   /api/duplicates.php                        → detect duplicates (runs the algorithm)
+ * PUT    /api/duplicates.php?id=N                   → confirm/reject pair
+ * DELETE /api/duplicates.php?id=N                   → remove pair
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/api_guard.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -16,6 +17,8 @@ header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
+
+requireApiAuth();
 
 $pdo    = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
@@ -27,6 +30,7 @@ switch ($method) {
 
 case 'GET':
     $projectId = isset($_GET['project_id']) ? (int) $_GET['project_id'] : null;
+    if ($projectId) requireProjectAccess(getDB(), (int) $projectId);
     if (!$projectId) jsonResponse(['error' => true, 'message' => 'project_id obrigatório'], 422);
 
     $status = $_GET['status'] ?? 'pending';
@@ -47,7 +51,7 @@ case 'GET':
 
     $pairs  = $stmt->fetchAll();
 
-    // Sumário dos estados
+    // Status summary
     $stmtSum = $pdo->prepare("
         SELECT status, COUNT(*) AS total
         FROM duplicates WHERE project_id = ?
@@ -59,7 +63,7 @@ case 'GET':
         $summary[$row['status']] = (int) $row['total'];
     }
 
-    // Contagem de artigos únicos (não marcados como duplicata)
+    // Count of unique articles (not marked as duplicates)
     $stmtUnique = $pdo->prepare("SELECT COUNT(*) FROM articles WHERE project_id = ? AND is_duplicate = 0");
     $stmtUnique->execute([$projectId]);
     $summary['unique_count'] = (int) $stmtUnique->fetchColumn();
@@ -71,9 +75,10 @@ case 'GET':
 case 'POST':
     $data      = getJsonBody();
     $projectId = (int) ($data['project_id'] ?? 0);
+    if ($projectId) requireProjectAccess(getDB(), $projectId);
     if (!$projectId) jsonResponse(['error' => true, 'message' => 'project_id obrigatório'], 422);
 
-    // Confirmar todos pendentes em lote (sempre mantém artigo A / article_id_1)
+    // Confirm all pending pairs in bulk (always keeps article A / article_id_1)
     if (($data['action'] ?? '') === 'confirm_all_pending') {
         $stmt = $pdo->prepare("SELECT * FROM duplicates WHERE project_id = ? AND status = 'pending' ORDER BY match_score DESC, id ASC");
         $stmt->execute([$projectId]);
@@ -86,7 +91,7 @@ case 'POST':
                 $canonicalId = (int) $pair['article_id_1'];
                 $duplicateId = (int) $pair['article_id_2'];
 
-                // Se o artigo A já foi marcado como duplicata, inverte a ordem
+                // If article A was already marked as a duplicate, swap the order
                 $chk = $pdo->prepare("SELECT is_duplicate FROM articles WHERE id = ?");
                 $chk->execute([$canonicalId]);
                 $art = $chk->fetch();
@@ -108,11 +113,11 @@ case 'POST':
         }
     }
 
-    // Detecta duplicatas para um projeto
-    // Configurações do algoritmo
-    $titleThreshold = (float) ($data['title_threshold'] ?? 85); // % de similaridade mínima para título
+    // Detect duplicates for a project
+    // Algorithm settings
+    $titleThreshold = (float) ($data['title_threshold'] ?? 85); // minimum title similarity %
 
-    // Busca artigos não duplicatas
+    // Fetch non-duplicate articles
     $stmt = $pdo->prepare("
         SELECT id, title, year, doi, publisher
         FROM articles
@@ -126,7 +131,7 @@ case 'POST':
     $skipped  = 0;
     $n        = count($articles);
 
-    // Remove pares antigos pendentes para reprocessar
+    // Remove old pending pairs to reprocess
     $pdo->prepare("DELETE FROM duplicates WHERE project_id = ? AND status = 'pending'")->execute([$projectId]);
 
     $stmtInsert = $pdo->prepare("
@@ -135,7 +140,7 @@ case 'POST':
         VALUES (?, ?, ?, ?, ?, 'pending')
     ");
 
-    // Algoritmo O(n²) com early-exit por DOI
+    // O(n²) algorithm with early-exit by DOI
     $byDoi = [];
     foreach ($articles as $art) {
         if (!empty($art['doi'])) {
@@ -146,7 +151,7 @@ case 'POST':
         }
     }
 
-    // 1. Match exato por DOI
+    // 1. Exact match by DOI
     foreach ($byDoi as $doi => $ids) {
         if (count($ids) < 2) continue;
         for ($i = 0; $i < count($ids); $i++) {
@@ -157,14 +162,14 @@ case 'POST':
         }
     }
 
-    // 2. Match por título similar
-    // Processamos em blocos para evitar timeout
+    // 2. Match by similar title
+    // Processed in chunks to avoid timeouts
     $titleNormMap = [];
     foreach ($articles as $art) {
         $titleNormMap[$art['id']] = normalizeTitle($art['title'] ?? '');
     }
 
-    $processedDoi = []; // pares já detectados por DOI
+    $processedDoi = []; // pairs already detected by DOI
     foreach ($byDoi as $doi => $ids) {
         foreach ($ids as $id1) {
             foreach ($ids as $id2) {
@@ -181,19 +186,19 @@ case 'POST':
         for ($j = $i + 1; $j < $n; $j++) {
             $art2 = $articles[$j];
 
-            // Pula se já detectado por DOI
+            // Skip if already detected by DOI
             if (isset($processedDoi[$art1['id'] . '_' . $art2['id']])) continue;
 
             $title2 = $titleNormMap[$art2['id']];
             if (empty($title2)) continue;
 
-            // Otimização: pula se anos muito diferentes (> 1 ano)
+            // Optimization: skip if years are too far apart (> 1 year)
             if ($art1['year'] && $art2['year'] && abs($art1['year'] - $art2['year']) > 1) {
                 $skipped++;
                 continue;
             }
 
-            // Calcula similaridade de título
+            // Compute title similarity
             $sim = titleSimilarity($title1, $title2);
 
             if ($sim >= $titleThreshold) {
@@ -216,17 +221,17 @@ case 'POST':
 
 // -----------------------------------------------------------------
 case 'PUT':
-    // Confirmar (canonical) ou rejeitar par de duplicatas
+    // Confirm (canonical) or reject a duplicate pair
     if (!$id) jsonResponse(['error' => true, 'message' => 'ID obrigatório'], 422);
 
     $data   = getJsonBody();
-    $action = $data['action'] ?? ''; // 'confirm' ou 'reject'
+    $action = $data['action'] ?? ''; // 'confirm' or 'reject'
 
     if (!in_array($action, ['confirm', 'reject'])) {
         jsonResponse(['error' => true, 'message' => "action deve ser 'confirm' ou 'reject'"], 422);
     }
 
-    // Busca o par
+    // Fetch the pair
     $stmt = $pdo->prepare("SELECT * FROM duplicates WHERE id = ?");
     $stmt->execute([$id]);
     $pair = $stmt->fetch();
@@ -240,14 +245,14 @@ case 'PUT':
 
         $pdo->beginTransaction();
         try {
-            // Atualiza o par
+            // Update the pair
             $pdo->prepare("
                 UPDATE duplicates
                 SET status = 'confirmed', canonical_id = ?, reviewed_at = NOW()
                 WHERE id = ?
             ")->execute([$canonicalId, $id]);
 
-            // Marca o artigo duplicado
+            // Mark the duplicate article
             $pdo->prepare("
                 UPDATE articles SET is_duplicate = 1, duplicate_of = ?, status = 'excluded'
                 WHERE id = ?
@@ -261,7 +266,7 @@ case 'PUT':
         }
 
     } else {
-        // Rejeitar
+        // Reject
         $pdo->prepare("
             UPDATE duplicates SET status = 'rejected', reviewed_at = NOW() WHERE id = ?
         ")->execute([$id]);
@@ -272,22 +277,23 @@ case 'PUT':
 // -----------------------------------------------------------------
 case 'DELETE':
     if ($id) {
-        // Remove par específico
+        // Remove specific pair
         $pdo->prepare("DELETE FROM duplicates WHERE id = ?")->execute([$id]);
         jsonResponse(['success' => true]);
     } else {
-        // Reset completo: remove todos os pares e desfaz marcações de duplicata
+        // Full reset: removes all pairs and undoes duplicate markings
         $projectId = isset($_GET['project_id']) ? (int) $_GET['project_id'] : null;
+        if ($projectId) requireProjectAccess(getDB(), (int) $projectId);
         if (!$projectId) jsonResponse(['error' => true, 'message' => 'id ou project_id obrigatório'], 422);
 
         $pdo->beginTransaction();
         try {
-            // Reverte artigos marcados como duplicata para pending (somente os desta detecção)
+            // Revert articles marked as duplicates back to pending (only for this detection run)
             $pdo->prepare("
                 UPDATE articles SET is_duplicate=0, duplicate_of=NULL, status='pending'
                 WHERE project_id=? AND is_duplicate=1
             ")->execute([$projectId]);
-            // Remove todos os pares do projeto
+            // Remove all pairs for the project
             $pdo->prepare("DELETE FROM duplicates WHERE project_id=?")->execute([$projectId]);
             $pdo->commit();
             jsonResponse(['success' => true, 'message' => 'Detecção redefinida com sucesso']);
@@ -323,15 +329,15 @@ function normalizeTitle(string $title): string
 }
 
 /**
- * Similaridade entre dois títulos normalizados (0–100)
- * Usa similar_text para eficiência + Levenshtein para curtos
+ * Similarity between two normalized titles (0–100)
+ * Uses similar_text for efficiency + Levenshtein for short strings
  */
 function titleSimilarity(string $a, string $b): float
 {
     if ($a === $b) return 100.0;
     if (empty($a) || empty($b)) return 0.0;
 
-    // similar_text é eficiente para strings longas
+    // similar_text is efficient for long strings
     similar_text($a, $b, $percent);
     return $percent;
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * PRISMA-SLR - Página: Importação de .bib
+ * PRISMA-SLR - Page: Import from .bib
  */
 if (!$projectId):
 ?>
@@ -13,7 +13,7 @@ if (!$projectId):
 <div class="page-header">
   <div>
     <h1 class="page-title"><i class="fa fa-file-import"></i> Importação de Referências</h1>
-    <p class="page-subtitle">Importe arquivos BibTeX (.bib), RIS (.ris) ou PubMed XML (.xml) de qualquer base de dados.</p>
+    <p class="page-subtitle">Importe arquivos BibTeX (.bib), RIS (.ris), CSV do Scopus (.csv) ou PubMed XML (.xml) de qualquer base de dados.</p>
   </div>
   <a href="?page=articles&project_id=<?= $projectId ?>" class="btn btn-ghost">
     <i class="fa fa-book"></i> Ver Artigos
@@ -35,13 +35,14 @@ if (!$projectId):
           <button type="button" class="fmt-tab active-tab" id="tab-bib"  onclick="setTab('bib')"  style="flex:1;padding:7px 4px;border:1px solid var(--primary);border-radius:7px;background:var(--primary);color:#fff;font-size:11px;font-weight:700;cursor:pointer"><i class="fa fa-file-code"></i> BibTeX (.bib)</button>
           <button type="button" class="fmt-tab"        id="tab-ris"  onclick="setTab('ris')"  style="flex:1;padding:7px 4px;border:1px solid var(--border);border-radius:7px;background:none;color:var(--text-muted);font-size:11px;font-weight:700;cursor:pointer"><i class="fa fa-file-lines"></i> RIS (.ris)</button>
           <button type="button" class="fmt-tab"        id="tab-xml"  onclick="setTab('xml')"  style="flex:1;padding:7px 4px;border:1px solid var(--border);border-radius:7px;background:none;color:var(--text-muted);font-size:11px;font-weight:700;cursor:pointer"><i class="fa fa-file-medical"></i> PubMed XML (.xml)</button>
+          <button type="button" class="fmt-tab"        id="tab-csv"  onclick="setTab('csv')"  style="flex:1;padding:7px 4px;border:1px solid var(--border);border-radius:7px;background:none;color:var(--text-muted);font-size:11px;font-weight:700;cursor:pointer"><i class="fa fa-file-csv"></i> Scopus CSV (.csv)</button>
         </div>
         <div class="upload-zone" id="upload-zone" onclick="document.getElementById('bib-file').click()">
           <i class="fa fa-file-arrow-up"></i>
           <p id="drop-text">Clique ou arraste o arquivo aqui</p>
-          <small id="fmt-hint">Formatos: .bib, .ris, .xml, .txt · Máximo: 50 MB</small>
+          <small id="fmt-hint">Formatos: .bib, .ris, .xml, .csv, .txt · Máximo: 50 MB</small>
         </div>
-        <input type="file" id="bib-file" accept=".bib,.ris,.xml,.txt" style="display:none"
+        <input type="file" id="bib-file" accept=".bib,.ris,.xml,.csv,.txt" style="display:none"
                onchange="onFileSelect(event)">
       </div>
 
@@ -155,7 +156,7 @@ const PROJECT_ID = <?= $projectId ?>;
 let selectedFile  = null;
 let activeTab     = 'bib';
 
-// ── Seletor de formato (abas) ────────────────────────────────────
+// ── Format selector (tabs) ─────────────────────────────────────────
 function setTab(fmt) {
   activeTab = fmt;
   ['bib','ris','xml'].forEach(f => {
@@ -167,12 +168,12 @@ function setTab(fmt) {
     btn.style.borderColor = active ? 'var(--primary)' : 'var(--border)';
     guide.style.display   = active ? 'block' : 'none';
   });
-  // Atualiza accept e hint
-  const acceptMap = { bib: '.bib,.txt', ris: '.ris,.txt', xml: '.xml' };
-  const hintMap   = { bib: 'Formato BibTeX (.bib) · Máx 50 MB', ris: 'Formato RIS (.ris) — Mendeley, Zotero, EndNote · Máx 50 MB', xml: 'PubMed XML (.xml) · Máx 50 MB' };
+  // Update accept and hint
+  const acceptMap = { bib: '.bib,.txt', ris: '.ris,.txt', xml: '.xml', csv: '.csv' };
+  const hintMap   = { bib: 'Formato BibTeX (.bib) · Máx 50 MB', ris: 'Formato RIS (.ris) — Mendeley, Zotero, EndNote · Máx 50 MB', xml: 'PubMed XML (.xml) · Máx 50 MB', csv: 'CSV do Scopus (.csv) — preserva afiliações e funding · Máx 50 MB' };
   document.getElementById('bib-file').accept = acceptMap[fmt];
   document.getElementById('fmt-hint').textContent = hintMap[fmt];
-  // Auto-seleciona base PubMed para XML
+  // Auto-select PubMed data source for XML
   if (fmt === 'xml') document.getElementById('f-source-type').value = 'pubmed';
 }
 
@@ -182,12 +183,12 @@ function onFileSelect(e) {
   selectedFile = file;
   document.getElementById('drop-text').textContent = `✓ ${file.name} (${formatBytes(file.size)})`;
   document.getElementById('upload-zone').style.borderColor = 'var(--primary)';
-  // Detecta formato pela extensão e muda aba
+  // Detect format by extension and switch tab
   const ext = file.name.split('.').pop().toLowerCase();
   if (ext === 'ris') setTab('ris');
   else if (ext === 'xml') setTab('xml');
   else setTab('bib');
-  // Detecta base automaticamente pelo nome do arquivo
+  // Auto-detect data source from the file name
   if (file.name.toLowerCase().includes('scopus')) {
     document.getElementById('f-source-type').value = 'scopus';
     if (!document.getElementById('f-source-name').value)
@@ -318,7 +319,11 @@ async function loadSources() {
         <td><strong>${s.article_count}</strong></td>
         <td>${s.search_date || '—'}</td>
         <td>${formatDate(s.imported_at)}</td>
-        <td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-ghost btn-sm"
+                  onclick="exportSource(${s.id})" title="Exportar artigos desta base (CSV)">
+            <i class="fa fa-download"></i>
+          </button>
           <button class="btn btn-ghost btn-sm text-danger"
                   onclick="deleteSourc(${s.id},'${escHtml(s.name)}')">
             <i class="fa fa-trash"></i>
@@ -331,6 +336,10 @@ async function loadSources() {
   } catch(e) {
     container.innerHTML = '<div class="alert alert-error"><i class="fa fa-triangle-exclamation"></i>Erro ao carregar fontes.</div>';
   }
+}
+
+function exportSource(sourceId) {
+  window.location.href = `api/export.php?project_id=${PROJECT_ID}&format=csv&scope=all&source_id=${sourceId}`;
 }
 
 function formatBytes(bytes) {
