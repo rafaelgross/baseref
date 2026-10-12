@@ -70,6 +70,9 @@ docker compose up -d
 * To view application logs: `docker compose logs -f web`.
 * To stop: `docker compose down`.
 
+> **Security Note on Default Passwords and Exposed Ports:**  
+> The bundled `docker-compose.yml` and `.env.example` include placeholder credentials (`DB_ROOT_PASSWORD=baseref_root_secret`, `DB_PASS=baseref_secret_password`) and expose the database port on `33066` for convenient local testing. **In any non-local or internet-exposed environment, you must change these passwords in `.env` and remove or bind the database port to `127.0.0.1:33066`** to prevent unauthorized access.
+
 ---
 
 ## 3. Manual Installation by Platform

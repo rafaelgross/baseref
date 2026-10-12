@@ -256,7 +256,6 @@ CREATE TABLE IF NOT EXISTS screening_decisions (
     notes TEXT,
     decided_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     rating TINYINT UNSIGNED NULL DEFAULT NULL,
-    PRIMARY KEY (id),
     UNIQUE KEY uk_article_phase_rev (article_id, phase, reviewer_id, is_consensus),
     KEY idx_reviewer (reviewer_id),
     KEY idx_reason (reason_id),
