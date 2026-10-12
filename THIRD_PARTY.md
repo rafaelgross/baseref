@@ -1,0 +1,47 @@
+# Third-Party Dependencies and External Services
+
+This document details all bundled front-end third-party libraries, licenses, local file paths, and external online services integrated with BaseRef.
+
+---
+
+## 1. Bundled Front-End Libraries (Vendored)
+
+All core front-end libraries used for charting, network visualization, word clouds, file export, and iconography are **served locally** from `assets/vendor/` with pinned versions. 
+
+> **CDN Verification Note:**  
+> A comprehensive scan of the codebase confirms that **none of these libraries are loaded via public CDNs** (such as cdnjs, jsDelivr, or unpkg). All corresponding `<script>` and `<link>` tags in the application point exclusively to relative local paths (`assets/vendor/...`).
+
+| Library | Version | License | Local File Path | Original Distribution / Source |
+|---|---|---|---|---|
+| **Chart.js** | 4.4.3 | MIT | `assets/vendor/chart.js-4.4.3/chart.umd.min.js` | npm `chart.js@4.4.3/dist` |
+| **vis-network** | 9.1.9 | Apache-2.0 / MIT (dual) | `assets/vendor/vis-network-9.1.9/vis-network.min.js` | npm `vis-network@9.1.9/standalone/umd` |
+| **WordCloud2.js** | 1.2.2 | MIT | `assets/vendor/wordcloud2-1.2.2/wordcloud2.min.js` | cdnjs `wordcloud2.js/1.2.2` |
+| **FileSaver.js** | 2.0.5 | MIT | `assets/vendor/filesaver-2.0.5/FileSaver.min.js` | cdnjs `FileSaver.js/2.0.5` |
+| **Font Awesome Free** | 6.5.1 | Icons: CC BY 4.0<br>Fonts: SIL OFL 1.1<br>Code: MIT | `assets/vendor/fontawesome-6.5.1/css/all.min.css`<br>`assets/vendor/fontawesome-6.5.1/webfonts/*` | cdnjs `font-awesome/6.5.1` |
+| **D3.js** | 7.9.0 | ISC | `assets/vendor/d3-7.9.0/d3.min.js` | npm `d3@7.9.0/dist` |
+| **topojson-client** | 3.1.0 | ISC | `assets/vendor/topojson-client-3.1.0/topojson-client.min.js` | npm `topojson-client@3.1.0/dist` |
+| **SheetJS (xlsx)** | 0.18.5 | Apache-2.0 | `assets/vendor/xlsx-0.18.5/xlsx.full.min.js` | npm `xlsx@0.18.5/dist` |
+| **QRCode.js** | 1.0.0 | MIT | `assets/vendor/qrcodejs-1.0.0/qrcode.min.js` | cdnjs `qrcodejs/1.0.0` |
+
+---
+
+## 2. Bundled Datasets & Backend Libraries
+
+* **World Map Boundaries**: `assets/data/countries-110m.json` (TopoJSON dataset for the country production map, served locally).
+* **MaxMind DB Reader**: `lib/vendor/maxmind-db/` (Apache-2.0) for reading local GeoIP `.mmdb` database files offline.
+
+---
+
+## 3. External Online Services & Integrations
+
+BaseRef relies on or optionally integrates with the following external web services:
+
+| Service | Provider / URL | Purpose | Required or Optional | Data Transmitted |
+|---|---|---|---|---|
+| **Google OAuth 2.0** | Google (`accounts.google.com`) | Secure authentication / user sign-in | **Required** (for standard login) | OAuth 2.0 handshake tokens, user email, profile name, and picture. |
+| **GTranslate (gtranslate.io)** | GTranslate Inc. (`cdn.gtranslate.net/widgets/latest/flags.js`) | Client-side interface language switcher (flags and dynamic translation of UI labels) | **External script** (loaded in `index.php`) | Browser language selection and translated DOM text strings. |
+| **Google Fonts** | Google (`fonts.googleapis.com`) | Web typography (Inter font family) | **External stylesheet** | Standard HTTP headers and client IP address. |
+| **OpenAlex API** | OurResearch (`api.openalex.org`) | Metadata enrichment (abstracts, citations, open access status) via DOI | **Optional** (user-triggered via button) | List of bibliographic DOIs. Contact email sent via `mailto` for the polite pool. |
+| **MyMemory Translation** | Translated S.r.l. (`api.mymemory.translated.net`) | Server-side translation proxy for abstracts and exclusion reasons | **Optional** (user-triggered via button) | Text snippets (up to 450 characters) to be translated. |
+| **AI Providers (Groq / Gemini / Anthropic)** | Groq Inc., Google AI Studio, or Anthropic | Optional automated title/abstract screening suggestions | **Optional** (requires API key) | Article title, year, journal, abstract, and project criteria. Never sends full papers. |
+| **YouTube** | Google / YouTube (`www.youtube-nocookie.com`) | Embedded video tutorial on the Help modal | **Optional** (shown only when opened) | Standard iframe embed headers. |

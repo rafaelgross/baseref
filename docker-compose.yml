@@ -1,0 +1,61 @@
+services:
+  db:
+    image: mariadb:10.11
+    container_name: baseref_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-baseref_root_secret}
+      MYSQL_DATABASE: ${DB_NAME:-prisma_slr}
+      MYSQL_USER: ${DB_USER:-baseref}
+      MYSQL_PASSWORD: ${DB_PASS:-baseref_secret_password}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./sql/install.sql:/docker-entrypoint-initdb.d/01_install.sql:ro
+    ports:
+      - "33066:3306"
+    networks:
+      - baseref_net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: baseref_web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PORT:-8080}:80"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-prisma_slr}
+      DB_USER: ${DB_USER:-baseref}
+      DB_PASS: ${DB_PASS:-baseref_secret_password}
+      DB_CHARSET: utf8mb4
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8080/auth/callback.php}
+      GOOGLE_SCOPES: ${GOOGLE_SCOPES:-openid email profile}
+      SESSION_LIFETIME: ${SESSION_LIFETIME:-28800}
+      AI_PROVIDER: ${AI_PROVIDER:-groq}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_DAILY_LIMIT: ${AI_DAILY_LIMIT:-100}
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - baseref_net
+
+volumes:
+  db_data:
+
+networks:
+  baseref_net:
+    driver: bridge

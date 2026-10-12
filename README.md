@@ -24,63 +24,58 @@
 
 ## Technology
 
-- **Backend**: PHP 8+ / MySQL
-- **Frontend**: HTML5, CSS3, JavaScript (no framework)
-- **Charts**: Chart.js 4, vis.js 9, D3.js, wordcloud2.js
-- **Local server**: MAMP (macOS/Windows), XAMPP, or any PHP+MySQL server
+- **Backend**: PHP 8.0+ (tested on 8.3) with PDO, MariaDB 10.4+ or MySQL 8.0+ (tested on MariaDB 10.11)
+- **Frontend**: HTML5, CSS3 and plain JavaScript (no framework, no build step)
+- **Charts and networks**: Chart.js 4.4.3, vis-network 9.1.9, D3 7.9.0 + topojson-client 3.1.0, wordcloud2.js 1.2.2, SheetJS 0.18.5 — all served locally from `assets/vendor/` with pinned versions (see `assets/vendor/README.md`)
 
-## Installation (MAMP)
+## Installation
 
-### Requirements
-- [MAMP](https://www.mamp.info/) installed and running
-- PHP 8.0+ and MySQL 8.0+
+BaseRef can be quickly launched using **Docker Compose** or deployed manually on Windows (XAMPP), macOS (MAMP), or Linux (Apache/Nginx).
 
-### Steps
+👉 **For comprehensive step-by-step instructions across all platforms, see [INSTALL.md](INSTALL.md).**
 
-1. **Clone the repository** into MAMP's `htdocs` folder:
-   ```bash
-   cd /Applications/MAMP/htdocs
-   git clone https://github.com/rafaelgross/baseref.git
-   cd baseref
-   ```
+### Quick Start with Docker
 
-2. **Configure the database** in `config/database.php` (copy `config/database.example.php` and fill in your own values):
-   ```php
-   define('DB_HOST', '127.0.0.1');
-   define('DB_PORT', '8889');      // MAMP default = 8889
-   define('DB_NAME', 'baseref');
-   define('DB_USER', 'root');
-   define('DB_PASS', 'root');
-   ```
-
-3. **Create the database** via phpMyAdmin (MAMP → Open WebStart → phpMyAdmin):
-   - Create the `baseref` database (charset: `utf8mb4`)
-   - Import the `sql/schema.sql` file
-
-   **Or via terminal:**
-   ```bash
-   /Applications/MAMP/Library/bin/mysql -u root -proot -P 8889 -h 127.0.0.1 \
-     -e "CREATE DATABASE IF NOT EXISTS baseref CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-   /Applications/MAMP/Library/bin/mysql -u root -proot -P 8889 -h 127.0.0.1 baseref \
-     < sql/schema.sql
-   ```
-
-4. **Configure Google OAuth** in `config/auth.php` (copy `config/auth.example.php`) with your own Google Client ID/Secret.
-
-5. **Open in your browser:**
-   ```
-   http://localhost:8888/baseref/
-   ```
-   > MAMP's default port is 8888. Adjust as needed for your setup.
-
-## Installation (XAMPP / other)
-
-Configure `config/database.php` with:
-```php
-define('DB_PORT', '3306');    // default MySQL port
-define('DB_USER', 'root');    // or your own user
-define('DB_PASS', '');        // or your own password
+```bash
+git clone https://github.com/rafaelgross/baseref.git
+cd baseref
+cp .env.example .env
+# Edit .env and enter your Google OAuth credentials
+docker compose up -d
 ```
+The application will be available at **`http://localhost:8080/`**. The database schema is imported automatically on startup.
+
+---
+
+### Quick Manual Setup
+
+1. **Requirements**: PHP >= 8.0 (`pdo_mysql`, `mbstring`, `curl`, `json`, `xml`, `openssl`), MySQL >= 8.0 or MariaDB >= 10.4, Apache or Nginx.
+2. **Clone the repository**:
+   ```bash
+   git clone https://github.com/rafaelgross/baseref.git
+   ```
+3. **Database initialization**:
+   Create the database and import the unified installation script:
+   ```bash
+   mysql -u baseref -p prisma_slr < sql/install.sql
+   ```
+4. **Configuration**:
+   ```bash
+   cp config/database.example.php config/database.php
+   cp config/auth.example.php     config/auth.php
+   ```
+   Edit both files to provide your database and Google OAuth credentials.
+5. **Detailed platform guides**: Please refer to [INSTALL.md](INSTALL.md) for XAMPP, MAMP, Linux virtual hosts, Nginx rules, and OAuth configuration.
+
+## Verification & Automated Testing
+
+BaseRef includes continuous integration and verification scripts:
+- **CI Workflow**: `.github/workflows/ci.yml` runs full syntax checking (`php -l`) across all PHP files on PHP 8.0, 8.1, 8.2, and 8.3.
+- **Verification Tests**: `php tests/run_tests.php` validates Cohen's Kappa calculation accuracy (including 3-decimal rounding) and PRISMA reason categorization logic without external dependencies.
+
+## Third-Party Libraries & External Services
+
+All core front-end charting, network, and export libraries (Chart.js, vis-network, WordCloud2.js, FileSaver.js, SheetJS, Font Awesome) are **served locally** from `assets/vendor/` without CDN dependencies. For complete licenses, file paths, and external services (Google OAuth, gtranslate.io, OpenAlex, MyMemory), see [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## Basic Usage
 
@@ -110,28 +105,27 @@ define('DB_PASS', '');        // or your own password
 
 ```
 baseref/
-├── api/               # REST endpoints (PHP)
-│   ├── projects.php
-│   ├── import.php
-│   ├── articles.php
-│   ├── duplicates.php
-│   ├── screening.php
-│   ├── kappa.php
-│   ├── prisma-flow.php
-│   ├── bibliometrics.php
-│   └── export.php
+├── api/                 # JSON endpoints (projects, import, duplicates, screening, kappa,
+│                        #   prisma-flow, bibliometrics, export, enrich, translate, ai-screening, ...)
 ├── assets/
-│   ├── css/style.css  # Complete design system
-│   ├── js/            # Scripts
-│   └── img/           # Images
+│   ├── css/             # Design system
+│   ├── js/              # Application scripts
+│   ├── vendor/          # Third-party JS/CSS libraries, pinned versions (see its README)
+│   ├── data/            # World map (TopoJSON) for the country-production map
+│   └── img/
+├── auth/                # Google OAuth callback and logout
 ├── config/
-│   └── database.example.php  # Database configuration template
-├── lib/
-│   └── BibTexParser.php  # Custom BibTeX/RIS/XML/CSV parsers
-├── pages/             # PHP pages (included via index.php)
-├── sql/
-│   └── schema.sql     # Database schema
-└── index.php          # Main router
+│   ├── database.example.php   # → copy to database.php
+│   ├── auth.example.php       # → copy to auth.php
+│   ├── ai.php                 # AI provider defaults (override in ai.local.php)
+│   └── api_guard.php          # Authentication/authorization helpers for the API
+├── lib/                 # Parsers (BibTeX, RIS, PubMed XML, Scopus CSV) and shared helpers
+├── pages/               # Pages rendered inside index.php
+├── sql/                 # Database scripts (see Installation, step 4)
+├── .htaccess            # Blocks web access to config/, sql/, lib/ and sensitive files
+├── index.php            # Main router (authenticated app)
+├── landing.php          # Public landing page
+└── login.php            # Sign-in page
 ```
 
 ## License
@@ -140,12 +134,15 @@ MIT © 2024 — See [LICENSE](LICENSE)
 
 ## Citation
 
-If you use this software in your research, please cite:
+If you use BaseRef in your research, please cite:
 
 ```
-BaseRef: Open-source web system for managing Systematic Literature Reviews.
-GitHub: https://github.com/rafaelgross/baseref
+GROSS, Rafael; GONÇALVES, Rodrigo Franco. BaseRef: plataforma de apoio à pesquisa e gestão
+de referências bibliográficas. Version 1.0.0 [software]. Zenodo, 2026.
+DOI: 10.5281/zenodo.21119457. Available at: https://baseref.com.br/
 ```
+
+Source code: https://github.com/rafaelgross/baseref
 
 ---
 

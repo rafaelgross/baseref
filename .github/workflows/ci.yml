@@ -1,0 +1,38 @@
+name: BaseRef CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  php-lint-and-test:
+    name: PHP Lint & Logic Verification
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.0', '8.1', '8.2', '8.3']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, curl, pdo_mysql, xml, iconv, json
+          coverage: none
+
+      - name: Syntax check (php -l) on all PHP files
+        run: |
+          echo "Checking syntax across all PHP scripts..."
+          find . -type f -name "*.php" -not -path "./lib/vendor/*" -print0 | while IFS= read -r -d '' file; do
+            php -l "$file" > /dev/null || exit 1
+          done
+          echo "All PHP files passed syntax verification."
+
+      - name: Run verification tests (Cohen's Kappa & PRISMA logic)
+        run: |
+          php tests/run_tests.php

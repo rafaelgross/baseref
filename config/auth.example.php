@@ -1,36 +1,41 @@
 <?php
 /**
- * PRISMA-SLR — config/auth.php
- * Configuração do Google OAuth 2.0 e helpers de sessão.
+ * BaseRef — config/auth.php (copy this file to config/auth.php and fill in the values)
+ * Google OAuth 2.0 configuration and session helpers.
  *
- * !! ANTES DE USAR !!
- * 1. Acesse https://console.cloud.google.com/
- * 2. Crie um projeto (ou selecione um existente)
- * 3. Menu "APIs e serviços" → "Credenciais" → "+ Criar Credenciais" → "ID do cliente OAuth"
- * 4. Tipo de aplicativo: "Aplicativo Web"
- * 5. Adicione a URI de redirecionamento autorizada:
- *      http://localhost/prisma-slr/auth/callback.php    (local)
- *      https://seudominio.com/prisma-slr/auth/callback.php  (produção)
- * 6. Copie o "ID do cliente" e o "Segredo do cliente" para as constantes abaixo.
+ * Step-by-step setup of the Google credentials: see "Google sign-in (OAuth 2.0)"
+ * in README.md. In short:
+ * 1. https://console.cloud.google.com/ → create (or select) a project
+ * 2. Configure the OAuth consent screen (scopes: openid, email, profile)
+ * 3. Credentials → Create credentials → OAuth client ID → "Web application"
+ * 4. Authorized redirect URI = the exact URL of auth/callback.php, e.g.
+ *      http://localhost/auth/callback.php           (local, XAMPP)
+ *      http://localhost:8888/auth/callback.php      (local, MAMP default port)
+ *      https://your-domain.org/auth/callback.php    (production)
+ * 5. Paste the Client ID and Client secret below.
+ *
+ * BaseRef must be served from the web server's document root (not a sub-folder):
+ * redirects such as /login.php are absolute paths.
  */
 
-// ─── Credenciais do Google OAuth ──────────────────────────────────────────────
-define('GOOGLE_CLIENT_ID',     'COLE_SEU_CLIENT_ID_AQUI.apps.googleusercontent.com');
-define('GOOGLE_CLIENT_SECRET', 'COLE_SEU_CLIENT_SECRET_AQUI');
+// ─── Google OAuth credentials ─────────────────────────────────────────────────
+define('GOOGLE_CLIENT_ID',     getenv('GOOGLE_CLIENT_ID') ?: 'PASTE_YOUR_CLIENT_ID_HERE.apps.googleusercontent.com');
+define('GOOGLE_CLIENT_SECRET', getenv('GOOGLE_CLIENT_SECRET') ?: 'PASTE_YOUR_CLIENT_SECRET_HERE');
 
-// URI de redirecionamento — deve ser idêntica à cadastrada no Google Cloud Console
-define('GOOGLE_REDIRECT_URI',  'http://localhost/prisma-slr/auth/callback.php');
+// Redirect URI — must be identical (scheme, host, port, path) to the one
+// registered in the Google Cloud Console
+define('GOOGLE_REDIRECT_URI',  getenv('GOOGLE_REDIRECT_URI') ?: 'http://localhost/auth/callback.php');
 
 // Scopes solicitados (email + perfil básico)
-define('GOOGLE_SCOPES', 'openid email profile');
+define('GOOGLE_SCOPES', getenv('GOOGLE_SCOPES') ?: 'openid email profile');
 
 // URLs do Google OAuth 2.0
 define('GOOGLE_AUTH_URL',  'https://accounts.google.com/o/oauth2/v2/auth');
 define('GOOGLE_TOKEN_URL', 'https://oauth2.googleapis.com/token');
 define('GOOGLE_USER_URL',  'https://www.googleapis.com/oauth2/v3/userinfo');
 
-// Duração da sessão: 8 horas
-define('SESSION_LIFETIME', 8 * 3600);
+// Duração da sessão: 8 horas (ou valor definido por variável de ambiente em segundos)
+define('SESSION_LIFETIME', getenv('SESSION_LIFETIME') ? (int) getenv('SESSION_LIFETIME') : (8 * 3600));
 
 // ─── Inicializa sessão segura ──────────────────────────────────────────────────
 function startSecureSession(): void
@@ -39,7 +44,7 @@ function startSecureSession(): void
         session_set_cookie_params([
             'lifetime' => SESSION_LIFETIME,
             'path'     => '/',
-            'secure'   => false, // mude para true em HTTPS (produção)
+            'secure'   => false, // set to true when the site is served over HTTPS (production)
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
@@ -80,7 +85,7 @@ function requireLogin(): void
         // Salva URL desejada para redirecionar após login
         startSecureSession();
         $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'] ?? '/';
-        header('Location: /prisma-slr/login.php');
+        header('Location: /login.php');
         exit;
     }
 }

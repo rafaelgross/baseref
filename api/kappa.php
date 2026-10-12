@@ -1,15 +1,19 @@
 <?php
 /**
- * PRISMA-SLR - API: Inter-rater agreement (Cohen's kappa) and multi-reviewer mode
+ * PRISMA-SLR - API: Concordância entre revisores (kappa de Cohen) e multirrevisor
  *
  * GET  /api/kappa.php?project_id=N&phase=screening
- *        → Cohen's kappa, contingency table, pending conflicts,
- *          project reviewers and screening mode
+ *        → kappa de Cohen, tabela de contingência, conflitos pendentes,
+ *          revisores do projeto e modo de triagem
  * POST /api/kappa.php  { action: "consensus", article_id, phase, decision, reason_id?, notes? }
- *        → records a consensus decision (conflict resolution)
+ *        → registra decisão de consenso (resolução de conflito)
  * POST /api/kappa.php  { action: "set_mode", project_id, screening_mode: "single"|"dual" }
- * POST /api/kappa.php  { action: "add_member", project_id, email }
+ * POST /api/kappa.php  { action: "add_member", project_id, email, role?: "reviewer"|"support" }
+ * POST /api/kappa.php  { action: "set_role", project_id, user_id, role: "reviewer"|"support" }
  * POST /api/kappa.php  { action: "remove_member", project_id, user_id }
+ *
+ * Papéis: reviewer = revisor cego (entra no kappa); support = apoio (vê as decisões dos outros,
+ * fora do kappa e do status oficial). Conflitos só aparecem para dono, admin e apoio.
  */
 
 require_once __DIR__ . '/../config/database.php';
@@ -31,7 +35,7 @@ if ($method === 'GET') {
     if (!in_array($phase, ['screening', 'eligibility'])) $phase = 'screening';
     requireProjectAccess($pdo, $projectId);
 
-    // Mode and reviewers
+    // Modo e revisores
     $stmt = $pdo->prepare("SELECT screening_mode, user_id FROM projects WHERE id = ?");
     $stmt->execute([$projectId]);
     $proj = $stmt->fetch();
@@ -45,14 +49,18 @@ if ($method === 'GET') {
     ");
     $stmt->execute([$projectId, $projectId]);
     $members = $stmt->fetchAll();
+    $supportIds = array_map('intval', array_column(array_filter($members, fn($m) => $m['role'] === 'support'), 'id'));
+    $notSupport = $supportIds ? ' AND sd.reviewer_id NOT IN (' . implode(',', $supportIds) . ')' : '';
+    $myRole     = projectRole($pdo, $projectId, (int) $apiUser['id']);
+    $canSeeOthers = in_array($myRole, ['owner', 'admin', 'support'], true);
 
-    // Pairs of individual decisions per article (two most active reviewers)
+    // Pares de decisões individuais por artigo (dois revisores mais ativos)
     $stmt = $pdo->prepare("
         SELECT sd.article_id, sd.reviewer_id, sd.decision
         FROM screening_decisions sd
         JOIN articles a ON a.id = sd.article_id
         WHERE a.project_id = ? AND a.is_duplicate = 0
-              AND sd.phase = ? AND sd.is_consensus = 0 AND sd.reviewer_id IS NOT NULL
+              AND sd.phase = ? AND sd.is_consensus = 0 AND sd.reviewer_id IS NOT NULL $notSupport
     ");
     $stmt->execute([$projectId, $phase]);
     $rows = $stmt->fetchAll();
@@ -60,7 +68,7 @@ if ($method === 'GET') {
     $byReviewer = [];
     foreach ($rows as $r) $byReviewer[$r['reviewer_id']][$r['article_id']] = $r['decision'];
 
-    // Two reviewers with the most decisions
+    // Dois revisores com mais decisões
     uasort($byReviewer, fn($a, $b) => count($b) <=> count($a));
     $reviewerIds = array_slice(array_keys($byReviewer), 0, 2);
 
@@ -73,14 +81,14 @@ if ($method === 'GET') {
         $nJoint = count($joint);
 
         if ($nJoint > 0) {
-            // 3×3 contingency table
+            // Tabela de contingência 3×3
             $table = array_fill_keys($cats, array_fill_keys($cats, 0));
             foreach ($joint as $articleId => $decA) {
                 $decB = $byReviewer[$rB][$articleId];
                 $table[$decA][$decB]++;
             }
 
-            // Cohen's kappa: κ = (po − pe) / (1 − pe)
+            // Kappa de Cohen: κ = (po − pe) / (1 − pe)
             $po = 0; $margA = array_fill_keys($cats, 0); $margB = array_fill_keys($cats, 0);
             foreach ($cats as $c1) {
                 $po += $table[$c1][$c1];
@@ -93,20 +101,20 @@ if ($method === 'GET') {
             $pe  = 0;
             foreach ($cats as $c) $pe += ($margA[$c] / $nJoint) * ($margB[$c] / $nJoint);
 
-            $kappa     = ($pe < 1) ? round(($po - $pe) / (1 - $pe), 4) : 1.0;
+            $kappa     = ($pe < 1) ? (($po - $pe) / (1 - $pe)) : 1.0;
             $agreement = round($po * 100, 2);
             $contingency = $table;
         }
     }
 
-    // Pending conflicts: 2+ diverging individual decisions with no consensus yet
+    // Conflitos pendentes: 2+ decisões individuais divergentes e sem consenso
     $stmt = $pdo->prepare("
         SELECT a.id, a.title, a.year, a.journal,
                GROUP_CONCAT(CONCAT(u.name, ': ', sd.decision) ORDER BY sd.reviewer_id SEPARATOR ' | ') AS votes
         FROM articles a
         JOIN screening_decisions sd ON sd.article_id = a.id AND sd.phase = ? AND sd.is_consensus = 0
         LEFT JOIN users u ON u.id = sd.reviewer_id
-        WHERE a.project_id = ? AND a.is_duplicate = 0
+        WHERE a.project_id = ? AND a.is_duplicate = 0 $notSupport
               AND NOT EXISTS (SELECT 1 FROM screening_decisions sc
                               WHERE sc.article_id = a.id AND sc.phase = ? AND sc.is_consensus = 1)
         GROUP BY a.id
@@ -114,11 +122,13 @@ if ($method === 'GET') {
         ORDER BY a.id
     ");
     $stmt->execute([$phase, $projectId, $phase]);
-    $conflicts = $stmt->fetchAll();
+    // Revisor cego não vê o voto dos outros
+    $conflicts = $canSeeOthers ? $stmt->fetchAll() : [];
 
     jsonResponse([
         'screening_mode' => $proj['screening_mode'] ?? 'single',
         'is_owner'       => (int) ($proj['user_id'] ?? 0) === (int) $apiUser['id'],
+        'my_role'        => $myRole,
         'members'        => $members,
         'phase'          => $phase,
         'kappa'          => $kappa,
@@ -148,11 +158,15 @@ case 'consensus':
         jsonResponse(['error' => true, 'message' => 'article_id, phase e decision válidos são obrigatórios'], 422);
     }
     requireArticleAccess($pdo, $articleId);
+    $role = projectRole($pdo, (int) $pdo->query("SELECT project_id FROM articles WHERE id = " . $articleId)->fetchColumn(), (int) $apiUser['id']);
+    if (!in_array($role, ['owner', 'admin'], true)) {
+        jsonResponse(['error' => true, 'message' => 'Apenas o dono do projeto resolve conflitos'], 403);
+    }
 
     $reasonId = !empty($data['reason_id']) ? (int) $data['reason_id'] : null;
     $notes    = $data['notes'] ?? null;
 
-    // Replaces any previous consensus
+    // Substitui qualquer consenso anterior
     $pdo->prepare("DELETE FROM screening_decisions WHERE article_id = ? AND phase = ? AND is_consensus = 1")
         ->execute([$articleId, $phase]);
     $pdo->prepare("
@@ -160,7 +174,7 @@ case 'consensus':
         VALUES (?, ?, 1, ?, ?, ?, ?)
     ")->execute([$articleId, (int) $apiUser['id'], $phase, $decision, $reasonId, $notes]);
 
-    // Recalculates status (same logic as screening.php)
+    // Recalcula status (mesma lógica do screening.php)
     require_once __DIR__ . '/screening_status.php';
     $newStatus = computeArticleStatusShared($pdo, $articleId);
     $pdo->prepare("UPDATE articles SET status = ? WHERE id = ?")->execute([$newStatus, $articleId]);
@@ -192,10 +206,37 @@ case 'add_member':
     if (!$member) {
         jsonResponse(['error' => true, 'message' => 'Usuário não encontrado — o revisor precisa ter feito login no sistema ao menos uma vez'], 404);
     }
+    $role = ($data['role'] ?? 'reviewer') === 'support' ? 'support' : 'reviewer';
 
-    $pdo->prepare("INSERT IGNORE INTO project_members (project_id, user_id, role) VALUES (?, ?, 'reviewer')")
-        ->execute([$projectId, $member['id']]);
-    jsonResponse(['success' => true, 'message' => 'Revisor ' . $member['name'] . ' adicionado ao projeto']);
+    $pdo->prepare("INSERT INTO project_members (project_id, user_id, role) VALUES (?, ?, ?)
+                   ON DUPLICATE KEY UPDATE role = VALUES(role)")
+        ->execute([$projectId, $member['id'], $role]);
+    jsonResponse(['success' => true, 'message' => 'Revisor ' . $member['name'] . ($role === 'support' ? ' (apoio)' : ' (cego)') . ' adicionado ao projeto']);
+
+case 'set_role':
+    $projectId = (int) ($data['project_id'] ?? 0);
+    $userId    = (int) ($data['user_id'] ?? 0);
+    $role      = $data['role'] ?? '';
+    if (!$projectId || !$userId || !in_array($role, ['reviewer', 'support'], true)) {
+        jsonResponse(['error' => true, 'message' => 'project_id, user_id e role (reviewer|support) são obrigatórios'], 422);
+    }
+    requireProjectAccess($pdo, $projectId);
+    requireProjectOwner($pdo, $projectId, (int) $apiUser['id']);
+
+    $pdo->prepare("UPDATE project_members SET role = ? WHERE project_id = ? AND user_id = ?")
+        ->execute([$role, $projectId, $userId]);
+
+    // O status oficial depende de quem vota: recalcula os artigos que esse revisor decidiu
+    require_once __DIR__ . '/screening_status.php';
+    $stmt = $pdo->prepare("SELECT DISTINCT sd.article_id FROM screening_decisions sd
+                           JOIN articles a ON a.id = sd.article_id
+                           WHERE a.project_id = ? AND sd.reviewer_id = ?");
+    $stmt->execute([$projectId, $userId]);
+    $upd = $pdo->prepare("UPDATE articles SET status = ? WHERE id = ?");
+    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $aid) {
+        $upd->execute([computeArticleStatusShared($pdo, (int) $aid), $aid]);
+    }
+    jsonResponse(['success' => true, 'message' => 'Papel atualizado']);
 
 case 'remove_member':
     $projectId = (int) ($data['project_id'] ?? 0);
@@ -217,7 +258,7 @@ default:
 // -----------------------------------------------------------------
 
 /**
- * Landis & Koch (1977) interpretation for kappa.
+ * Interpretação de Landis & Koch (1977) para o kappa.
  */
 function interpretKappa(float $k): string
 {
@@ -230,7 +271,7 @@ function interpretKappa(float $k): string
 }
 
 /**
- * Only the project owner (or admin) can change mode and members.
+ * Apenas o dono do projeto (ou admin) altera modo e membros.
  */
 function requireProjectOwner(PDO $pdo, int $projectId, int $userId): void
 {

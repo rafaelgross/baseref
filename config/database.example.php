@@ -4,12 +4,12 @@
  * MySQL via PDO - MAMP (root/root, porta 8889)
  */
 
-define('DB_HOST', '127.0.0.1');
-define('DB_PORT', '3306');        // use 8889 para MAMP no macOS
-define('DB_NAME', 'prisma_slr');
-define('DB_USER', 'seu_usuario');
-define('DB_PASS', 'sua_senha');
-define('DB_CHARSET', 'utf8mb4');
+define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
+define('DB_PORT', getenv('DB_PORT') ?: '3306');        // 8889 for MAMP on macOS
+define('DB_NAME', getenv('DB_NAME') ?: 'prisma_slr');
+define('DB_USER', getenv('DB_USER') ?: 'your_db_user');
+define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : 'your_db_password');
+define('DB_CHARSET', getenv('DB_CHARSET') ?: 'utf8mb4');
 
 function getDB(): PDO {
     static $pdo = null;
