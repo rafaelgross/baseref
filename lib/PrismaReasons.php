@@ -45,3 +45,29 @@ function isNotRetrievedReason(?string $reason, $flag): bool
     if ($flag !== null && $flag !== '') return (int) $flag === 1;
     return $reason !== null && preg_match(notRetrievedPattern(), $reason) === 1;
 }
+
+/**
+ * Escopo da concordância na ELEGIBILIDADE (kappa): só entram os "reports assessed for eligibility"
+ * do fluxograma PRISMA 2020, isto é, os relatórios que chegaram ao texto completo e foram de fato avaliados.
+ * Ficam de fora (a decisão continua gravada, só não entra neste cálculo):
+ *   - registros que não passaram pela triagem do revisor de referência (o dono do projeto): entraram na
+ *     elegibilidade por divergência/consenso na triagem, não pelo fluxo normal;
+ *   - relatórios não recuperados (motivo "texto completo indisponível" ou marcado not_retrieved).
+ *
+ * @param int[]  $jointIds       artigos com decisão de elegibilidade dos dois revisores
+ * @param array  $refScreening   [article_id => 'include'|'exclude'|'uncertain']  triagem do revisor de referência
+ * @param array  $refEligibility [article_id => ['decision' => ..., 'reason' => ?string, 'not_retrieved' => mixed]]
+ * @return array{ids:int[], not_retrieved:int, screening_divergence:int}
+ */
+function eligibilityReportsAssessed(array $jointIds, array $refScreening, array $refEligibility): array
+{
+    $ids = []; $notRetrieved = 0; $divergence = 0;
+    foreach ($jointIds as $id) {
+        if (($refScreening[$id] ?? null) !== 'include') { $divergence++; continue; }
+        $el = $refEligibility[$id] ?? null;
+        if ($el && ($el['decision'] ?? '') === 'exclude'
+            && isNotRetrievedReason($el['reason'] ?? null, $el['not_retrieved'] ?? null)) { $notRetrieved++; continue; }
+        $ids[] = $id;
+    }
+    return ['ids' => $ids, 'not_retrieved' => $notRetrieved, 'screening_divergence' => $divergence];
+}

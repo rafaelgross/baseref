@@ -99,12 +99,10 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
   <meta name="description" content="BaseRef — Plataforma de apoio à pesquisa e gestão de referências bibliográficas">
 
   <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/vendor/inter-gfonts-v20/inter.css">
 
   <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/vendor/fontawesome-6.5.1/css/all.min.css">
 
   <!-- Styles -->
   <link rel="stylesheet" href="assets/css/style.css?v=<?= @filemtime(__DIR__ . '/assets/css/style.css') ?>">
@@ -134,18 +132,18 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
   <script src="https://cdn.gtranslate.net/widgets/latest/flags.js" defer></script>
 
   <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="assets/vendor/chart.js-4.4.3/chart.umd.min.js"></script>
   <!-- vis.js Network -->
-  <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+  <script src="assets/vendor/vis-network-9.1.9/vis-network.min.js"></script>
   <!-- QRCode.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="assets/vendor/qrcodejs-1.0.0/qrcode.min.js"></script>
   <!-- WordCloud2.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
+  <script src="assets/vendor/wordcloud2-1.2.2/wordcloud2.min.js"></script>
   <!-- FileSaver.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="assets/vendor/filesaver-2.0.5/FileSaver.min.js"></script>
   <!-- D3.js + TopoJSON (choropleth map) -->
-  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script src="assets/vendor/d3-7.9.0/d3.min.js"></script>
+  <script src="assets/vendor/topojson-client-3.1.0/topojson-client.min.js"></script>
 </head>
 <body>
 
@@ -447,7 +445,7 @@ $jsVer = fn($f) => '?v=' . @filemtime(__DIR__ . '/' . $f);
 <script src="assets/js/screening.js<?= $jsVer('assets/js/screening.js') ?>"></script>
 <?php elseif ($page === 'bibliometrics'): ?>
 <!-- SheetJS — generates .xlsx files in the browser to export each chart's data -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="assets/vendor/xlsx-0.18.5/xlsx.full.min.js"></script>
 <script src="assets/js/bib-i18n.js<?= $jsVer('assets/js/bib-i18n.js') ?>"></script>
 <script src="assets/js/bibliometrics.js<?= $jsVer('assets/js/bibliometrics.js') ?>"></script>
 <?php elseif ($page === 'prisma-flow'): ?>

@@ -1,8 +1,8 @@
 <?php
 /**
- * PRISMA-SLR - PRISMA 2020 Flow Diagram
- * Renders in three styles (B&W publication, color, dark) with
- * vector export (SVG) and raster export at 150/300/600 dpi for submission.
+ * PRISMA-SLR - Diagrama de Fluxo PRISMA 2020
+ * Renderização em três estilos (publicação P&B, colorido, escuro) com
+ * exportação vetorial (SVG) e raster em 150/300/600 dpi para submissão.
  */
 if (!$projectId): ?>
 <div class="empty-state"><i class="fa fa-triangle-exclamation"></i>
@@ -12,7 +12,7 @@ if (!$projectId): ?>
 <div class="page-header">
   <div>
     <h1 class="page-title"><i class="fa fa-diagram-project"></i> Diagrama PRISMA 2020</h1>
-    <p class="page-subtitle" id="pf-subtitle">Fluxo de identificação, triagem, elegibilidade e inclusão de estudos.</p>
+    <p class="page-subtitle" id="pf-subtitle">Fluxo de identificação, triagem e inclusão de estudos — modelo PRISMA 2020 para bases de dados.</p>
   </div>
   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
     <button class="btn btn-outline" onclick="exportDiagram('png')">
@@ -28,10 +28,10 @@ if (!$projectId): ?>
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 260px;gap:20px;align-items:start;min-width:0">
-  <!-- Diagram: occupies all remaining space, internal scroll if the SVG is wide -->
+  <!-- Diagrama: ocupa todo espaço restante, scroll interno se SVG for largo -->
   <div class="card" style="min-width:0;overflow:hidden;padding:20px 24px 24px">
 
-    <!-- Figure options bar -->
+    <!-- Barra de opções de figura -->
     <div class="pf-toolbar">
       <div class="pf-tool">
         <label id="pf-lbl-style">Estilo</label>
@@ -62,14 +62,14 @@ if (!$projectId): ?>
 
     <div id="prisma-loading" class="text-center" style="padding:60px"><div class="spinner"></div></div>
     <div style="overflow-x:auto">
-      <div id="prisma-diagram" class="pf-paper" style="display:none"></div>
+      <div id="prisma-diagram" class="pf-paper notranslate" translate="no" style="display:none"></div>
     </div>
     <p class="pf-hint" id="pf-hint">
       SVG = vetorial (recomendado para o periódico). PNG a 300 dpi atende à maioria das diretrizes de submissão.
     </p>
   </div>
 
-  <!-- Data panel: fixed 260px column, never leaves the viewport -->
+  <!-- Painel de dados: coluna fixa 260px, nunca sai da tela -->
   <div>
     <div class="card" style="margin-bottom:12px">
       <h3 class="card-title" style="font-size:0.85rem" id="pf-panel-id">Identificação</h3>
@@ -79,10 +79,6 @@ if (!$projectId): ?>
       <h3 class="card-title" style="font-size:0.85rem" id="pf-panel-sc">Triagem</h3>
       <div id="detail-screening" class="detail-section"></div>
     </div>
-    <div class="card" style="margin-bottom:12px">
-      <h3 class="card-title" style="font-size:0.85rem" id="pf-panel-el">Elegibilidade</h3>
-      <div id="detail-eligibility" class="detail-section"></div>
-    </div>
     <div class="card">
       <h3 class="card-title" style="font-size:0.85rem" id="pf-panel-inc">Incluídos</h3>
       <div id="detail-included" class="detail-section"></div>
@@ -90,7 +86,7 @@ if (!$projectId): ?>
   </div>
 </div>
 
-<!-- Hidden canvas for export -->
+<!-- Canvas oculto para export -->
 <canvas id="export-canvas" style="display:none"></canvas>
 
 <style>
@@ -102,7 +98,7 @@ if (!$projectId): ?>
 .detail-num { font-weight:700; color:var(--primary); }
 .prisma-box { cursor:default; }
 
-/* ── Figure options bar ───────────────────────────── */
+/* ── Barra de opções da figura ───────────────────────────── */
 .pf-toolbar { display:flex; flex-wrap:wrap; gap:22px; align-items:flex-end;
   padding:0 0 16px; margin-bottom:18px; border-bottom:1px solid var(--border); }
 .pf-tool { display:flex; flex-direction:column; gap:6px; }
@@ -123,7 +119,7 @@ if (!$projectId): ?>
 .pf-check input { accent-color:var(--primary); cursor:pointer; }
 .pf-hint { margin:14px 0 0; font-size:.74rem; color:var(--text-muted); line-height:1.5; }
 
-/* "Paper" area: shows the figure exactly as it will be exported */
+/* Área "papel": mostra a figura exatamente como será exportada */
 .pf-paper { display:inline-block; }
 .pf-paper.pf-light { background:#fff; padding:10px; border-radius:4px;
   box-shadow:0 1px 10px rgba(0,0,0,.16); }
@@ -139,13 +135,14 @@ const PF_PROJECT_ID = <?= $projectId ?>;
 
 // ── Translations ────────────────────────────────────────────────
 const PF_T = {
+  // Rótulos das caixas seguem o modelo oficial PRISMA 2020 para revisões novas que
+  // buscaram apenas em bases de dados e registros (Page et al., 2021) e suas
+  // traduções publicadas (PT: Galvão et al., 2022; ES: Yepes-Nuñez et al., 2021).
   pt: {
-    // Page
-    subtitle:     'Fluxo de identificação, triagem, elegibilidade e inclusão de estudos.',
+    subtitle:     'Fluxo de identificação, triagem e inclusão de estudos — modelo PRISMA 2020 para bases de dados.',
     btn_png:      'Exportar PNG',
     btn_svg:      'Exportar SVG',
     btn_refresh:  'Atualizar',
-    // Toolbar
     lbl_style:    'Estilo',
     st_pub:       'Publicação',
     st_col:       'Colorido',
@@ -155,44 +152,44 @@ const PF_T = {
     opt_reasons:  'Motivos na figura',
     opt_caption:  'Legenda',
     hint:         'SVG = vetorial (recomendado para o periódico). PNG a 300 dpi atende à maioria das diretrizes de submissão.',
-    // Side panel headers
     panel_id:     'Identificação',
     panel_sc:     'Triagem',
-    panel_el:     'Elegibilidade',
     panel_inc:    'Incluídos',
-    // Detail rows
-    total_identified:     'Total identificados',
-    duplicates_removed:   'Duplicatas removidas',
-    unique_screening:     'Únicos para triagem',
-    screened:             'Avaliados',
-    included_sc:          'Incluídos',
-    excluded_sc:          'Excluídos',
-    fulltext_assessed:    'Texto completo avaliados',
-    excluded_ft:          'Excluídos',
-    studies_included:     'Estudos incluídos',
-    no_reason:            'Sem motivo',
-    // SVG diagram boxes
-    d_records_id:    'Registros identificados',
-    d_for_screening: 'Para triagem (únicos)',
-    d_dup_removed:   'Duplicatas removidas',
-    d_for_elig:      'Para elegibilidade',
-    d_exc_sc:        'Excluídos na triagem',
-    d_exc_ft:        'Excluídos (texto completo)',
-    d_studies_inc:   'Estudos incluídos',
+    total_identified:      'Registros identificados',
+    duplicates_removed:    'Duplicatas removidas',
+    unique_screening:      'Registros únicos',
+    records_screened:      'Registros triados',
+    records_excluded:      'Registros excluídos',
+    reports_sought:        'Relatos buscados para recuperação',
+    reports_not_retrieved: 'Relatos não recuperados',
+    reports_assessed:      'Relatos avaliados para elegibilidade',
+    reports_excluded:      'Relatos excluídos',
+    awaiting_ft:           'Aguardando decisão do texto completo',
+    pending_sc:            'Aguardando triagem',
+    studies_included:      'Estudos incluídos na revisão',
+    no_reason:             'Sem motivo informado',
+    other_sources:         'Outras fontes',
+    d_identified_from:     'Registros identificados de:',
+    d_databases:           'Bases de dados',
+    d_removed_before:      'Registros removidos antes da triagem:',
+    d_dup_removed:         'Registros duplicados removidos',
+    d_screened:            'Registros triados',
+    d_excluded:            'Registros excluídos',
+    d_sought:              'Relatos buscados para recuperação',
+    d_not_retrieved:       'Relatos não recuperados',
+    d_assessed:            'Relatos avaliados para elegibilidade',
+    d_reports_excluded:    'Relatos excluídos:',
+    d_included:            'Estudos incluídos na revisão',
     d_phase_id:      'IDENTIFICAÇÃO',
     d_phase_sc:      'TRIAGEM',
-    d_phase_el:      'ELEGIBILIDADE',
     d_phase_inc:     'INCLUÍDOS',
-    d_see_reasons:   '▼ ver motivos',
     d_no_db:         'Bases não disponíveis',
-    d_sources:       'Registros identificados em:',
     d_more:          'outros motivos',
     d_caption:       'Fluxograma PRISMA 2020',
-    // Export file name
     filename:        'prisma-flow',
   },
   en: {
-    subtitle:     'Identification, screening, eligibility and inclusion flow.',
+    subtitle:     'Identification, screening and inclusion of studies — PRISMA 2020 flow diagram for databases.',
     btn_png:      'Export PNG',
     btn_svg:      'Export SVG',
     btn_refresh:  'Refresh',
@@ -207,38 +204,42 @@ const PF_T = {
     hint:         'SVG = vector (recommended for the journal). PNG at 300 dpi meets most submission guidelines.',
     panel_id:     'Identification',
     panel_sc:     'Screening',
-    panel_el:     'Eligibility',
     panel_inc:    'Included',
-    total_identified:     'Total identified',
-    duplicates_removed:   'Duplicates removed',
-    unique_screening:     'Unique for screening',
-    screened:             'Assessed',
-    included_sc:          'Included',
-    excluded_sc:          'Excluded',
-    fulltext_assessed:    'Full text assessed',
-    excluded_ft:          'Excluded',
-    studies_included:     'Studies included',
-    no_reason:            'No reason',
-    d_records_id:    'Records identified',
-    d_for_screening: 'For screening (unique)',
-    d_dup_removed:   'Duplicates removed',
-    d_for_elig:      'For eligibility',
-    d_exc_sc:        'Excluded in screening',
-    d_exc_ft:        'Excluded (full text)',
-    d_studies_inc:   'Studies included',
+    total_identified:      'Records identified',
+    duplicates_removed:    'Duplicates removed',
+    unique_screening:      'Unique records',
+    records_screened:      'Records screened',
+    records_excluded:      'Records excluded',
+    reports_sought:        'Reports sought for retrieval',
+    reports_not_retrieved: 'Reports not retrieved',
+    reports_assessed:      'Reports assessed for eligibility',
+    reports_excluded:      'Reports excluded',
+    awaiting_ft:           'Awaiting full-text decision',
+    pending_sc:            'Awaiting screening',
+    studies_included:      'Studies included in review',
+    no_reason:             'No reason given',
+    other_sources:         'Other sources',
+    d_identified_from:     'Records identified from:',
+    d_databases:           'Databases',
+    d_removed_before:      'Records removed before screening:',
+    d_dup_removed:         'Duplicate records removed',
+    d_screened:            'Records screened',
+    d_excluded:            'Records excluded',
+    d_sought:              'Reports sought for retrieval',
+    d_not_retrieved:       'Reports not retrieved',
+    d_assessed:            'Reports assessed for eligibility',
+    d_reports_excluded:    'Reports excluded:',
+    d_included:            'Studies included in review',
     d_phase_id:      'IDENTIFICATION',
     d_phase_sc:      'SCREENING',
-    d_phase_el:      'ELIGIBILITY',
     d_phase_inc:     'INCLUDED',
-    d_see_reasons:   '▼ see reasons',
     d_no_db:         'Databases not available',
-    d_sources:       'Records identified from:',
     d_more:          'other reasons',
     d_caption:       'PRISMA 2020 flow diagram',
     filename:        'prisma-flow-en',
   },
   es: {
-    subtitle:     'Flujo de identificación, cribado, elegibilidad e inclusión de estudios.',
+    subtitle:     'Identificación, cribado e inclusión de estudios — diagrama de flujo PRISMA 2020 para bases de datos.',
     btn_png:      'Exportar PNG',
     btn_svg:      'Exportar SVG',
     btn_refresh:  'Actualizar',
@@ -253,32 +254,36 @@ const PF_T = {
     hint:         'SVG = vectorial (recomendado para la revista). PNG a 300 dpi cumple la mayoría de las directrices de envío.',
     panel_id:     'Identificación',
     panel_sc:     'Cribado',
-    panel_el:     'Elegibilidad',
     panel_inc:    'Incluidos',
-    total_identified:     'Total identificados',
-    duplicates_removed:   'Duplicados eliminados',
-    unique_screening:     'Únicos para cribado',
-    screened:             'Evaluados',
-    included_sc:          'Incluidos',
-    excluded_sc:          'Excluidos',
-    fulltext_assessed:    'Texto completo evaluado',
-    excluded_ft:          'Excluidos',
-    studies_included:     'Estudios incluidos',
-    no_reason:            'Sin motivo',
-    d_records_id:    'Registros identificados',
-    d_for_screening: 'Para cribado (únicos)',
-    d_dup_removed:   'Duplicados eliminados',
-    d_for_elig:      'Para elegibilidad',
-    d_exc_sc:        'Excluidos en cribado',
-    d_exc_ft:        'Excluidos (texto completo)',
-    d_studies_inc:   'Estudios incluidos',
+    total_identified:      'Registros identificados',
+    duplicates_removed:    'Duplicados eliminados',
+    unique_screening:      'Registros únicos',
+    records_screened:      'Registros cribados',
+    records_excluded:      'Registros excluidos',
+    reports_sought:        'Publicaciones buscadas para su recuperación',
+    reports_not_retrieved: 'Publicaciones no recuperadas',
+    reports_assessed:      'Publicaciones evaluadas para decidir su elegibilidad',
+    reports_excluded:      'Publicaciones excluidas',
+    awaiting_ft:           'Pendientes de decisión a texto completo',
+    pending_sc:            'Pendientes de cribado',
+    studies_included:      'Estudios incluidos en la revisión',
+    no_reason:             'Sin motivo indicado',
+    other_sources:         'Otras fuentes',
+    d_identified_from:     'Registros identificados desde:',
+    d_databases:           'Bases de datos',
+    d_removed_before:      'Registros eliminados antes del cribado:',
+    d_dup_removed:         'Registros duplicados eliminados',
+    d_screened:            'Registros cribados',
+    d_excluded:            'Registros excluidos',
+    d_sought:              'Publicaciones buscadas para su recuperación',
+    d_not_retrieved:       'Publicaciones no recuperadas',
+    d_assessed:            'Publicaciones evaluadas para decidir su elegibilidad',
+    d_reports_excluded:    'Publicaciones excluidas:',
+    d_included:            'Estudios incluidos en la revisión',
     d_phase_id:      'IDENTIFICACIÓN',
     d_phase_sc:      'CRIBADO',
-    d_phase_el:      'ELEGIBILIDAD',
     d_phase_inc:     'INCLUIDOS',
-    d_see_reasons:   '▼ ver motivos',
     d_no_db:         'Bases no disponibles',
-    d_sources:       'Registros identificados en:',
     d_more:          'otros motivos',
     d_caption:       'Diagrama de flujo PRISMA 2020',
     filename:        'prisma-flow-es',
@@ -287,18 +292,19 @@ const PF_T = {
 
 function getT() { return PF_T[window.PRISMA_LANG || 'pt']; }
 
-// Exclusion reasons are free text typed by the researcher (usually in
-// Portuguese) and are not part of the interface's translation dictionary —
-// that's why they need to be translated separately when the active language isn't PT.
+// Motivos de exclusão são texto livre digitado pelo pesquisador (geralmente em
+// português) e não fazem parte do dicionário de tradução da interface — por
+// isso precisam ser traduzidos à parte quando o idioma ativo não é PT.
 const REASON_TRANSLATE_CACHE = {};
 async function translateReasonsIfNeeded(prisma) {
   const lang      = window.PRISMA_LANG || 'pt';
   const targetMap = { en: 'en', es: 'es' };
   const target    = targetMap[lang];
-  const lists     = [prisma?.screening?.exclusion_reasons, prisma?.eligibility?.exclusion_reasons];
+  const sc        = prisma?.screening || {};
+  const lists     = [sc.records_reasons, sc.not_retrieved_reasons, sc.reports_reasons];
 
   if (!target) {
-    // Switched back to PT — restore the original text without re-translating
+    // Voltou para PT — restaura o texto original sem precisar traduzir de novo
     lists.forEach(list => (list || []).forEach(r => { if (r._original) r.reason = r._original; }));
     return;
   }
@@ -339,7 +345,6 @@ function applyPFLang() {
   set('pf-btn-refresh', t.btn_refresh);
   set('pf-panel-id',    t.panel_id);
   set('pf-panel-sc',    t.panel_sc);
-  set('pf-panel-el',    t.panel_el);
   set('pf-panel-inc',   t.panel_inc);
   set('pf-lbl-style',   t.lbl_style);
   set('pf-st-pub',      t.st_pub);
@@ -352,16 +357,16 @@ function applyPFLang() {
   set('pf-hint',        t.hint);
 }
 
-// ── Figure styles ───────────────────────────────────────────
-// "publication" is the default: black-and-white, safe for printing and for
-// grayscale conversion, Arial typography (accepted by journals).
+// ── Estilos da figura ───────────────────────────────────────────
+// "publication" é o padrão: preto-e-branco, seguro em impressão e em
+// conversão para escala de cinza, tipografia Arial (aceita por periódicos).
 const PF_STYLES = {
   publication: {
     paperLight: true,
     font:       "Arial, Helvetica, 'Liberation Sans', sans-serif",
     bg:         '#ffffff',
     radius:     2,
-    numFirst:   false,          // label on top, "(n = X)" below
+    numFirst:   false,          // rótulo em cima, "(n = X)" embaixo
     main:  { fill:'#ffffff', stroke:'#111111', sw:1.1, num:'#000000', label:'#111111', sub:'#333333' },
     db:    { fill:'#ffffff', stroke:'#111111', sw:1.1, num:'#000000', label:'#111111', sub:'#333333' },
     exc:   { fill:'#f2f2f2', stroke:'#111111', sw:1.1, num:'#000000', label:'#111111', sub:'#333333', dash:'' },
@@ -448,54 +453,52 @@ async function loadFlow() {
 }
 
 function renderDetails(d) {
-  const t = getT();
+  const t  = getT();
+  const id = d.identification, sc = d.screening;
+  const row = (label, n, opts = {}) =>
+    `<div class="detail-row"${opts.indent ? ' style="padding-left:12px' + (opts.small ? ';font-size:0.75rem' : '') + '"' : ''}>`
+    + `<span>${escHtml(label)}</span><span class="${opts.indent ? '' : 'detail-num'}"`
+    + `${opts.color ? ` style="color:${opts.color}"` : ''}>${n}</span></div>`;
+  const reasons = (list, small) => (list || []).map(r => row(r.reason || t.no_reason, r.total, { indent: true, small })).join('');
 
   // Identification
-  let id_html = `<div class="detail-row"><span>${t.total_identified}</span><span class="detail-num">${d.identification.total_identified}</span></div>`;
-  (d.identification.by_database||[]).forEach(b => {
-    id_html += `<div class="detail-row" style="padding-left:12px"><span>${escHtml(b.name)}</span><span>${b.count}</span></div>`;
-  });
-  id_html += `<div class="detail-row"><span>${t.duplicates_removed}</span><span class="detail-num">${d.identification.duplicates_removed}</span></div>`;
-  id_html += `<div class="detail-row"><span>${t.unique_screening}</span><span class="detail-num">${d.identification.unique_after_dedup}</span></div>`;
-  document.getElementById('detail-identification').innerHTML = id_html;
+  let h = row(t.total_identified, id.total_identified);
+  (id.by_database || []).forEach(b => { h += row(b.name || t.other_sources, b.count, { indent: true }); });
+  h += row(t.duplicates_removed, id.duplicates_removed, { color: 'var(--accent-red)' });
+  h += row(t.unique_screening, id.unique_after_dedup);
+  document.getElementById('detail-identification').innerHTML = h;
 
-  // Screening
-  let sc_html = `<div class="detail-row"><span>${t.screened}</span><span class="detail-num">${d.screening.records_screened}</span></div>`;
-  sc_html += `<div class="detail-row"><span>${t.included_sc}</span><span class="detail-num" style="color:var(--accent-green)">${d.screening.records_included}</span></div>`;
-  sc_html += `<div class="detail-row"><span>${t.excluded_sc}</span><span class="detail-num" style="color:var(--accent-red)">${d.screening.records_excluded}</span></div>`;
-  (d.screening.exclusion_reasons||[]).forEach(r => {
-    sc_html += `<div class="detail-row" style="padding-left:12px;font-size:0.75rem"><span>${escHtml(r.reason||t.no_reason)}</span><span>${r.total}</span></div>`;
-  });
-  document.getElementById('detail-screening').innerHTML = sc_html;
-
-  // Eligibility
-  let el_html = `<div class="detail-row"><span>${t.fulltext_assessed}</span><span class="detail-num">${d.eligibility.assessed_full_text}</span></div>`;
-  el_html += `<div class="detail-row"><span>${t.excluded_ft}</span><span class="detail-num">${d.eligibility.excluded_full_text}</span></div>`;
-  (d.eligibility.exclusion_reasons||[]).forEach(r => {
-    el_html += `<div class="detail-row" style="padding-left:12px"><span>${escHtml(r.reason||t.no_reason)}</span><span>${r.total}</span></div>`;
-  });
-  document.getElementById('detail-eligibility').innerHTML = el_html;
+  // Screening (título/resumo + recuperação + elegibilidade do texto completo)
+  h  = row(t.records_screened, sc.records_screened);
+  h += row(t.records_excluded, sc.records_excluded, { color: 'var(--accent-red)' }) + reasons(sc.records_reasons, true);
+  h += row(t.reports_sought, sc.reports_sought);
+  h += row(t.reports_not_retrieved, sc.reports_not_retrieved, { color: 'var(--accent-red)' }) + reasons(sc.not_retrieved_reasons, true);
+  h += row(t.reports_assessed, sc.reports_assessed);
+  h += row(t.reports_excluded, sc.reports_excluded, { color: 'var(--accent-red)' }) + reasons(sc.reports_reasons, false);
+  if (sc.records_pending > 0)    h += row(t.pending_sc, sc.records_pending, { color: 'var(--text-muted)' });
+  if (sc.awaiting_full_text > 0) h += row(t.awaiting_ft, sc.awaiting_full_text, { color: 'var(--text-muted)' });
+  document.getElementById('detail-screening').innerHTML = h;
 
   // Included
-  document.getElementById('detail-included').innerHTML = `
-    <div class="detail-row"><span>${t.studies_included}</span><span class="detail-num">${d.included.studies_included}</span></div>`;
+  document.getElementById('detail-included').innerHTML =
+    row(t.studies_included, d.included.studies_included, { color: 'var(--accent-green)' });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  Diagram drawing engine
-//  Content-driven layout: each box's height is computed from the text it
-//  contains, so nothing is ever cut off or overlapping.
+//  Motor de desenho do diagrama
+//  Layout dirigido pelo conteúdo: a altura de cada caixa é calculada a partir
+//  do texto que ela contém, então nada é cortado nem sobreposto.
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Geometry (SVG user units = px at 96 dpi)
+// Geometria (unidades de usuário SVG = px a 96 dpi)
 const PF_GEO = {
-  M:        16,   // margin
-  phaseW:   26,   // phase bar width
+  M:        16,   // margem
+  phaseW:   26,   // largura da barra de fase
   phaseGap: 14,
-  mainW:    300,  // main column
-  colGap:   72,   // gap between the main column and the exclusion boxes
-  excW:     300,  // exclusion column
-  rowGap:   34,   // vertical gap between rows (arrow length)
+  mainW:    300,  // coluna principal
+  colGap:   72,   // espaço entre coluna principal e caixas de exclusão
+  excW:     300,  // coluna de exclusões
+  rowGap:   34,   // espaço vertical entre linhas (comprimento da seta)
   padX:     12,
   padY:     11,
 };
@@ -504,7 +507,7 @@ PF_GEO.excX  = PF_GEO.mainX + PF_GEO.mainW + PF_GEO.colGap;
 PF_GEO.W     = PF_GEO.excX + PF_GEO.excW + PF_GEO.M;
 PF_GEO.mainCX = PF_GEO.mainX + PF_GEO.mainW / 2;
 
-/** Approximate line wrapping using an average character-width metric (Arial). */
+/** Quebra de linha aproximada por métrica média de caractere (Arial). */
 function pfWrap(text, maxW, fs, bold) {
   const k   = bold ? 0.585 : 0.525;
   const max = Math.max(6, Math.floor(maxW / (fs * k)));
@@ -515,7 +518,7 @@ function pfWrap(text, maxW, fs, bold) {
     if ((last + ' ' + w).length <= max) out[out.length - 1] = last + ' ' + w;
     else out.push(w);
   });
-  // A single word longer than the box: split it into chunks
+  // Palavra única maior que a caixa: corta em pedaços
   const fixed = [];
   out.forEach(l => {
     if (l.length <= max) { fixed.push(l); return; }
@@ -524,14 +527,14 @@ function pfWrap(text, maxW, fs, bold) {
   return fixed.length ? fixed : [''];
 }
 
-/** Total height of a set of text lines. */
+/** Altura total de um conjunto de linhas de texto. */
 function pfMeasure(lines) {
   let h = PF_GEO.padY * 2;
   lines.forEach(l => { h += (l.gapBefore || 0) + l.lh; });
   return Math.round(h);
 }
 
-/** Draws a box + centered text lines. */
+/** Desenha caixa + linhas de texto centralizadas. */
 function pfDrawBox(x, y, w, lines, box, S, extraAttrs) {
   let cy = y + PF_GEO.padY;
   let txt = '';
@@ -555,7 +558,7 @@ function pfDrawBox(x, y, w, lines, box, S, extraAttrs) {
 
 function round(n) { return Math.round(n * 100) / 100; }
 
-/** Lines for a main box (number + label). */
+/** Linhas de uma caixa principal (número + rótulo). */
 function pfBoxLines(S, box, num, label, w) {
   const inner = w - PF_GEO.padX * 2;
   const L = [];
@@ -571,7 +574,7 @@ function pfBoxLines(S, box, num, label, w) {
   return L;
 }
 
-/** Extra lines listing the exclusion reasons. */
+/** Linhas extras com os motivos de exclusão. */
 function pfReasonLines(S, box, reasons, w) {
   const inner = w - PF_GEO.padX * 2;
   const L = [];
@@ -590,142 +593,112 @@ function pfReasonLines(S, box, reasons, w) {
   return L;
 }
 
+/**
+ * Caixa em formato de lista (título em negrito + itens "rótulo (n = X)"), usada nas
+ * caixas compostas do PRISMA 2020: "Records identified from:" e "Records removed
+ * before screening:". Itens com indent = 1 aparecem como marcadores.
+ */
+function pfListLines(S, box, title, items, w) {
+  const inner = w - PF_GEO.padX * 2;
+  const L = [];
+  pfWrap(title, inner, S.fs.label, true).forEach(tx =>
+    L.push({ t: tx, fs: S.fs.label, fw: 700, fill: box.label, lh: S.fs.label + 3.5, align: 'start' }));
+  items.forEach((it, i) => {
+    const bullet = it.indent ? '• ' : '';
+    const pad    = it.indent ? '   ' : '';
+    const fs     = it.indent ? S.fs.sub : S.fs.label;
+    pfWrap(`${it.label} (n = ${it.n})`, inner - (it.indent ? 14 : 0), fs).forEach((line, j) =>
+      L.push({ t: (j === 0 ? bullet : pad) + line, fs, fw: it.indent ? 400 : 600,
+               fill: it.indent ? box.sub : box.num, lh: fs + 3.5, align: 'start',
+               gapBefore: (i === 0 && j === 0) ? 4 : 0 }));
+  });
+  return L;
+}
+
 function renderDiagram(d) {
-  const S    = PF_STYLES[pfStyle] || PF_STYLES.publication;
-  const G    = PF_GEO;
-  const t    = getT();
-  const id   = d.identification;
-  const sc   = d.screening;
-  const el   = d.eligibility;
-  const inc  = d.included;
+  const S   = PF_STYLES[pfStyle] || PF_STYLES.publication;
+  const G   = PF_GEO;
+  const t   = getT();
+  const id  = d.identification;
+  const sc  = d.screening;
+  const inc = d.included;
 
   const showReasons = document.getElementById('pf-opt-reasons')?.checked !== false;
   const showCaption = document.getElementById('pf-opt-caption')?.checked === true;
+  const repReasons  = (sc.reports_reasons || []).filter(r => r.total > 0);
 
-  const scReasons = (sc.exclusion_reasons || []).filter(r => r.total > 0);
-  const elReasons = (el.exclusion_reasons || []).filter(r => r.total > 0);
+  // ── Linhas do modelo oficial PRISMA 2020 (bases de dados e registros) ───────
+  // phase: 0 = Identification, 1 = Screening, 2 = Included
+  const dbs = id.by_database || [];
+  const idLines = dbs.length
+    ? pfListLines(S, S.db, t.d_identified_from,
+        [{ label: t.d_databases, n: id.total_identified }]
+          .concat(dbs.map(b => ({ label: b.name || t.other_sources, n: b.count, indent: 1 }))), G.mainW)
+    : [{ t: t.d_no_db, fs: S.fs.label, fw: 400, fill: S.main.label, lh: S.fs.label + 4 }];
+  const rows = [
+    { phase: 0, mLines: idLines, mBox: S.db,
+      exc: { lines: pfListLines(S, S.exc, t.d_removed_before,
+               [{ label: t.d_dup_removed, n: id.duplicates_removed }], G.excW) } },
+    { phase: 1, num: sc.records_screened, label: t.d_screened,
+      exc: { num: sc.records_excluded, label: t.d_excluded } },
+    { phase: 1, num: sc.reports_sought, label: t.d_sought,
+      exc: { num: sc.reports_not_retrieved, label: t.d_not_retrieved } },
+    { phase: 1, num: sc.reports_assessed, label: t.d_assessed,
+      exc: { num: sc.reports_excluded, label: t.d_reports_excluded, reasons: repReasons } },
+    { phase: 2, num: inc.studies_included, label: t.d_included, exc: null },
+  ];
 
   let svg = '';
   let y   = G.M + 6;
-
-  // ── 1. Sources (databases) ────────────────────────────────
-  const dbs = id.by_database || [];
-  let dbBottom, dbTop = y;
-
-  if (!dbs.length) {
-    const lines = [{ t: t.d_no_db, fs: S.fs.label, fw: 400, fill: S.main.label, lh: S.fs.label + 4 }];
-    svg += pfDrawBox(G.mainX, y, G.mainW, lines, S.main, S);
-    dbBottom = y + pfMeasure(lines);
-    svg += pfArrow(G.mainCX, dbBottom, dbBottom + G.rowGap, S.arrow, S);
-    y = dbBottom + G.rowGap;
-  } else if (dbs.length <= 3) {
-    // Side-by-side boxes, converging into the total
-    const gap = 12;
-    const bw  = Math.floor((G.mainW - gap * (dbs.length - 1)) / dbs.length);
-    let maxH  = 0;
-    const boxes = dbs.map((s, i) => {
-      const bx    = G.mainX + i * (bw + gap);
-      const lines = pfBoxLines(S, S.db, s.count, s.name, bw);
-      const h     = pfMeasure(lines);
-      if (h > maxH) maxH = h;
-      return { bx, bw, lines, h };
-    });
-    boxes.forEach(b => { svg += pfDrawBox(b.bx, y, b.bw, padTo(b.lines, maxH, S), S.db, S); });
-    dbBottom = y + maxH;
-    // Orthogonal connectors converging to the center
-    const railY = dbBottom + 16;
-    boxes.forEach(b => {
-      const cx = b.bx + b.bw / 2;
-      svg += `<path d="M${round(cx)},${dbBottom} V${railY}" fill="none"`
-           + ` stroke="${S.arrow.color}" stroke-width="${S.arrow.sw}"/>`;
-    });
-    if (boxes.length > 1) {
-      const x1 = boxes[0].bx + boxes[0].bw / 2;
-      const x2 = boxes[boxes.length - 1].bx + boxes[boxes.length - 1].bw / 2;
-      svg += `<path d="M${round(x1)},${railY} H${round(x2)}" fill="none"`
-           + ` stroke="${S.arrow.color}" stroke-width="${S.arrow.sw}"/>`;
-    }
-    svg += pfArrow(G.mainCX, railY, railY + G.rowGap - 16, S.arrow, S);
-    y = railY + G.rowGap - 16;
-  } else {
-    // Many databases: single box listing the sources (official PRISMA 2020 style)
-    const inner = G.mainW - G.padX * 2;
-    const lines = [];
-    pfWrap(t.d_sources, inner, S.fs.label, true).forEach(tx =>
-      lines.push({ t: tx, fs: S.fs.label, fw: 700, fill: S.db.label, lh: S.fs.label + 3.5 }));
-    dbs.forEach((s, i) => {
-      pfWrap(`${s.name} (n = ${s.count})`, inner - 10, S.fs.sub).forEach((line, j) =>
-        lines.push({ t: (j === 0 ? '• ' : '   ') + line, fs: S.fs.sub, fw: 400, fill: S.db.sub,
-                     lh: S.fs.sub + 3, align: 'start', gapBefore: (i === 0 && j === 0) ? 5 : 0 }));
-    });
-    svg += pfDrawBox(G.mainX, y, G.mainW, lines, S.db, S);
-    dbBottom = y + pfMeasure(lines);
-    svg += pfArrow(G.mainCX, dbBottom, dbBottom + G.rowGap, S.arrow, S);
-    y = dbBottom + G.rowGap;
-  }
-
-  // ── 2..5. Main rows ───────────────────────────────────
-  const rows = [
-    { num: id.total_identified,   label: t.d_records_id,
-      exc: { num: id.duplicates_removed, label: t.d_dup_removed, reasons: [] } },
-    { num: id.unique_after_dedup, label: t.d_for_screening,
-      exc: { num: sc.records_excluded || 0, label: t.d_exc_sc, reasons: scReasons } },
-    { num: sc.records_included || 0, label: t.d_for_elig,
-      exc: { num: el.excluded_full_text || 0, label: t.d_exc_ft, reasons: elReasons } },
-    { num: inc.studies_included,  label: t.d_studies_inc, exc: null },
-  ];
-
   const laid = [];
   rows.forEach((r, i) => {
-    const mLines = pfBoxLines(S, S.main, r.num, r.label, G.mainW);
+    const mBox   = r.mBox || S.main;
+    const mLines = r.mLines || pfBoxLines(S, mBox, r.num ?? 0, r.label, G.mainW);
     const mH     = pfMeasure(mLines);
     let eLines = null, eH = 0;
     if (r.exc) {
-      eLines = pfBoxLines(S, S.exc, r.exc.num, r.exc.label, G.excW);
-      if (showReasons) eLines = eLines.concat(pfReasonLines(S, S.exc, r.exc.reasons, G.excW));
+      eLines = r.exc.lines || pfBoxLines(S, S.exc, r.exc.num ?? 0, r.exc.label, G.excW);
+      if (showReasons && r.exc.reasons) eLines = eLines.concat(pfReasonLines(S, S.exc, r.exc.reasons, G.excW));
       eH = pfMeasure(eLines);
     }
     const rowH = Math.max(mH, eH);
-    const top  = y;
-    laid.push({ top, rowH, mY: top + (rowH - mH) / 2, mH, mLines,
-                eY: eLines ? top + (rowH - eH) / 2 : 0, eH, eLines, exc: r.exc });
-    y = top + rowH + (i < rows.length - 1 ? G.rowGap : 0);
+    laid.push({ phase: r.phase, top: y, rowH, mY: y + (rowH - mH) / 2, mH, mLines, mBox,
+                eY: eLines ? y + (rowH - eH) / 2 : 0, eH, eLines, exc: r.exc });
+    y += rowH + (i < rows.length - 1 ? G.rowGap : 0);
   });
 
-  // Phase bars (one per row), with boundaries at the midpoint of the gaps
-  const bounds = [];
-  bounds.push(dbTop - 6);
-  bounds.push(laid[0].top + laid[0].rowH + G.rowGap / 2);   // end of Identification
-  bounds.push(laid[1].top + laid[1].rowH + G.rowGap / 2);   // end of Screening
-  bounds.push(laid[2].top + laid[2].rowH + G.rowGap / 2);   // end of Eligibility
-  bounds.push(laid[3].top + laid[3].rowH + 6);              // end of Included
-  const phaseLabels = [t.d_phase_id, t.d_phase_sc, t.d_phase_el, t.d_phase_inc];
-  for (let i = 0; i < 4; i++) {
-    svg = pfPhaseBar(G.M, bounds[i], G.phaseW, bounds[i+1] - bounds[i] - 4, phaseLabels[i], S) + svg;
-  }
+  // Faixas de fase: Identification (linha 0), Screening (linhas 1–3), Included (linha 4)
+  const phaseLabels = [t.d_phase_id, t.d_phase_sc, t.d_phase_inc];
+  [0, 1, 2].forEach(ph => {
+    const rs   = laid.filter(r => r.phase === ph);
+    const first = rs[0], last = rs[rs.length - 1];
+    const top  = laid.indexOf(first) === 0 ? first.top - 6 : first.top - G.rowGap / 2;
+    const bot  = laid.indexOf(last) === laid.length - 1 ? last.top + last.rowH + 6 : last.top + last.rowH + G.rowGap / 2;
+    svg = pfPhaseBar(G.M, top, G.phaseW, bot - top - 4, phaseLabels[ph], S) + svg;
+  });
 
-  // Boxes + arrows
+  // Caixas + setas
   laid.forEach((r, i) => {
-    svg += pfDrawBox(G.mainX, r.mY, G.mainW, r.mLines, S.main, S);
+    svg += pfDrawBox(G.mainX, r.mY, G.mainW, r.mLines, r.mBox, S);
     if (r.eLines) {
       const yMid = r.mY + r.mH / 2;
       svg += pfArrowH(G.mainX + G.mainW, yMid, G.excX, S.arrowExc, S);
-      const clickable = r.exc.reasons && r.exc.reasons.length
+      const reasons = r.exc.reasons || [];
+      const clickable = reasons.length
         ? `onclick="openReasonsModal('${encodeURIComponent(JSON.stringify(
-              r.exc.reasons.map(x => `${x.reason || getT().no_reason}: ${x.total}`)))}','${
+              reasons.map(x => `${x.reason || getT().no_reason}: ${x.total}`)))}','${
               String(r.exc.label).replace(/'/g, "\\'")}')" style="cursor:pointer"`
         : '';
       svg += pfDrawBox(G.excX, r.eY, G.excW, r.eLines, S.exc, S, clickable);
     }
     if (i < laid.length - 1) {
-      const next = laid[i + 1];
-      svg += pfArrow(G.mainCX, r.mY + r.mH, next.mY, S.arrow, S);
+      svg += pfArrow(G.mainCX, r.mY + r.mH, laid[i + 1].mY, S.arrow, S);
     }
   });
 
   let H = laid[laid.length - 1].top + laid[laid.length - 1].rowH + G.M + 6;
 
-  // Optional caption (for slides/reports; journals require it in the manuscript text)
+  // Legenda opcional (para slides/relatórios; periódicos pedem no texto)
   if (showCaption) {
     const cap = `${t.d_caption}${flowData?.project_title ? ' — ' + flowData.project_title : ''}`;
     const capLines = pfWrap(cap, G.W - G.M * 2, S.fs.caption);
@@ -745,7 +718,7 @@ function renderDiagram(d) {
   diag.innerHTML = out;
 }
 
-/** Equalizes the database boxes' height by adding spacing before the 1st line. */
+/** Iguala a altura das caixas de bases adicionando espaçamento antes da 1ª linha. */
 function padTo(lines, targetH, S) {
   const h = pfMeasure(lines);
   if (h >= targetH) return lines;
@@ -785,14 +758,14 @@ function pfArrowH(x1, y, x2, A, S) {
 
 function pfPhaseBar(x, y, w, h, label, S) {
   const midX = x + w / 2, midY = y + h / 2;
-  // Shrinks the label (rotated 90°) if the bar is short, so it never overflows
+  // Encolhe o rótulo (girado 90°) se a barra for curta, para nunca vazar
   const need = label.length * (S.fs.phase * 0.62 + 1.1);
   let fs = S.fs.phase, ls = 1.1;
   if (need > h - 12) {
     ls = 0.4;
     fs = Math.max(6, Math.min(S.fs.phase, (h - 12) / (label.length * 0.62 + 0.4)));
   }
-  // dy in em units: more portable than dominant-baseline across converters/Word/Illustrator
+  // dy em em: mais portável que dominant-baseline em conversores/Word/Illustrator
   return `<g>
     <rect x="${x}" y="${round(y)}" width="${w}" height="${round(h)}" rx="${S.radius}"
           fill="${S.phase.fill}" opacity="${S.phase.opacity}"/>
@@ -803,7 +776,7 @@ function pfPhaseBar(x, y, w, h, label, S) {
   </g>`;
 }
 
-// ── Export ──────────────────────────────────────────────────────────────
+// ── Exportação ──────────────────────────────────────────────────────────────
 function exportDiagram(format) {
   const svgEl = document.getElementById('prisma-svg');
   if (!svgEl) { showToast('Gere o diagrama primeiro', 'warning'); return; }
@@ -813,13 +786,13 @@ function exportDiagram(format) {
   const H = svgEl.viewBox.baseVal.height;
   const fname = `${t.filename}-${pfStyle}`;
 
-  // Clean clone: no onclick/cursor, with explicit width/height (Word, Illustrator, LaTeX)
+  // Clone limpo: sem onclick/cursor, com width/height explícitos (Word, Illustrator, LaTeX)
   const clone = svgEl.cloneNode(true);
   clone.removeAttribute('style');
   clone.setAttribute('width',  W);
   clone.setAttribute('height', H);
   clone.querySelectorAll('[onclick]').forEach(n => { n.removeAttribute('onclick'); n.removeAttribute('style'); });
-  // concatenated to avoid colliding with PHP's short_open_tag
+  // concatenado para não colidir com short_open_tag do PHP
   const svgData = '<' + '?xml version="1.0" encoding="UTF-8"?' + '>\n'
                 + new XMLSerializer().serializeToString(clone);
 
@@ -829,7 +802,7 @@ function exportDiagram(format) {
     return;
   }
 
-  // PNG: scale = dpi / 96 (SVG user units are px at 96 dpi)
+  // PNG: escala = dpi / 96 (unidades de usuário SVG são px a 96 dpi)
   const scale = Math.max(1, pfDpi / 96);
   const img   = new Image();
   const url   = URL.createObjectURL(new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' }));
@@ -859,7 +832,7 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// ── Exclusion reasons modal ────────────────────────────────────────────
+// ── Modal de motivos de exclusão ────────────────────────────────────────────
 function openReasonsModal(jsonStr, title) {
   let reasons = [];
   try { reasons = JSON.parse(decodeURIComponent(jsonStr)); } catch(e) { return; }
@@ -898,12 +871,12 @@ function openReasonsModal(jsonStr, title) {
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 }
 
-// ── Delete duplicates ──────────────────────────────────────────────────────
+// ── Deletar duplicatas ──────────────────────────────────────────────────────
 function deleteDuplicates() {
   const count = flowData?.prisma?.identification?.duplicates_removed ?? 0;
   if (!count) { showToast('Nenhuma duplicata encontrada.', 'info'); return; }
 
-  // Confirmation modal
+  // Modal de confirmação
   const modal = document.createElement('div');
   modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;
     display:flex;align-items:center;justify-content:center;padding:20px`;
@@ -940,67 +913,7 @@ function deleteDuplicates() {
       if (d.error) throw new Error(d.message);
       showToast(`${d.deleted ?? count} duplicata(s) excluída(s) com sucesso.`, 'success');
       modal.remove();
-      loadFlow(); // reload the diagram
-    } catch(e) {
-      showToast('Erro: ' + e.message, 'error');
-      modal.remove();
-    }
-  };
-}
-
-// ── Delete excluded records (screening or eligibility) ────────────────────────────
-function deleteExcluded(stage) {
-  const labels = {
-    screened: { label: 'Excluídos na triagem',       status: 'excluded', scope: 'screened' },
-    eligible: { label: 'Excluídos (texto completo)', status: 'excluded', scope: 'eligible' },
-  };
-  const info  = labels[stage];
-  const count = stage === 'screened'
-    ? (flowData?.prisma?.screening?.records_excluded ?? 0)
-    : (flowData?.prisma?.eligibility?.excluded_full_text ?? 0);
-
-  if (!count) { showToast('Nenhum registro encontrado.', 'info'); return; }
-
-  const modal = document.createElement('div');
-  modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;
-    display:flex;align-items:center;justify-content:center;padding:20px`;
-  modal.innerHTML = `
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;
-      padding:28px 32px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-        <span style="font-size:1.6rem">🗑️</span>
-        <h2 style="margin:0;font-size:1.05rem;font-weight:700">Excluir registros?</h2>
-      </div>
-      <p style="color:var(--text-muted);font-size:.87rem;margin:0 0 22px;line-height:1.55">
-        Isso removerá permanentemente <strong style="color:var(--text)">${count} artigo(s)</strong>
-        da categoria <strong style="color:var(--text)">${info.label}</strong>. Esta ação não pode ser desfeita.
-      </p>
-      <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button id="exc-cancel" class="btn btn-ghost">Cancelar</button>
-        <button id="exc-confirm" class="btn btn-danger" style="background:#ef4444;color:#fff;border-color:#ef4444">
-          <i class="fa fa-trash"></i> Excluir ${count} registro(s)
-        </button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-
-  modal.querySelector('#exc-cancel').onclick = () => modal.remove();
-  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
-
-  modal.querySelector('#exc-confirm').onclick = async () => {
-    const btn = modal.querySelector('#exc-confirm');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Excluindo...';
-    try {
-      const r = await fetch(
-        `api/prisma-flow.php?action=delete_excluded&stage=${stage}&project_id=${PF_PROJECT_ID}`,
-        { method: 'POST' }
-      );
-      const d = await r.json();
-      if (d.error) throw new Error(d.message);
-      showToast(`${d.deleted ?? count} registro(s) excluído(s) com sucesso.`, 'success');
-      modal.remove();
-      loadFlow();
+      loadFlow(); // recarrega diagrama
     } catch(e) {
       showToast('Erro: ' + e.message, 'error');
       modal.remove();

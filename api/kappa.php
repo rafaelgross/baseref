@@ -2,9 +2,10 @@
 /**
  * PRISMA-SLR - API: Concordância entre revisores (kappa de Cohen) e multirrevisor
  *
- * GET  /api/kappa.php?project_id=N&phase=screening
+ * GET  /api/kappa.php?project_id=N&phase=screening|eligibility
  *        → kappa de Cohen, tabela de contingência, conflitos pendentes,
- *          revisores do projeto e modo de triagem
+ *          revisores do projeto e modo de triagem. Na elegibilidade, o kappa considera só os relatórios
+ *          avaliados no texto completo do fluxograma PRISMA (ver lib/PrismaReasons.php).
  * POST /api/kappa.php  { action: "consensus", article_id, phase, decision, reason_id?, notes? }
  *        → registra decisão de consenso (resolução de conflito)
  * POST /api/kappa.php  { action: "set_mode", project_id, screening_mode: "single"|"dual" }
@@ -72,12 +73,43 @@ if ($method === 'GET') {
     uasort($byReviewer, fn($a, $b) => count($b) <=> count($a));
     $reviewerIds = array_slice(array_keys($byReviewer), 0, 2);
 
-    $kappa = null; $contingency = null; $nJoint = 0; $agreement = null;
+    $kappa = null; $contingency = null; $nJoint = 0; $agreement = null; $eligibilityScope = null;
     $cats = ['include', 'exclude', 'uncertain'];
 
     if (count($reviewerIds) === 2) {
         [$rA, $rB] = $reviewerIds;
         $joint = array_intersect_key($byReviewer[$rA], $byReviewer[$rB]);
+
+        // Elegibilidade: só os relatórios avaliados no texto completo do fluxograma PRISMA (sem os não
+        // recuperados e sem os registros vindos de divergência na triagem). Nenhuma decisão é alterada.
+        if ($phase === 'eligibility') {
+            require_once __DIR__ . '/../lib/PrismaReasons.php';
+            ensureReasonFlagColumn($pdo);
+            $ownerId = (int) ($proj['user_id'] ?? 0);
+            $refId   = in_array($ownerId, [$rA, $rB], true) ? $ownerId : $rA;   // revisor do fluxograma: o dono do projeto
+            $stmt = $pdo->prepare("
+                SELECT sd.article_id, sd.phase, sd.decision, er.reason, er.not_retrieved
+                FROM screening_decisions sd
+                JOIN articles a ON a.id = sd.article_id
+                LEFT JOIN exclusion_reasons er ON er.id = sd.reason_id
+                WHERE a.project_id = ? AND a.is_duplicate = 0 AND sd.is_consensus = 0 AND sd.reviewer_id = ?
+                ORDER BY sd.decided_at, sd.id
+            ");
+            $stmt->execute([$projectId, $refId]);
+            $refScreening = []; $refEligibility = [];
+            foreach ($stmt->fetchAll() as $r) {                     // a última decisão de cada fase prevalece
+                if ($r['phase'] === 'screening') $refScreening[(int) $r['article_id']] = $r['decision'];
+                else $refEligibility[(int) $r['article_id']] = ['decision' => $r['decision'], 'reason' => $r['reason'], 'not_retrieved' => $r['not_retrieved']];
+            }
+            $scope = eligibilityReportsAssessed(array_keys($joint), $refScreening, $refEligibility);
+            $eligibilityScope = [
+                'decided_by_both'      => count($joint),
+                'reports_assessed'     => count($scope['ids']),
+                'not_retrieved'        => $scope['not_retrieved'],
+                'screening_divergence' => $scope['screening_divergence'],
+            ];
+            $joint = array_intersect_key($joint, array_flip($scope['ids']));
+        }
         $nJoint = count($joint);
 
         if ($nJoint > 0) {
@@ -135,6 +167,7 @@ if ($method === 'GET') {
         'interpretation' => $kappa !== null ? interpretKappa($kappa) : null,
         'observed_agreement_percent' => $agreement,
         'n_joint'        => $nJoint,
+        'eligibility_scope' => $eligibilityScope,   // só na fase de elegibilidade: o que entrou e o que ficou fora da conta
         'contingency'    => $contingency,
         'categories'     => $cats,
         'conflicts'      => $conflicts,

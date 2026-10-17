@@ -1,13 +1,13 @@
 /**
  * PRISMA-SLR — bibliometrics.js
- * Helper functions + classic bibliometric visualizations (Lotka, Bradford,
- * Word Cloud, Trend Topics, Three-Field Plot, Citations per Year).
+ * Funções auxiliares + visualizações bibliométricas clássicas (Lotka, Bradford,
+ * Word Cloud, Trend Topics, Three-Field Plot, Citações por Ano).
  *
- * Academic quality conventions:
- *  - Axes with title and unit
- *  - N (sample size) and statistical parameters visible
- *  - Accessible, high-contrast colors
- *  - High-resolution PNG export with light background (for publication)
+ * Convenções de qualidade acadêmica:
+ *  - Eixos com título e unidade
+ *  - N (tamanho amostral) e parâmetros estatísticos visíveis
+ *  - Cores acessíveis e contrastantes
+ *  - Exportação PNG em alta resolução com fundo claro (publicação)
  */
 'use strict';
 
@@ -25,7 +25,7 @@ if (typeof Chart !== 'undefined') {
   Chart.defaults.plugins.legend.labels.padding = 16;
 }
 
-// ─── Palette and axis helpers ────────────────────────────────────────────────
+// ─── Helpers de paleta e eixo ────────────────────────────────────────────────
 function generatePalette(n) {
   const base = [
     [0, 212, 255], [0, 229, 160], [116, 192, 252], [229, 153, 247],
@@ -39,9 +39,9 @@ function generatePalette(n) {
 }
 
 /**
- * Text color that follows the theme. Titles and axes used to be fixed in
- * light gray (#cbd5e1/#94a3b8): in light theme — and in PNG export, which
- * forces a white background — the text was nearly illegible in the figure.
+ * Cor de texto que acompanha o tema. Títulos e eixos estavam fixos em cinza
+ * claro (#cbd5e1/#94a3b8): no tema claro — e na exportação PNG, que força fundo
+ * branco — o texto ficava quase ilegível na figura.
  */
 function bibTextColor(strong) {
   const isLight = document.body.classList.contains('theme-light');
@@ -59,10 +59,10 @@ function darkAxisConfig(opts = {}) {
   };
 }
 
-// ─── PNG export (publication mode: light background, high pixel density) ──
-// If the canvas belongs to a Chart.js chart, redraw it natively at a higher
-// resolution (rather than stretching the already-rendered raster, which just
-// blurs the image), then restore the chart to the screen's normal density.
+// ─── Exportação PNG (modo publicação: fundo claro, alta densidade de pixel) ──
+// Se o canvas pertence a um gráfico Chart.js, redesenha nativamente numa
+// resolução maior (em vez de esticar o raster já renderizado, que só borra a
+// imagem) e depois devolve o gráfico à densidade normal da tela.
 function exportCanvasPng(canvasId, filename) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) { typeof showToast === 'function' && showToast('Canvas não encontrado', 'error'); return; }
@@ -157,8 +157,8 @@ function exportElementPng(elementId, filename) {
 }
 
 // =============================================================================
-// ───── LOTKA'S LAW (author productivity) ─────────────────────────────────────
-// Uses bars (observed) + line (theoretical curve). Linear scale for robustness.
+// ───── PRODUTIVIDADE DOS AUTORES (distribuição descritiva, ligada à Lei de Lotka)
+// Barras de observado apenas: sem curva de modelo e sem teste de aderência.
 // =============================================================================
 function buildLotkaChart(canvasId, payload) {
   const canvas = document.getElementById(canvasId);
@@ -166,19 +166,16 @@ function buildLotkaChart(canvasId, payload) {
   bibReplaySave(buildLotkaChart, arguments);
   if (window._lotkaChart) { window._lotkaChart.destroy(); }
 
-  const dist   = payload.distribution;
-  const labels = dist.map(d => d.n_articles + bt(d.n_articles == 1 ? 'unit_article' : 'unit_articles'));
+  const dist     = payload.distribution;
+  const labels   = dist.map(d => d.n_articles + bt(d.n_articles == 1 ? 'unit_article' : 'unit_articles'));
   const observed = dist.map(d => +d.n_authors);
   const totalA   = payload.total_authors || 0;
-  const coef     = payload.lotka_coefficient;
-  // Theoretical Lotka curve f(n) = f(1)/n^a, anchored to the observed number
-  // of authors with 1 article (f1). Anchoring on f1 (rather than the
-  // regression intercept) makes the curve pass through the first observed
-  // point, as in the classic presentation.
-  const f1 = (dist.find(d => +d.n_articles === 1) || {}).n_authors || observed[0] || 0;
-  const theory = coef
-    ? dist.map(d => Math.round(f1 / Math.pow(+d.n_articles, coef.slope)))
-    : [];
+  const totalArt = payload.total_articles || 0;
+
+  // Identifica a amostra: os recortes (todos sem duplicatas × só incluídos) dão resultados diferentes
+  const sample = bt(payload.scope === 'included' ? 'lotka_sample_included' : 'lotka_sample_all',
+                    { a: totalArt, n: totalA })
+               + (payload.source_filter ? ' ' + bt('lotka_sample_db') : '');
 
   const isLight = document.body.classList.contains('theme-light');
   const tc = isLight ? '#475569' : '#94a3b8';
@@ -187,32 +184,21 @@ function buildLotkaChart(canvasId, payload) {
     type: 'bar',
     data: {
       labels,
-      datasets: [
-        {
-          label: bt('lotka_observed', { n: totalA }),
-          data: observed,
-          backgroundColor: 'rgba(0,212,255,0.72)',
-          borderColor: '#00D4FF',
-          borderWidth: 1, borderRadius: 4, order: 2,
-        },
-        ...(theory.length ? [{
-          label: coef ? bt('lotka_theory', { slope: coef.slope }) : bt('lotka_theory_short'),
-          data: theory,
-          type: 'line',
-          borderColor: 'rgba(245,158,11,0.9)',
-          borderDash: [6, 4],
-          pointRadius: 4, pointBackgroundColor: '#f59e0b',
-          fill: false, tension: 0.1, order: 1,
-        }] : []),
-      ],
+      datasets: [{
+        label: bt('lotka_observed', { n: totalA }),
+        data: observed,
+        backgroundColor: 'rgba(0,212,255,0.72)',
+        borderColor: '#00D4FF',
+        borderWidth: 1, borderRadius: 4,
+      }],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'top', labels: { color: tc } },
+        legend: { display: false },
         title: {
           display: true,
-          text: coef ? bt('lotka_title', { slope: coef.slope, n: totalA }) : bt('lotka_title_short'),
+          text: [bt('lotka_title'), sample],
           color: tc, font: { size: 11, weight: '600' },
         },
       },
@@ -228,9 +214,9 @@ function buildLotkaChart(canvasId, payload) {
 }
 
 // =============================================================================
-// ───── BRADFORD'S LAW (journal zones) ────────────────────────────────────────
-// Bars colored by zone (core / related / peripheral) ordered by productivity.
-// Shows the top 30 journals to avoid clutter.
+// ───── LEI DE BRADFORD (zonas de periódicos) ─────────────────────────────────
+// Barras coloridas por zona (núcleo / intermediária / periferia) ordenadas por
+// produtividade. Mostra os 30 primeiros periódicos para não sobrecarregar.
 // =============================================================================
 function buildBradfordChart(canvasId, payload) {
   const canvas = document.getElementById(canvasId);
@@ -239,7 +225,7 @@ function buildBradfordChart(canvasId, payload) {
   if (window._bradfordChart) { window._bradfordChart.destroy(); }
 
   const z      = payload.zones;
-  // Limits to the 30 most productive for readability
+  // Limita aos 30 mais produtivos para legibilidade
   const series = payload.series.slice(0, 30);
 
   const zoneColor = (rank) => {
@@ -251,7 +237,7 @@ function buildBradfordChart(canvasId, payload) {
   const isLight = document.body.classList.contains('theme-light');
   const tc = isLight ? '#475569' : '#94a3b8';
 
-  // Short label (max 25 chars)
+  // Label curto (máx 25 chars)
   const shorten = (s) => s.length > 25 ? s.slice(0, 24) + '…' : s;
 
   window._bradfordChart = new Chart(canvas.getContext('2d'), {
@@ -298,7 +284,7 @@ function buildBradfordChart(canvasId, payload) {
 }
 
 // =============================================================================
-// ───── ANNUAL PRODUCTION + CAGR ──────────────────────────────────────────────
+// ───── PRODUÇÃO ANUAL + CAGR ─────────────────────────────────────────────────
 // =============================================================================
 function buildAnnualGrowthChart(canvasId, payload) {
   const canvas = document.getElementById(canvasId);
@@ -373,14 +359,14 @@ function buildWordCloud(containerId, rows) {
   }
   bibReplaySave(buildWordCloud, arguments);
 
-  // Ensures layout has been calculated before reading the width
+  // Garante que o layout foi calculado antes de pegar a largura
   requestAnimationFrame(() => {
   el.innerHTML = '';
   const canvas = document.createElement('canvas');
   const cssW = el.offsetWidth || el.clientWidth || 700;
   const cssH = 360;
-  // Native canvas at high pixel density (min. 2x), displayed at the original
-  // size via CSS — avoids a blurry word cloud when exporting/downloading.
+  // Canvas nativo em alta densidade de pixel (mín. 2x), mostrado no tamanho
+  // original via CSS — evita nuvem de palavras borrada ao exportar/baixar.
   const dpr = Math.max(window.devicePixelRatio || 1, 2);
   canvas.width  = cssW * dpr;
   canvas.height = cssH * dpr;
@@ -405,11 +391,11 @@ function buildWordCloud(containerId, rows) {
     drawOutOfBound: false,
     shrinkToFit: true,
   });
-  }); // closes requestAnimationFrame
+  }); // fecha requestAnimationFrame
 }
 
 // =============================================================================
-// ───── TREND TOPICS (keyword timeline) ───────────────────────────────────────
+// ───── TREND TOPICS (timeline de keywords) ───────────────────────────────────
 // =============================================================================
 function buildTrendTopicsChart(canvasId, rows) {
   const canvas = document.getElementById(canvasId);
@@ -417,8 +403,8 @@ function buildTrendTopicsChart(canvasId, rows) {
   bibReplaySave(buildTrendTopicsChart, arguments);
   if (window._trendTopicsChart) { window._trendTopicsChart.destroy(); }
 
-  // Each keyword becomes a point: x = year median, y = index (order), size ∝ freq
-  // Horizontal line from q1 → q3 shows the temporal spread.
+  // Cada keyword vira um ponto: x = mediana do ano, y = índice (ordem), tamanho ∝ freq
+  // Linha horizontal de q1 → q3 mostra a dispersão temporal.
   const data = rows.map((r, i) => ({
     x:    +r.year_median,
     y:    i + 1,
@@ -431,7 +417,7 @@ function buildTrendTopicsChart(canvasId, rows) {
   const labels = rows.map(r => r.keyword);
   const maxFreq = Math.max(...data.map(d => d.freq));
 
-  // Plugin to draw the q1-q3 lines (temporal range)
+  // Plugin para desenhar as linhas q1-q3 (range temporal)
   const rangePlugin = {
     id: 'trendRange',
     afterDatasetsDraw(chart) {
@@ -494,7 +480,7 @@ function buildTrendTopicsChart(canvasId, rows) {
 }
 
 // =============================================================================
-// ───── AVERAGE CITATIONS PER YEAR (TC/Y) ─────────────────────────────────────
+// ───── CITAÇÕES MÉDIAS POR ANO (TC/Y) ────────────────────────────────────────
 // =============================================================================
 function buildCitationsPerYearChart(canvasId, rows) {
   const canvas = document.getElementById(canvasId);
@@ -540,10 +526,10 @@ function buildCitationsPerYearChart(canvasId, rows) {
 }
 
 // =============================================================================
-// ───── THREE-FIELD PLOT (native SVG Sankey) ──────────────────────────────────
+// ───── THREE-FIELD PLOT (Sankey SVG nativo) ──────────────────────────────────
 // =============================================================================
-// Renders a 3-column Sankey (Authors | Keywords | Journals) in pure SVG.
-// Layout: each node is a rectangle whose height is proportional to its total links.
+// Renderiza um Sankey de 3 colunas (Autores | Keywords | Periódicos) em SVG puro.
+// Layout: cada nó é um retângulo cuja altura é proporcional ao total de ligações.
 function buildThreeFieldPlot(containerId, payload) {
   const el = document.getElementById(containerId);
   if (!el || !payload) return;
@@ -556,7 +542,7 @@ function buildThreeFieldPlot(containerId, payload) {
   }
   bibReplaySave(buildThreeFieldPlot, arguments);
 
-  // Computes total weight per node
+  // Calcula peso total por nó
   const weight = { A: {}, K: {}, J: {} };
   authors.forEach(a => weight.A[a] = 0);
   keywords.forEach(k => weight.K[k] = 0);
@@ -569,7 +555,7 @@ function buildThreeFieldPlot(containerId, payload) {
   const colX = [60, W * 0.5, W - 60];
   const nodeW = 18, gap = 8;
 
-  // Function to compute the Y position of each node within the column
+  // Função pra computar Y de cada nó dentro da coluna
   function layoutColumn(items, weights, totalH) {
     const total = items.reduce((s, k) => s + (weights[k] || 1), 0) || 1;
     const usableH = totalH - (items.length - 1) * gap - 40;
@@ -606,11 +592,11 @@ function buildThreeFieldPlot(containerId, payload) {
     return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
   }
 
-  // To stack links within each node
+  // Para empilhar links dentro de cada nó
   const offA = {}, offKin = {}, offKout = {}, offJ = {};
   function nextOff(map, key) { return map[key] = (map[key] || 0); }
 
-  // Renders AK links
+  // Renderiza links AK
   links_ak.forEach(l => {
     const a = layA[l.author], k = layK[l.keyword];
     if (!a || !k) return;
@@ -629,7 +615,7 @@ function buildThreeFieldPlot(containerId, payload) {
     svg.appendChild(path);
   });
 
-  // Renders KJ links
+  // Renderiza links KJ
   links_kj.forEach(l => {
     const k = layK[l.keyword], j = layJ[l.journal];
     if (!k || !j) return;
@@ -648,7 +634,7 @@ function buildThreeFieldPlot(containerId, payload) {
     svg.appendChild(path);
   });
 
-  // Draws boxes and labels
+  // Desenha caixas e rótulos
   function drawColumn(items, lay, x, colorMap, labelSide) {
     items.forEach(name => {
       const n = lay[name]; if (!n) return;
@@ -678,7 +664,7 @@ function buildThreeFieldPlot(containerId, payload) {
   drawColumn(keywords, layK, colX[1], colorK, 'right');
   drawColumn(journals, layJ, colX[2], colorJ, 'right');
 
-  // Headers
+  // Cabeçalhos
   [bt('authors_col'), bt('keywords_col'), bt('journals_col')].forEach((t, i) => {
     const h = document.createElementNS('http://www.w3.org/2000/svg','text');
     h.setAttribute('x', colX[i] + nodeW / 2);
@@ -700,7 +686,7 @@ function buildThreeFieldPlot(containerId, payload) {
   }
 }
 
-// Exports an SVG to PNG
+// Exporta um SVG para PNG
 function exportSvgPng(containerId, filename) {
   const el  = document.getElementById(containerId);
   const svg = el && el.querySelector('svg');
@@ -724,14 +710,14 @@ function exportSvgPng(containerId, filename) {
   img.src = url;
 }
 
-// ─── Choropleth map — Country Scientific Production ────────────────────────
-// bibliometrix style: sequential blue scale, 5-class legend,
-// countries with no data in gray, tooltip with name + N documents.
+// ─── Mapa coroplético — Country Scientific Production ──────────────────────
+// Estilo bibliometrix: escala sequencial de azuis, legenda em 5 classes,
+// países sem dados em cinza, tooltip com nome + N documentos.
 function buildCountryMap(containerId, rows) {
   const el = document.getElementById(containerId);
   if (!el) return;
 
-  // Visible feedback while loading
+  // Feedback visível enquanto carrega
   el.innerHTML = `<p style="color:var(--text-muted);padding:24px;text-align:center"><i class="fa fa-spinner fa-spin"></i> ${bt('map_loading')}</p>`;
   bibReplaySave(buildCountryMap, arguments);
 
@@ -741,7 +727,7 @@ function buildCountryMap(containerId, rows) {
   }
   el.innerHTML = '';
 
-  // Name normalization to ISO 3166 alpha-2 → numeric (TopoJSON uses numeric)
+  // Normalização de nomes para ISO 3166 alpha-2 → numeric (TopoJSON usa numeric)
   const nameToNumeric = {
     'Afghanistan':57,'Albania':8,'Algeria':12,'Angola':24,'Argentina':32,
     'Armenia':51,'Australia':36,'Austria':40,'Azerbaijan':31,
@@ -791,7 +777,7 @@ function buildCountryMap(containerId, rows) {
     }
   });
 
-  // Blue scale matching bibliometrix
+  // Escala de azuis igual ao bibliometrix
   const color = d3.scaleSequentialLog(d3.interpolateBlues)
     .domain([1, Math.max(maxN, 2)]);
 
@@ -801,7 +787,7 @@ function buildCountryMap(containerId, rows) {
     .attr('height', height)
     .attr('xmlns', 'http://www.w3.org/2000/svg');
 
-  // projection will be configured with fitSize after the data loads
+  // projection será configurada com fitSize após carregar os dados
   const projection = d3.geoNaturalEarth1();
   const path = d3.geoPath().projection(projection);
 
@@ -817,13 +803,13 @@ function buildCountryMap(containerId, rows) {
     .style('font-size','12px')
     .style('display','none');
 
-  // Loads local TopoJSON (assets/data/countries-110m.json)
+  // Carrega TopoJSON local (assets/data/countries-110m.json)
   const topoUrl = (typeof APP !== 'undefined' ? APP.baseUrl + '/' : '') + 'assets/data/countries-110m.json';
   d3.json(topoUrl)
     .then(world => {
       const countries = topojson.feature(world, world.objects.countries);
 
-      // fitSize automatically adjusts scale and translate to the SVG size
+      // fitSize ajusta escala e translate automaticamente ao tamanho do SVG
       projection.fitSize([width, height], countries);
 
       svg.append('g')
@@ -856,7 +842,7 @@ function buildCountryMap(containerId, rows) {
             d3.select(this).attr('stroke','#fff').attr('stroke-width',0.3);
           });
 
-      // Legend (5 levels, bibliometrix style)
+      // Legenda (5 níveis, estilo bibliometrix)
       const legendW = 16, legendH = 80;
       const legendX = 12, legendY = height - legendH - 50;
 
@@ -889,8 +875,8 @@ function buildCountryMap(containerId, rows) {
 }
 
 // =============================================================================
-// ───── LOCAL IMPACT INDICES (h, g, m) ────────────────────────────────────────
-// Table ranked by h-index, in the style of bibliometrix's "Local Impact".
+// ───── ÍNDICES DE IMPACTO LOCAL (h, g, m) ────────────────────────────────────
+// Tabela ranqueada por índice h, no estilo "Local Impact" do bibliometrix.
 // =============================================================================
 function buildImpactTable(containerId, rows, kind) {
   const el = document.getElementById(containerId);
@@ -928,9 +914,9 @@ function buildImpactTable(containerId, rows, kind) {
 }
 
 // =============================================================================
-// ───── THEMATIC MAP (Callon strategic diagram) ──────────────────────────────
-// Bubbles plotted on centrality × density, with median lines dividing the
-// quadrants: motor · niche · emerging/declining · basic/transversal.
+// ───── MAPA TEMÁTICO (diagrama estratégico de Callon) ───────────────────────
+// Bolhas em centralidade × densidade, com linhas medianas dividindo os
+// quadrantes: motor · nicho · emergente/declinante · básico/transversal.
 // =============================================================================
 function buildThematicMap(canvasId, clusters) {
   const canvas = document.getElementById(canvasId);
@@ -964,7 +950,7 @@ function buildThematicMap(canvasId, clusters) {
     _cluster: c,
   }));
 
-  // Plugin: median lines + label for each bubble
+  // Plugin: linhas medianas + rótulo de cada bolha
   const quadrantPlugin = {
     id: 'callonQuadrants',
     afterDatasetsDraw(chart) {
@@ -983,7 +969,7 @@ function buildThematicMap(canvasId, clusters) {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Quadrant names in the corners
+      // Nomes dos quadrantes nos cantos
       ctx.font = '600 10px Inter, sans-serif';
       ctx.fillStyle = isLight ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.35)';
       ctx.textAlign = 'left';
@@ -993,7 +979,7 @@ function buildThematicMap(canvasId, clusters) {
       ctx.fillText(bt('quad_motor'),    chartArea.right - 8, chartArea.top + 14);
       ctx.fillText(bt('quad_basic'),    chartArea.right - 8, chartArea.bottom - 8);
 
-      // Label for each cluster above its bubble
+      // Rótulo de cada cluster sobre a bolha
       ctx.textAlign = 'center';
       ctx.font = '600 11px Inter, sans-serif';
       ctx.fillStyle = isLight ? '#1e293b' : '#f1f5f9';
@@ -1039,7 +1025,7 @@ function buildThematicMap(canvasId, clusters) {
 }
 
 // =============================================================================
-// ───── 1. TOP INSTITUTIONS ────────────────────────────────────────────────────
+// ───── 1. TOP INSTITUIÇÕES ────────────────────────────────────────────────────
 // =============================================================================
 function buildTopInstitutionsChart(canvasId, rows) {
   const canvas = document.getElementById(canvasId);
@@ -1124,7 +1110,7 @@ function buildMcpScpChart(canvasId, data) {
 }
 
 // =============================================================================
-// ───── 3. AUTHOR PRODUCTION OVER TIME ────────────────────────────────────────
+// ───── 3. PRODUÇÃO DOS AUTORES AO LONGO DO TEMPO ─────────────────────────────
 // =============================================================================
 function buildAuthorOverTimeChart(canvasId, data) {
   const canvas = document.getElementById(canvasId);
@@ -1169,15 +1155,15 @@ function buildAuthorOverTimeChart(canvasId, data) {
 }
 
 // =============================================================================
-// ───── 4. COUNTRY COLLABORATION NETWORK ──────────────────────────────────────
+// ───── 4. REDE DE COLABORAÇÃO ENTRE PAÍSES ───────────────────────────────────
 // =============================================================================
 function buildCountryCollabChart(containerId, data) {
   const el = document.getElementById(containerId);
   if (!el || !data) return;
   const nodes = data.nodes || [], edges = data.edges || [];
 
-  // nodeMap is the list of valid countries (with n >= 2, from PHP)
-  // Used as a whitelist: only shows edges where BOTH countries are valid nodes
+  // nodeMap é a lista de países válidos (com n >= 2 vindos do PHP)
+  // Usa-se como whitelist: só mostra arestas onde AMBOS países são nós válidos
   const nodeMap = Object.fromEntries(nodes.map(n => [n.country, +n.n]));
   const validSet = new Set(Object.keys(nodeMap));
   const filteredEdges = edges.filter(e => validSet.has(e.c1) && validSet.has(e.c2));
@@ -1190,7 +1176,7 @@ function buildCountryCollabChart(containerId, data) {
 
   const maxN = nodes.length ? Math.max(...nodes.map(n => +n.n)) : 1;
   const maxW = Math.max(...filteredEdges.map(e => +e.weight));
-  // Countries that appear in the filtered edges
+  // Países que aparecem nas arestas filtradas
   const countries = [...new Set([...filteredEdges.map(e=>e.c1),...filteredEdges.map(e=>e.c2)])];
   const n = countries.length;
   const W = el.clientWidth || 700, H = Math.max(420, Math.min(600, n * 14));
@@ -1200,7 +1186,7 @@ function buildCountryCollabChart(containerId, data) {
     return [c, { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) }];
   }));
   let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:${H}px">`;
-  // Edges
+  // Arestas
   filteredEdges.forEach(e => {
     if (!pos[e.c1] || !pos[e.c2]) return;
     const t = Math.max(1, Math.round(1 + 4 * +e.weight / maxW));
@@ -1210,7 +1196,7 @@ function buildCountryCollabChart(containerId, data) {
                   stroke="#00D4FF" stroke-width="${t}" stroke-opacity="${op}">
               <title>${e.c1} &#8596; ${e.c2}: ${bt('n_articles', { n: e.weight })}</title></line>`;
   });
-  // Nodes
+  // Nós
   countries.forEach(c => {
     const p = pos[c]; if (!p) return;
     const pn = nodeMap[c] || 1;
@@ -1228,7 +1214,7 @@ function buildCountryCollabChart(containerId, data) {
 }
 
 // =============================================================================
-// ───── 5. THEMATIC EVOLUTION ──────────────────────────────────────────────────
+// ───── 5. EVOLUÇÃO TEMÁTICA ───────────────────────────────────────────────────
 // =============================================================================
 function buildThematicEvolution(containerId, data) {
   const el = document.getElementById(containerId);

@@ -1,15 +1,15 @@
 <?php
 /**
- * PRISMA-SLR - Effective article status derived from the screening decisions.
- * Shared between api/screening.php and api/kappa.php (consensus resolution).
+ * PRISMA-SLR - Status efetivo do artigo a partir das decisões de triagem.
+ * Compartilhado entre api/screening.php e api/kappa.php (resolução de consenso).
  */
 
 /**
- * Computes the article's status based on the recorded decisions
+ * Calcula o status do artigo com base nas decisões registradas
  */
 function computeArticleStatusShared(PDO $pdo, int $articleId): string
 {
-    // Project's screening mode and owner (for tie-breaking in single mode)
+    // Modo de triagem do projeto e dono (para desempate em modo single)
     $stmt = $pdo->prepare("
         SELECT p.screening_mode, p.user_id AS owner_id FROM projects p
         JOIN articles a ON a.project_id = p.id WHERE a.id = ?
@@ -26,7 +26,19 @@ function computeArticleStatusShared(PDO $pdo, int $articleId): string
     $stmt->execute([$articleId]);
     $rows = $stmt->fetchAll();
 
-    // Effective decision per phase: consensus > agreement between 2+ reviewers (dual) > single decision (single)
+    // Revisores de apoio não votam: suas decisões não contam para acordo, conflito nem status
+    $stmt = $pdo->prepare("
+        SELECT pm.user_id FROM project_members pm
+        JOIN articles a ON a.project_id = pm.project_id
+        WHERE a.id = ? AND pm.role = 'support'
+    ");
+    $stmt->execute([$articleId]);
+    $supportIds = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    if ($supportIds) {
+        $rows = array_values(array_filter($rows, fn($r) => !in_array((int) $r['reviewer_id'], $supportIds, true)));
+    }
+
+    // Decisão efetiva por fase: consenso > acordo entre 2+ revisores (dual) > decisão única (single)
     $decisions = [];
     foreach (['screening', 'eligibility'] as $ph) {
         $phaseRows = array_values(array_filter($rows, fn($r) => $r['phase'] === $ph));
@@ -41,16 +53,16 @@ function computeArticleStatusShared(PDO $pdo, int $articleId): string
         if ($mode === 'dual') {
             $unique = array_unique(array_column($individual, 'decision'));
             if (count($individual) >= 2 && count($unique) === 1) {
-                $decisions[$ph] = $unique[0];           // agreement
+                $decisions[$ph] = $unique[0];           // acordo
             } elseif (count($individual) >= 2) {
-                $decisions[$ph] = 'conflict';           // awaiting resolution
+                $decisions[$ph] = 'conflict';           // aguarda resolução
             }
-            // Only 1 decision: awaiting the second reviewer
+            // 1 decisão apenas: aguarda o segundo revisor
         } elseif (!empty($individual)) {
-            // Single mode with more than one reviewer disagreeing: the project
-            // owner's decision prevails as official (the other votes stay
-            // recorded, but don't determine the status on their own — formal
-            // resolution by consensus remains available on the Agreement page).
+            // Modo single com mais de um revisor divergindo: a decisão do dono
+            // do projeto prevalece como oficial (demais votos ficam registrados,
+            // mas não determinam o status sozinhos — resolução formal por
+            // consenso continua disponível na página de Concordância).
             $ownerDecision = array_values(array_filter(
                 $individual, fn($r) => (int) $r['reviewer_id'] === $ownerId
             ));
@@ -58,20 +70,20 @@ function computeArticleStatusShared(PDO $pdo, int $articleId): string
         }
     }
 
-    // Conflict does not advance the article
+    // Conflito não avança o artigo
     if (($decisions['screening']   ?? '') === 'conflict') return 'screened';
 
-    // Excluded in some phase
+    // Excluído em alguma fase
     if (($decisions['screening']   ?? '') === 'exclude') return 'excluded';
     if (($decisions['eligibility'] ?? '') === 'exclude') return 'excluded';
 
-    // Included at eligibility
+    // Incluído na elegibilidade
     if (($decisions['eligibility'] ?? '') === 'include') return 'included';
 
-    // Passed screening
+    // Passou pela triagem
     if (($decisions['screening'] ?? '') === 'include') return 'eligible';
 
-    // Passed screening with uncertainty
+    // Passou pela triagem com incerteza
     if (($decisions['screening'] ?? '') === 'uncertain') return 'screened';
 
     return 'screened';

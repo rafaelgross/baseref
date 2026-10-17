@@ -1,30 +1,30 @@
 <?php
 /**
- * PRISMA-SLR - BibTeX Parser
+ * PRISMA-SLR - Parser BibTeX
  *
- * Supports the two detected formats:
- *   - Scopus: indentation with \t, fields like affiliations, author_keywords,
- *             note with "Cited by: N", EID, etc.
- *   - Web of Science: indentation with spaces, fields Unique-ID, Times-Cited,
+ * Suporta os dois formatos detectados:
+ *   - Scopus: indentação com \t, campos como affiliations, author_keywords,
+ *             note com "Cited by: N", EID, etc.
+ *   - Web of Science: indentação com espaços, campos Unique-ID, Times-Cited,
  *                     Keywords-Plus, Affiliation, Web-of-Science-Index, etc.
  */
 
 class BibTexParser
 {
-    /** @var array Already-parsed entries */
+    /** @var array Entradas já parseadas */
     private array $entries = [];
 
-    /** @var array Log of warnings and errors */
+    /** @var array Log de avisos e erros */
     private array $log = [];
 
     // -----------------------------------------------------------------
-    // Public interface
+    // Interface pública
     // -----------------------------------------------------------------
 
     /**
-     * Parses a .bib file and returns an array of normalized entries.
+     * Parseia um arquivo .bib e retorna array de entradas normalizadas.
      *
-     * @param  string $content  Raw file content
+     * @param  string $content  Conteúdo bruto do arquivo
      * @param  string $sourceType 'scopus'|'wos'|'auto'
      * @return array ['entries' => [...], 'log' => [...]]
      */
@@ -33,15 +33,15 @@ class BibTexParser
         $this->entries = [];
         $this->log     = [];
 
-        // Remove UTF-8 BOM
+        // Remove BOM UTF-8
         $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
 
-        // Auto-detect type if necessary
+        // Detecta tipo automaticamente se necessário
         if ($sourceType === 'auto') {
             $sourceType = $this->detectSourceType($content);
         }
 
-        // Extract @TYPE{...} blocks
+        // Extrai blocos @TYPE{...}
         $blocks = $this->extractBlocks($content);
         $this->log[] = ['type' => 'info', 'msg' => sprintf('%d blocos encontrados (fonte: %s)', count($blocks), $sourceType)];
 
@@ -69,16 +69,16 @@ class BibTexParser
     }
 
     // -----------------------------------------------------------------
-    // Format detection
+    // Detecção de formato
     // -----------------------------------------------------------------
 
     private function detectSourceType(string $content): string
     {
-        // Scopus uses EID and lowercase affiliations
+        // Scopus usa EID e affiliations em minúsculo
         if (preg_match('/\bEID\s*=|affiliations\s*=|author_keywords\s*=/i', $content)) {
             return 'scopus';
         }
-        // WoS uses Unique-ID and Times-Cited
+        // WoS usa Unique-ID e Times-Cited
         if (preg_match('/Unique-ID\s*=|Times-Cited\s*=|Web-of-Science-Index\s*=/i', $content)) {
             return 'wos';
         }
@@ -86,7 +86,7 @@ class BibTexParser
     }
 
     // -----------------------------------------------------------------
-    // Block extraction
+    // Extração de blocos
     // -----------------------------------------------------------------
 
     private function extractBlocks(string $content): array
@@ -96,23 +96,23 @@ class BibTexParser
         $i      = 0;
 
         while ($i < $len) {
-            // Look for the start of an @ entry
+            // Procura início de uma entrada @
             $pos = strpos($content, '@', $i);
             if ($pos === false) break;
 
-            // Ignore @comment, @preamble, @string
+            // Ignora @comment, @preamble, @string
             $rest = substr($content, $pos + 1, 20);
             if (preg_match('/^(comment|preamble|string)\b/i', $rest)) {
-                // Skip to the next @
+                // Pula até o próximo @
                 $i = $pos + 1;
                 continue;
             }
 
-            // Find the opening {
+            // Encontra a abertura {
             $openPos = strpos($content, '{', $pos);
             if ($openPos === false) break;
 
-            // Walk through with a brace counter to find the closing one
+            // Percorre com contador de chaves para achar o fechamento
             $depth  = 0;
             $end    = $openPos;
             $inStr  = false;
@@ -127,7 +127,7 @@ class BibTexParser
             }
 
             if ($depth !== 0) {
-                // Malformed block - try to recover
+                // Bloco mal formado - tenta recuperar
                 $this->log[] = ['type' => 'warning', 'msg' => "Bloco mal formado iniciado na posição {$pos}"];
                 $i = $pos + 1;
                 continue;
@@ -141,12 +141,12 @@ class BibTexParser
     }
 
     // -----------------------------------------------------------------
-    // Parsing an individual block
+    // Parse de um bloco individual
     // -----------------------------------------------------------------
 
     private function parseBlock(string $block, string $sourceType): ?array
     {
-        // Extract type and key: @ARTICLE{KeyHere,
+        // Extrai tipo e chave: @ARTICLE{ChaveAqui,
         if (!preg_match('/^@(\w+)\s*\{\s*([^,\n]*)/s', $block, $m)) {
             return null;
         }
@@ -154,28 +154,34 @@ class BibTexParser
         $entryType = strtolower(trim($m[1]));
         $citeKey   = trim($m[2]);
 
-        // Ignore entries with unrecognized type
+        // Ignora entradas sem tipo reconhecido
         $validTypes = ['article','inproceedings','proceedings','conference','book',
                        'incollection','phdthesis','mastersthesis','techreport','misc','review'];
-        // Proceed even if not recognized
+        // Passa mesmo se não reconhecido
         if (empty($citeKey)) return null;
 
-        // Extract the content inside the braces (everything after the key's comma)
+        // Extrai o interior das chaves (tudo depois da vírgula da chave)
         $inner = substr($block, strpos($block, ',') + 1);
-        // Remove the final closing brace
-        $inner = rtrim($inner, " \t\n\r}");
+        // Remove só a chave que fecha a entrada — extractBlocks() garante que o bloco
+        // termina exatamente nela. (Antes, rtrim($inner, " \t\n\r}") apagava também a
+        // chave que fecha o ÚLTIMO campo, que então era descartado: no export do Scopus
+        // é o note = {Cited by: N; ...Open Access}, e citações/acesso aberto se perdiam.)
+        $inner = rtrim($inner);
+        if (substr($inner, -1) === '}') {
+            $inner = substr($inner, 0, -1);
+        }
 
-        // Parse fields
+        // Parseia campos
         $rawFields = $this->parseFields($inner);
 
-        // Normalize into a unified structure
+        // Normaliza para estrutura unificada
         $entry = $this->normalize($rawFields, $entryType, $citeKey, $sourceType, $block);
 
         return $entry;
     }
 
     // -----------------------------------------------------------------
-    // Parsing all fields of a block
+    // Parse de todos os campos de um bloco
     // -----------------------------------------------------------------
 
     private function parseFields(string $inner): array
@@ -185,29 +191,29 @@ class BibTexParser
         $i      = 0;
 
         while ($i < $len) {
-            // Skip spaces and commas between fields
+            // Pula espaços e vírgulas entre campos
             while ($i < $len && in_array($inner[$i], [' ', "\t", "\n", "\r", ','])) {
                 $i++;
             }
             if ($i >= $len) break;
 
-            // Read the field name (up to the =)
+            // Lê o nome do campo (até o =)
             $eqPos = strpos($inner, '=', $i);
             if ($eqPos === false) break;
 
             $fieldName = strtolower(trim(substr($inner, $i, $eqPos - $i)));
-            $fieldName = str_replace(['-', ' '], '_', $fieldName); // normalize name
+            $fieldName = str_replace(['-', ' '], '_', $fieldName); // normaliza nome
             $i = $eqPos + 1;
 
-            // Skip spaces after the =
+            // Pula espaços após o =
             while ($i < $len && in_array($inner[$i], [' ', "\t"])) $i++;
 
             if ($i >= $len) break;
 
-            // Read value: can be {content}, "content", or a number
+            // Lê valor: pode ser {conteudo}, "conteudo" ou número
             $value = '';
             if ($inner[$i] === '{') {
-                // Value between braces
+                // Valor entre chaves
                 $depth = 0;
                 $start = $i;
                 for ($j = $i; $j < $len; $j++) {
@@ -222,17 +228,17 @@ class BibTexParser
                     }
                 }
             } elseif ($inner[$i] === '"') {
-                // Value between quotes
+                // Valor entre aspas
                 $i++;
                 $start = $i;
                 while ($i < $len && $inner[$i] !== '"') {
-                    if ($inner[$i] === '\\') $i++; // escape
+                    if ($inner[$i] === '\\') $i++; // escapa
                     $i++;
                 }
                 $value = substr($inner, $start, $i - $start);
-                $i++; // close quotes
+                $i++; // fecha aspas
             } else {
-                // Number or @string reference
+                // Número ou referência a @string
                 $start = $i;
                 while ($i < $len && !in_array($inner[$i], [',', "\n", "\r"])) $i++;
                 $value = trim(substr($inner, $start, $i - $start));
@@ -247,7 +253,7 @@ class BibTexParser
     }
 
     // -----------------------------------------------------------------
-    // Normalization into a unified structure
+    // Normalização para estrutura unificada
     // -----------------------------------------------------------------
 
     private function normalize(array $f, string $type, string $key, string $src, string $raw): array
@@ -261,7 +267,7 @@ class BibTexParser
             'year'           => (int) ($f['year'] ?? 0) ?: null,
             'language'       => $this->cleanBraces($f['language'] ?? 'English'),
 
-            // Journal
+            // Periódico
             'journal'        => $this->cleanBraces(
                 $f['journal'] ?? $f['booktitle'] ?? $f['source'] ?? ''
             ),
@@ -273,21 +279,21 @@ class BibTexParser
             'eissn'          => $this->normalizeISSN($f['eissn'] ?? ''),
             'isbn'           => $this->cleanBraces($f['isbn'] ?? ''),
 
-            // Identifiers
+            // Identificadores
             'doi'            => $this->normalizeDOI($f['doi'] ?? ''),
             'url'            => $this->cleanBraces($f['url'] ?? $f['link'] ?? ''),
             'eid'            => $this->cleanBraces($f['eid'] ?? ''),
             'wos_id'         => $this->extractWosId($f),
             'pubmed_id'      => $this->cleanBraces($f['pubmed_id'] ?? $f['pmid'] ?? ''),
 
-            // Publisher
+            // Editora
             'publisher'      => $this->cleanBraces($f['publisher'] ?? ''),
 
-            // Metrics
+            // Métricas
             'cited_by'       => $this->extractCitedBy($f),
             'open_access'    => $this->detectOpenAccess($f),
 
-            // Authors, keywords, and affiliations (arrays)
+            // Autores, palavras-chave e afiliações (arrays)
             'authors'        => $this->parseAuthors($f['author'] ?? ''),
             'keywords_author'=> $this->parseKeywordList($f['author_keywords'] ?? $f['keywords'] ?? ''),
             'keywords_plus'  => $this->parseKeywordList($f['keywords_plus'] ?? ''),
@@ -296,7 +302,7 @@ class BibTexParser
             'raw_bibtex'     => $raw,
         ];
 
-        // Remove empty fields (keeps 0 and false)
+        // Remove campos vazios (mantém 0 e false)
         foreach ($e as $k => $v) {
             if ($v === '' || $v === [] || $v === null) {
                 $e[$k] = null;
@@ -307,10 +313,10 @@ class BibTexParser
     }
 
     // -----------------------------------------------------------------
-    // Normalization helpers
+    // Helpers de normalização
     // -----------------------------------------------------------------
 
-    /** Remove nested braces and extra line breaks */
+    /** Remove chaves aninhadas e quebras de linha extras */
     private function cleanBraces(string $s): string
     {
         $s = preg_replace('/\{+([^{}]*)\}+/', '$1', $s);
@@ -334,7 +340,7 @@ class BibTexParser
             'misc'            => 'Other',
         ];
 
-        // Scopus/WoS may have type= inside the field
+        // Scopus/WoS podem ter type= dentro do campo
         if (!empty($rawType)) {
             $rt = strtolower(trim($rawType));
             foreach ($map as $k => $v) {
@@ -349,7 +355,7 @@ class BibTexParser
     private function normalizeDOI(string $doi): string
     {
         $doi = trim($doi);
-        // Remove prefixes like https://doi.org/
+        // Remove prefixos como https://doi.org/
         $doi = preg_replace('#^https?://(dx\.)?doi\.org/#i', '', $doi);
         return $doi;
     }
@@ -357,10 +363,10 @@ class BibTexParser
     private function normalizeISSN(string $issn): string
     {
         $issn = trim($issn);
-        // Take the first ISSN if there are several separated by ; or ,
+        // Pega o primeiro ISSN se houver vários separados por ; ou ,
         $parts = preg_split('/[;,\s]+/', $issn);
         $first = trim($parts[0] ?? '');
-        // Format as XXXX-XXXX
+        // Formata como XXXX-XXXX
         $digits = preg_replace('/\D/', '', $first);
         if (strlen($digits) === 8) {
             return substr($digits, 0, 4) . '-' . substr($digits, 4);
@@ -370,10 +376,10 @@ class BibTexParser
 
     private function extractWosId(array $f): ?string
     {
-        // WoS UT or Unique-ID
+        // WoS UT ou Unique-ID
         $uid = $f['unique_id'] ?? $f['ut'] ?? $f['wos_id'] ?? '';
         $uid = $this->cleanBraces($uid);
-        // Remove WOS: prefix
+        // Remove prefixo WOS:
         $uid = preg_replace('/^WOS:/i', '', $uid);
         return $uid ?: null;
     }
@@ -398,19 +404,19 @@ class BibTexParser
         $oa = strtolower($f['open_access'] ?? $f['oa'] ?? '');
         if (in_array($oa, ['true', '1', 'yes', 'gold', 'green', 'diamond'])) return true;
 
-        // Scopus: publication_stage = Final + a few fields
+        // Scopus: publication_stage = Final + alguns campos
         if (isset($f['note']) && str_contains(strtolower($f['note']), 'open access')) return true;
 
         return false;
     }
 
     // -----------------------------------------------------------------
-    // Authors
+    // Autores
     // -----------------------------------------------------------------
 
     /**
-     * Parses the author field = {Lastname, Firstname and Lastname2, Firstname2 and ...}
-     * Returns an array of strings with full names
+     * Parseia campo author = {Sobrenome, Nome and Sobrenome2, Nome2 and ...}
+     * Retorna array de strings com nomes completos
      */
     private function parseAuthors(string $authorStr): array
     {
@@ -418,7 +424,7 @@ class BibTexParser
 
         $authorStr = $this->cleanBraces($authorStr);
 
-        // Split by " and " (case-insensitive)
+        // Divide por " and " (case-insensitive)
         $parts = preg_split('/\s+and\s+/i', $authorStr);
         $authors = [];
 
@@ -426,7 +432,7 @@ class BibTexParser
             $part = trim($part);
             if (empty($part)) continue;
 
-            // Format "Lastname, Firstname" → "Firstname Lastname"
+            // Formato "Sobrenome, Nome" → "Nome Sobrenome"
             if (str_contains($part, ',')) {
                 [$last, $first] = array_map('trim', explode(',', $part, 2));
                 $full = trim("$first $last");
@@ -434,7 +440,7 @@ class BibTexParser
                 $full = $part;
             }
 
-            // Remove double punctuation and extra spaces
+            // Remove pontuação dupla e espaços extras
             $full = preg_replace('/\s+/', ' ', $full);
             if (!empty($full)) {
                 $authors[] = $full;
@@ -445,11 +451,11 @@ class BibTexParser
     }
 
     // -----------------------------------------------------------------
-    // Keywords
+    // Palavras-chave
     // -----------------------------------------------------------------
 
     /**
-     * Parses keyword lists separated by ; or ,
+     * Parseia listas de palavras-chave separadas por ; ou ,
      */
     private function parseKeywordList(string $kwStr): array
     {
@@ -457,10 +463,10 @@ class BibTexParser
 
         $kwStr = $this->cleanBraces($kwStr);
 
-        // Scopus uses ; WoS uses ;  but sometimes ,
+        // Scopus usa ; WoS usa ;  mas às vezes ,
         $parts = preg_split('/\s*[;]\s*/', $kwStr);
         if (count($parts) === 1) {
-            // Try splitting by ,
+            // Tenta separar por ,
             $parts = preg_split('/\s*,\s*/', $kwStr);
         }
 
@@ -476,7 +482,7 @@ class BibTexParser
     }
 
     // -----------------------------------------------------------------
-    // Affiliations
+    // Afiliações
     // -----------------------------------------------------------------
 
     private function parseAffiliations(array $f, string $src): array
@@ -495,7 +501,7 @@ class BibTexParser
         if (empty($raw)) return [];
 
         $affs = [];
-        // Scopus: separated by ; between full affiliations
+        // Scopus: separado por ; entre afiliações completas
         $parts = preg_split('/;\s*(?=[A-Z])/u', $raw);
         if (count($parts) === 1) {
             $parts = explode(';', $raw);
@@ -516,15 +522,15 @@ class BibTexParser
     }
 
     /**
-     * Tries to extract the country from the affiliation text
-     * (usually the last comma-separated element)
+     * Tenta extrair o país do texto da afiliação
+     * (geralmente é o último elemento separado por vírgula)
      */
     private function extractCountry(string $affiliation): string
     {
         $parts = array_map('trim', explode(',', $affiliation));
         $last  = end($parts);
 
-        // Partial list of countries for basic validation
+        // Lista parcial de países para validação básica
         $countries = [
             'Brazil', 'Brasil', 'United States', 'USA', 'United Kingdom', 'UK',
             'China', 'Germany', 'France', 'Italy', 'Spain', 'Portugal', 'Australia',
@@ -539,7 +545,7 @@ class BibTexParser
             if (stripos($last, $c) !== false) return $c;
         }
 
-        // If the last fragment looks like a country (short, no digits)
+        // Se o último fragmento parece ser país (curto, sem números)
         if (strlen($last) < 50 && !preg_match('/\d/', $last)) {
             return $last;
         }

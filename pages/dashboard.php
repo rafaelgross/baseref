@@ -1,30 +1,40 @@
 <?php
 /**
  * PRISMA-SLR - Dashboard
- * Overview of the active project
+ * Visão geral do projeto ativo
  */
 $pdb = getDB();
 $hasProject = $projectId > 0;
 
+// Contadores ACUMULADOS do funil (cada artigo conta em todas as etapas que já passou):
+//   screened      = com decisão de triagem (título/resumo)
+//   eligible      = aprovados na triagem (seguem para o texto completo)
+//   elig_assessed = aprovados na triagem que já têm decisão de elegibilidade
+//   included      = incluídos na elegibilidade
+//   excluded      = excluídos na triagem + excluídos na elegibilidade
+//   pending       = sem decisão de triagem
 $stats = ['total_articles' => 0, 'total_duplicates' => 0, 'pending' => 0, 'screened' => 0,
-          'eligible' => 0, 'included' => 0, 'excluded' => 0];
+          'eligible' => 0, 'elig_assessed' => 0, 'included' => 0, 'excluded' => 0];
 
 $citationYear = date('Y');
 $citationUrl = 'https://baseref.com.br/';
 $citationAccessDate = date('d/m/Y');
-$citationDoi = 'https://doi.org/10.5281/zenodo.21119457'; // v1.0.0 code archived on Zenodo
+$citationDoi = 'https://doi.org/10.5281/zenodo.21119457'; // codigo v1.0.0 arquivado no Zenodo
 $citationAbnt = 'GROSS, Rafael; GONCALVES, Rodrigo Franco. BaseRef: plataforma de apoio a pesquisa e gestao de referencias bibliograficas. Versao 1.0.0 [software]. Zenodo, ' . $citationYear . '. DOI: ' . $citationDoi . '. Disponivel em: <' . $citationUrl . '>. Acesso em: ' . $citationAccessDate . '.';
 $citationApa = 'Gross, R., & Goncalves, R. F. (' . $citationYear . '). BaseRef (Version 1.0.0) [Computer software]. Zenodo. ' . $citationDoi;
 $dashboardPageContext = $projectId ? 'dashboard-project' : 'dashboard-home';
-$pixKey = '28759679832';
-$pixMerchantName = 'RAFAEL GROSS';
-$pixMerchantCity = 'SAO PAULO';
+// Donation (PIX) settings come from config/donation.local.php (not versioned — see
+// config/donation.example.php). Without a key, the donation buttons are hidden.
+if (is_readable(__DIR__ . '/../config/donation.local.php')) require_once __DIR__ . '/../config/donation.local.php';
+$pixKey = defined('DONATION_PIX_KEY') ? DONATION_PIX_KEY : '';
+$pixMerchantName = defined('DONATION_PIX_NAME') ? DONATION_PIX_NAME : 'BASEREF';
+$pixMerchantCity = defined('DONATION_PIX_CITY') ? DONATION_PIX_CITY : 'SAO PAULO';
 $pixDescription = 'Doacao BaseRef';
 $pixTxid = 'PRISMASLR';
-$pixPayload = buildPixPayload($pixKey, $pixMerchantName, $pixMerchantCity, $pixDescription, $pixTxid);
+$pixPayload = $pixKey !== '' ? buildPixPayload($pixKey, $pixMerchantName, $pixMerchantCity, $pixDescription, $pixTxid) : '';
 
 if ($hasProject) {
-    // Total and duplicates remain global — they don't depend on reviewer decisions
+    // Total e duplicatas continuam globais — não dependem de decisão de revisor
     $stmt = $pdb->prepare("
         SELECT COUNT(*) AS total_articles, SUM(is_duplicate) AS total_duplicates
         FROM articles WHERE project_id = ?
@@ -34,8 +44,8 @@ if ($hasProject) {
     $stats['total_articles']   = (int) ($base['total_articles']   ?? 0);
     $stats['total_duplicates'] = (int) ($base['total_duplicates'] ?? 0);
 
-    // Personal progress of the logged-in reviewer — same "mine" rule used in Screening,
-    // so each reviewer sees what THEY have already assessed, not the project's official status.
+    // Progresso pessoal do revisor logado — mesma regra "mine" usada na Triagem,
+    // para que cada revisor veja o que ELE já avaliou, não o status oficial do projeto.
     $reviewerId = (int) $user['id'];
     $stmt = $pdb->prepare("
         SELECT a.id AS article_id, sd.phase, sd.decision
@@ -59,21 +69,26 @@ if ($hasProject) {
         $screenDec = $d['screening']   ?? null;
         $eligDec   = $d['eligibility'] ?? null;
 
+        // Antes cada artigo caía numa única "situação atual" (só os 'uncertain' contavam
+        // como triados e só os aprovados ainda sem leitura completa como elegíveis), e as
+        // barras de progresso dividiam esses grupos excludentes entre si — num projeto
+        // concluído isso dava "Triagem 0/N", "Elegibilidade 0/0" e "Incluídos X/0".
         if ($screenDec === null) {
             $stats['pending']++;
-        } elseif ($screenDec === 'exclude') {
-            $stats['excluded']++;
-        } elseif ($screenDec === 'uncertain') {
-            $stats['screened']++;
-        } elseif ($eligDec === null) {
-            $stats['eligible']++;
-        } elseif ($eligDec === 'exclude') {
-            $stats['excluded']++;
-        } elseif ($eligDec === 'include') {
-            $stats['included']++;
-        } else {
-            $stats['screened']++;
+            continue;
         }
+        $stats['screened']++;
+        if ($screenDec === 'exclude') {
+            $stats['excluded']++;
+            continue;
+        }
+        if ($screenDec !== 'include') continue;   // 'uncertain': triado, ainda sem desfecho
+
+        $stats['eligible']++;
+        if ($eligDec === null) continue;
+        $stats['elig_assessed']++;
+        if ($eligDec === 'include')     $stats['included']++;
+        elseif ($eligDec === 'exclude') $stats['excluded']++;
     }
 }
 ?>
@@ -464,9 +479,11 @@ if ($hasProject) {
     <button type="button" class="btn btn-outline btn-lg" onclick="openFeedbackModal()">
       <i class="fa fa-star"></i> Avaliar sistema
     </button>
+    <?php if ($pixKey !== ''): ?>
     <button type="button" class="btn btn-outline btn-lg" onclick="openDonationModal()">
       <i class="fa fa-heart"></i> Apoiar projeto
     </button>
+    <?php endif; ?>
   </div>
 
   <hr class="welcome-divider">
@@ -582,9 +599,11 @@ function setFeedbackRating(rating) {
     <button type="button" class="btn btn-outline" onclick="openFeedbackModal()">
       <i class="fa fa-star"></i> Avaliar sistema
     </button>
+    <?php if ($pixKey !== ''): ?>
     <button type="button" class="btn btn-outline" onclick="openDonationModal()">
       <i class="fa fa-heart"></i> Apoiar projeto
     </button>
+    <?php endif; ?>
   </div>
 </div>
 
@@ -608,7 +627,7 @@ function setFeedbackRating(rating) {
   <div class="stat-card yellow">
     <div class="stat-icon"><i class="fa fa-magnifying-glass"></i></div>
     <div class="stat-value" id="stat-screened"><?= number_format((int)$stats['screened']) ?></div>
-    <div class="stat-label">Triados</div>
+    <div class="stat-label"><span data-tx="dash_screened" translate="no" class="notranslate">Triados</span></div>
   </div>
   <div class="stat-card">
     <div class="stat-icon"><i class="fa fa-check-double"></i></div>
@@ -641,9 +660,11 @@ function setFeedbackRating(rating) {
       $phases = [
         ['Identificação',  $total,               $total,                  'var(--primary)',        'fa-book'],
         ['Deduplicação',   $nonDup,               $total,                  'var(--accent-red)',     'fa-copy'],
-        ['Triagem',        (int)$stats['screened'],(int)$nonDup,           'var(--accent-yellow)',  'fa-magnifying-glass'],
-        ['Elegibilidade',  (int)$stats['eligible'],(int)$stats['screened'],'var(--primary)',        'fa-check-double'],
-        ['Incluídos',      (int)$stats['included'],(int)$stats['eligible'],'var(--accent-green)',   'fa-circle-check'],
+        // Triagem: triados / únicos · Elegibilidade: avaliados no texto completo / aprovados
+        // na triagem · Incluídos: incluídos / avaliados no texto completo
+        ['Triagem',        (int)$stats['screened'],      (int)$nonDup,               'var(--accent-yellow)',  'fa-magnifying-glass'],
+        ['Elegibilidade',  (int)$stats['elig_assessed'], (int)$stats['eligible'],    'var(--primary)',        'fa-check-double'],
+        ['Incluídos',      (int)$stats['included'],      (int)$stats['elig_assessed'],'var(--accent-green)',  'fa-circle-check'],
       ];
       foreach ($phases as [$label, $n, $d, $color, $icon]):
         $pct = $d > 0 ? min(100, round($n / $d * 100)) : 0;
@@ -697,12 +718,20 @@ function setFeedbackRating(rating) {
     Convide colaboradores pelo e-mail da conta deles. O sistema nao lista usuarios cadastrados; se o e-mail ainda nao existir,
     sera exibida a orientacao para a pessoa entrar no sistema pelo menos uma vez.
   </p>
+  <p style="font-size:.78rem;color:var(--text-muted);margin:0 0 14px;line-height:1.6">
+    <b>Revisor cego</b>: triagem independente; vê apenas as proprias decisoes e entra no kappa de Cohen.
+    <b>Revisor de apoio</b>: vê o que os outros revisores decidiram para ajudar na escolha; nao entra no kappa nem no status oficial.
+  </p>
   <div id="dashboard-team-members">
     <div class="text-center" style="padding:24px"><div class="spinner"></div></div>
   </div>
   <div id="dashboard-team-add" style="display:none;gap:8px;margin-top:12px;flex-wrap:wrap">
     <input type="email" class="form-control" id="dashboard-member-email"
            placeholder="email do colaborador" style="flex:1;min-width:220px">
+    <select class="form-control" id="dashboard-member-role" style="width:auto">
+      <option value="reviewer">Revisor cego</option>
+      <option value="support">Revisor de apoio</option>
+    </select>
     <button class="btn btn-primary btn-sm" type="button" onclick="addProjectMember()">
       <i class="fa fa-user-plus"></i> Adicionar colaborador
     </button>
@@ -879,8 +908,14 @@ async function loadProjectTeam() {
           ${escHtml(member.name)} <small class="text-muted">(${escHtml(member.email)})</small>
         </div>
         ${member.role !== 'owner' && DASH_IS_PROJECT_OWNER
-          ? `<button class="btn btn-ghost btn-sm" type="button" onclick="removeProjectMember(${member.id})"><i class="fa fa-xmark"></i> Remover</button>`
-          : `<span class="badge badge-pending" style="font-size:.68rem">${member.role === 'owner' ? 'dono' : 'colaborador'}</span>`}
+          ? `<div style="display:flex;gap:8px;align-items:center">
+               <select class="form-control" style="width:auto;font-size:.78rem;padding:4px 8px" onchange="setMemberRole(${member.id}, this.value)">
+                 <option value="reviewer" ${member.role === 'reviewer' ? 'selected' : ''}>Revisor cego</option>
+                 <option value="support" ${member.role === 'support' ? 'selected' : ''}>Revisor de apoio</option>
+               </select>
+               <button class="btn btn-ghost btn-sm" type="button" onclick="removeProjectMember(${member.id})"><i class="fa fa-xmark"></i> Remover</button>
+             </div>`
+          : `<span class="badge badge-pending" style="font-size:.68rem">${member.role === 'owner' ? 'dono' : member.role === 'support' ? 'apoio' : 'revisor cego'}</span>`}
       </div>`).join('');
   } catch (e) {
     membersEl.innerHTML = `<div class="alert alert-error"><i class="fa fa-triangle-exclamation"></i> ${escHtml(e.message)}</div>`;
@@ -896,7 +931,8 @@ async function addProjectMember() {
     const r = await fetch('api/kappa.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'add_member', project_id: <?= $projectId ?>, email }),
+      body: JSON.stringify({ action: 'add_member', project_id: <?= $projectId ?>, email,
+                             role: document.getElementById('dashboard-member-role').value }),
     });
     const d = await r.json();
     if (d.error) throw new Error(d.message);
@@ -907,6 +943,22 @@ async function addProjectMember() {
   } catch (e) {
     showToast(e.message, 'error');
   }
+}
+
+async function setMemberRole(userId, role) {
+  try {
+    const r = await fetch('api/kappa.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'set_role', project_id: <?= $projectId ?>, user_id: userId, role }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.message);
+    showToast(d.message || 'Papel atualizado', 'success');
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+  loadProjectTeam();
 }
 
 async function removeProjectMember(userId) {
@@ -928,7 +980,7 @@ async function removeProjectMember(userId) {
   }
 }
 
-// Loads the project's sources into the dashboard
+// Carrega fontes do projeto no dashboard
 (async () => {
   const container = document.getElementById('sources-table-container');
   try {

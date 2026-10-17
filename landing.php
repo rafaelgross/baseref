@@ -97,9 +97,8 @@ $manualUrl    = '/TUTORIAL.pdf';                           // user manual (gener
   "publisher": { "@type": "Person", "name": "Rafael Gross" }
 }
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/vendor/inter-gfonts-v20/inter.css">
+<link rel="stylesheet" href="assets/vendor/lora-gfonts-v37/lora.css">
 <style>
 :root{
   /* dark (default — same as the app) */

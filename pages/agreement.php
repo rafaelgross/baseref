@@ -157,6 +157,7 @@ function renderKappa(d) {
       <span style="font-size:2.6rem;font-weight:800;color:${color}">κ = ${(Math.round(k * 1000) / 1000).toFixed(3)}</span><br>
       <span style="font-size:.9rem;color:var(--text-muted)">${escHtml(d.interpretation)} (Landis &amp; Koch)</span><br>
       <span style="font-size:.78rem;color:var(--text-muted)">Concordância observada: ${d.observed_agreement_percent}% · ${d.n_joint} artigos avaliados em comum</span>
+      ${d.eligibility_scope ? `<br><span style="font-size:.74rem;color:var(--text-muted)">Texto completo (PRISMA 2020): ${d.eligibility_scope.reports_assessed} relatórios avaliados. Não entram na conta: ${d.eligibility_scope.not_retrieved} não recuperados e ${d.eligibility_scope.screening_divergence} registros vindos de divergência na triagem. As decisões continuam registradas.</span>` : ''}
     </div>
     ${table}`;
 }

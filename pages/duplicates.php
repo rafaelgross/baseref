@@ -1,6 +1,6 @@
 <?php
 /**
- * PRISMA-SLR - Page: Duplicates
+ * PRISMA-SLR - Página: Duplicatas
  */
 if (!$projectId): ?>
 <div class="empty-state"><i class="fa fa-triangle-exclamation"></i>
@@ -9,18 +9,18 @@ if (!$projectId): ?>
 
 <div class="page-header">
   <div>
-    <h1 class="page-title"><i class="fa fa-copy"></i> Gerenciamento de Duplicatas</h1>
+    <h1 class="page-title"><i class="fa fa-copy"></i> <span data-tx="dup_title" translate="no" class="notranslate">Gerenciamento de Duplicatas</span></h1>
     <p class="page-subtitle">Detecte e resolva registros duplicados entre as bases de dados.</p>
   </div>
   <div style="display:flex;gap:10px;flex-wrap:wrap">
     <button class="btn btn-primary" onclick="runDetection()" id="btn-detect">
-      <i class="fa fa-magnifying-glass"></i> Detectar Duplicatas
+      <i class="fa fa-magnifying-glass"></i> <span data-tx="dup_detect" translate="no" class="notranslate">Detectar Duplicatas</span>
     </button>
     <button class="btn btn-success" onclick="confirmAllPending()" id="btn-confirm-all" style="display:none">
       <i class="fa fa-check-double"></i> Confirmar todos pendentes
     </button>
     <button class="btn btn-ghost" onclick="loadDuplicates()">
-      <i class="fa fa-rotate"></i> Atualizar
+      <i class="fa fa-rotate"></i> <span data-tx="dup_refresh" translate="no" class="notranslate">Atualizar</span>
     </button>
     <button class="btn btn-ghost" onclick="resetDetection()" style="color:var(--accent-red);border-color:var(--accent-red)">
       <i class="fa fa-trash"></i> Redefinir
@@ -78,7 +78,7 @@ if (!$projectId): ?>
     </div>
     <div>
       <button class="btn btn-primary" onclick="runDetection()" id="btn-detect2">
-        <i class="fa fa-play"></i> Executar
+        <i class="fa fa-play"></i> <span data-tx="dup_run" translate="no" class="notranslate">Executar</span>
       </button>
     </div>
   </div>
@@ -116,7 +116,7 @@ function selectDupTab(status, btn) {
 async function runDetection() {
   const btn = document.getElementById('btn-detect');
   const btn2 = document.getElementById('btn-detect2');
-  [btn, btn2].forEach(b => { if(b){b.disabled=true; b.innerHTML='<div class="spinner"></div> Detectando...'; }});
+  [btn, btn2].forEach(b => { if(b){b.disabled=true; b.innerHTML='<div class="spinner"></div> ' + txSpan('dup_detecting'); }});
 
   try {
     const threshold = document.getElementById('threshold-slider').value;
@@ -133,8 +133,8 @@ async function runDetection() {
     showToast('Erro: ' + e.message, 'error');
   } finally {
     [btn, btn2].forEach(b => { if(b){b.disabled=false; }});
-    if(btn) btn.innerHTML = '<i class="fa fa-magnifying-glass"></i> Detectar Duplicatas';
-    if(btn2) btn2.innerHTML = '<i class="fa fa-play"></i> Executar';
+    if(btn) btn.innerHTML = '<i class="fa fa-magnifying-glass"></i> ' + txSpan('dup_detect');
+    if(btn2) btn2.innerHTML = '<i class="fa fa-play"></i> ' + txSpan('dup_run');
   }
 }
 
@@ -146,7 +146,7 @@ async function loadDuplicates(status = currentDupStatus) {
     const r = await fetch(`api/duplicates.php?project_id=${DUP_PROJECT_ID}&status=${status}`);
     const d = await r.json();
 
-    // Update stats
+    // Atualiza stats
     const s = d.summary || {};
     const pending   = s.pending   || 0;
     const confirmed = s.confirmed || 0;
@@ -161,11 +161,11 @@ async function loadDuplicates(status = currentDupStatus) {
     const countEl = document.getElementById('tab-count-pending');
     if (countEl) countEl.textContent = pending;
 
-    // "Confirm all" button only appears if there are pending items
+    // Botão confirmar todos só aparece se há pendentes
     const btnAll = document.getElementById('btn-confirm-all');
     if (btnAll) btnAll.style.display = pending > 0 ? '' : 'none';
 
-    // Informational banner
+    // Banner informativo
     const banner = document.getElementById('info-banner');
     const bannerText = document.getElementById('info-banner-text');
     if (banner && bannerText && typeof unique === 'number') {

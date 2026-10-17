@@ -1,11 +1,11 @@
 <?php
 /**
  * PRISMA-SLR — login.php
- * Login page with Google OAuth 2.0
+ * Página de login com Google OAuth 2.0
  */
 require_once __DIR__ . '/config/auth.php';
 
-// If already logged in, redirect to the app
+// Se já está logado, redireciona para o app
 if (isLoggedIn()) {
     header('Location: /');
     exit;
@@ -22,16 +22,15 @@ unset($_SESSION['login_error']);
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Entrar — BaseRef</title>
   <script>
-    // Applies the theme saved by the landing page before the first paint (avoids flash)
+    // Aplica o tema salvo pela landing antes da primeira pintura (evita flash)
     (function(){
       var t = 'light';
       try { t = localStorage.getItem('prisma_theme') || 'light'; } catch(e) {}
       document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/vendor/inter-gfonts-v20/inter.css">
+  <link rel="stylesheet" href="assets/vendor/fontawesome-6.5.1/css/all.min.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -84,7 +83,7 @@ unset($_SESSION['login_error']);
     [data-theme="light"] .btn-google { border: 1px solid #dadce0; box-shadow: 0 1px 4px rgba(13,42,92,.08); }
     [data-theme="light"] .error-msg  { color: #b91c1c; }
 
-    /* logos: one per theme, swapped via CSS (no flash) */
+    /* logos: um por tema, trocados via CSS (sem flash) */
     .logo img.logo-light { display: none; }
     [data-theme="light"] .logo img.logo-dark  { display: none; }
     [data-theme="light"] .logo img.logo-light { display: block; }

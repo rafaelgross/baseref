@@ -1,0 +1,24 @@
+# BaseRef — block web access to server-side code, configuration and database scripts.
+#
+# Rewrite-based on purpose: LiteSpeed/OpenLiteSpeed ignore "Require"/"Deny" directives
+# in .htaccess but do apply RewriteRule; Apache needs mod_rewrite (enabled by default
+# on most distributions; Ubuntu/Debian: sudo a2enmod rewrite) and AllowOverride FileInfo.
+# [F] answers 403 Forbidden.
+
+RewriteEngine On
+
+# Folders with PHP includes, credentials and SQL scripts (only used by the application itself)
+RewriteRule ^(config|sql|lib)(/|$) - [F,L,NC]
+
+# Database scripts, Markdown documents and configuration templates, wherever they are
+RewriteRule \.(sql|md)$ - [F,L,NC]
+RewriteRule \.example\.php$ - [F,L,NC]
+
+# Backups, editor leftovers and maintenance scripts (e.g. page.php.bak-2026..., *.old, *.py)
+RewriteRule \.(bak|old|orig|save|swp)([.-]|$) - [F,L,NC]
+RewriteRule ~$ - [F,L]
+RewriteRule \.(py|sh|docx?)$ - [F,L,NC]
+
+# Any hidden file or folder (.git, .env, .htaccess, .claude, editor settings...),
+# except .well-known (used by Let's Encrypt certificate validation)
+RewriteRule (^|/)\.(?!well-known(/|$)) - [F,L]

@@ -1,9 +1,9 @@
 <?php
 /**
- * PRISMA-SLR - API: Bibliometrics
- * GET /api/bibliometrics.php?project_id=N&chart=TYPE
+ * PRISMA-SLR - API: Bibliometria
+ * GET /api/bibliometrics.php?project_id=N&chart=TIPO
  *
- * Available types:
+ * Tipos disponíveis:
  *   publications_year, document_types, top_journals, top_authors,
  *   top_countries, keywords_frequency, citations_distribution,
  *   open_access, top_publishers, keywords_by_year
@@ -19,14 +19,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 $pdo       = getDB();
 $projectId = isset($_GET['project_id']) ? (int) $_GET['project_id'] : null;
 $chart     = $_GET['chart'] ?? 'all';
-$scope     = $_GET['scope']  ?? 'all'; // 'all' or 'included'
+$scope     = $_GET['scope']  ?? 'all'; // 'all' ou 'included'
 
 if (!$projectId) jsonResponse(['error' => true, 'message' => 'project_id obrigatório'], 422);
 requireProjectAccess($pdo, $projectId);
 $reviewerId = (int) requireApiAuth()['id'];
 
 /**
- * Validates kw_type against the closed list of the keyword_type enum.
+ * Valida kw_type contra a lista fechada do enum keyword_type.
  */
 function kwTypeWhere(string $kwType): string
 {
@@ -34,11 +34,11 @@ function kwTypeWhere(string $kwType): string
     return "AND ak.keyword_type = '$kwType'";
 }
 
-// Scope filter (all articles or only those included by me)
+// Filtro de escopo (todos os artigos ou só os incluídos por mim)
 $scopeWhere = $scope === 'included' ? "AND a.is_duplicate = 0 AND " . personalIncludedExists($reviewerId) : "AND a.is_duplicate = 0";
 
-// Optional filter for a single imported data source/dataset (e.g. WOS only, Scopus only);
-// without it, the charts combine all datasets in the project.
+// Filtro opcional por uma única base/dataset importado (ex: só WOS, só Scopus);
+// sem isso, os gráficos combinam todos os datasets do projeto.
 $sourceId = isset($_GET['source_id']) ? (int) $_GET['source_id'] : 0;
 if ($sourceId) {
     $scopeWhere .= " AND a.source_id = $sourceId";
@@ -132,7 +132,7 @@ if ($chart === 'all' || $chart === 'citations_distribution') {
     ");
     $stmt->execute([$projectId]);
     $raw = $stmt->fetchAll();
-    // Group into buckets
+    // Agrupa em faixas
     $buckets = ['0' => 0, '1-5' => 0, '6-10' => 0, '11-25' => 0, '26-50' => 0, '51-100' => 0, '100+' => 0];
     foreach ($raw as $row) {
         $c = (int) $row['cited_by'];
@@ -175,10 +175,10 @@ if ($chart === 'all' || $chart === 'top_publishers') {
 }
 
 if ($chart === 'all' || $chart === 'keywords_by_year') {
-    // Top 5 keywords per year (for a stacked area chart)
+    // Top 5 keywords por ano (para gráfico de área empilhada)
     $limit = (int) ($_GET['limit'] ?? 8);
 
-    // First, get the top global keywords
+    // Primeiro, pega as top keywords globais
     $stmtTop = $pdo->prepare("
         SELECT ak.keyword
         FROM article_keywords ak
@@ -231,7 +231,7 @@ if ($chart === 'all' || $chart === 'top_cited') {
     ");
     $stmt->execute([$projectId, $limit]);
     $top = $stmt->fetchAll();
-    // Authors for each article
+    // Autores de cada artigo
     if (!empty($top)) {
         $ids = array_column($top, 'id');
         $ph  = implode(',', array_fill(0, count($ids), '?'));
@@ -248,12 +248,12 @@ if ($chart === 'all' || $chart === 'top_cited') {
 }
 
 // =============================================================
-// ───── CLASSIC BIBLIOMETRIC ANALYSES ──────────────────────────
+// ───── ANÁLISES BIBLIOMÉTRICAS CLÁSSICAS ──────────────────────
 // =============================================================
 
-// ── Lotka's Law: distribution of author productivity ─────────
-// For each n (articles per author), counts how many authors produced exactly n articles.
-// On a log-log scale this approximates a line with slope ~ -2 (Lotka, 1926).
+// ── Lei de Lotka: distribuição de produtividade dos autores ──
+// Para cada n (artigos por autor), conta quantos autores produziram exatamente n artigos.
+// Apresentação apenas descritiva: sem ajuste de modelo nem teste de aderência.
 if ($chart === 'all' || $chart === 'lotka') {
     $stmt = $pdo->prepare("
         SELECT n_articles, COUNT(*) AS n_authors FROM (
@@ -269,38 +269,24 @@ if ($chart === 'all' || $chart === 'lotka') {
     $stmt->execute([$projectId]);
     $rows = $stmt->fetchAll();
 
-    // Total number of authors (for %)
     $totalAuthors = array_sum(array_column($rows, 'n_authors'));
 
-    // Estimates the Lotka coefficient via simple linear regression in log-log space
-    // log(y) = log(C) - n * log(x)
-    $coef = null;
-    if (count($rows) >= 3) {
-        $sx = $sy = $sxy = $sxx = 0;
-        $k = 0;
-        foreach ($rows as $r) {
-            if ($r['n_articles'] < 1 || $r['n_authors'] < 1) continue;
-            $x = log((float)$r['n_articles']);
-            $y = log((float)$r['n_authors']);
-            $sx += $x; $sy += $y; $sxy += $x * $y; $sxx += $x * $x;
-            $k++;
-        }
-        if ($k >= 2 && ($k * $sxx - $sx * $sx) != 0) {
-            $slope = ($k * $sxy - $sx * $sy) / ($k * $sxx - $sx * $sx);
-            $intercept = ($sy - $slope * $sx) / $k;
-            $coef = ['slope' => round(-$slope, 3), 'C' => round(exp($intercept), 3)];
-        }
-    }
+    // Tamanho da amostra (artigos no mesmo escopo/base dos autores contados)
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM articles a WHERE a.project_id = ? $scopeWhere");
+    $stmt->execute([$projectId]);
+    $totalArticles = (int) $stmt->fetchColumn();
 
     $result['lotka'] = [
-        'distribution'    => $rows,
-        'total_authors'   => $totalAuthors,
-        'lotka_coefficient' => $coef, // exponent n of Lotka's Law (ideally ~2)
+        'distribution'   => $rows,
+        'total_authors'  => $totalAuthors,
+        'total_articles' => $totalArticles,
+        'scope'          => $scope === 'included' ? 'included' : 'all',
+        'source_filter'  => $sourceId > 0,
     ];
 }
 
-// ── Bradford's Law: journal dispersion ────────────────────────
-// Sorts journals by number of articles and splits them into 3 zones with ~equal total articles.
+// ── Lei de Bradford: dispersão de periódicos ──────────────────
+// Ordena periódicos por nº de artigos e divide em 3 zonas com ~mesmo total de artigos.
 if ($chart === 'all' || $chart === 'bradford') {
     $stmt = $pdo->prepare("
         SELECT journal, COUNT(*) AS n
@@ -311,22 +297,22 @@ if ($chart === 'all' || $chart === 'bradford') {
     $stmt->execute([$projectId]);
     $rawRows = $stmt->fetchAll();
 
-    // Normalizes variants of the same journal (Scopus vs Web of Science):
-    // "Sustainability (Switzerland)" and "SUSTAINABILITY" → same key.
-    // Keeps the most frequent spelling as the label (tiebreak: the longest one).
-    $merged = []; // key => ['n' => int, 'labels' => [spelling => count]]
+    // Normaliza variantes do mesmo periódico (Scopus vs Web of Science):
+    // "Sustainability (Switzerland)" e "SUSTAINABILITY" → mesma chave.
+    // Mantém como rótulo a grafia mais frequente (desempate: a mais longa).
+    $merged = []; // key => ['n' => int, 'labels' => [grafia => contagem]]
     foreach ($rawRows as $r) {
         $key = mb_strtoupper($r['journal']);
-        $key = preg_replace('/\s*\([^)]*\)\s*$/', '', $key); // remove "(...)" suffix
-        $key = preg_replace('/[[:punct:]]/', ' ', $key);     // punctuation → space
-        $key = trim(preg_replace('/\s+/', ' ', $key));        // collapse spaces
+        $key = preg_replace('/\s*\([^)]*\)\s*$/', '', $key); // remove sufixo "(...)"
+        $key = preg_replace('/[[:punct:]]/', ' ', $key);     // pontuação → espaço
+        $key = trim(preg_replace('/\s+/', ' ', $key));        // colapsa espaços
         if (!isset($merged[$key])) $merged[$key] = ['n' => 0, 'labels' => []];
         $merged[$key]['n'] += (int) $r['n'];
         $merged[$key]['labels'][$r['journal']] = ((int) $r['n']);
     }
     $rows = [];
     foreach ($merged as $m) {
-        // label = most frequent spelling; tiebreak by the longest one
+        // rótulo = grafia mais frequente; desempate pela mais longa
         arsort($m['labels']);
         $top = array_key_first($m['labels']);
         foreach ($m['labels'] as $lbl => $c) {
@@ -339,7 +325,7 @@ if ($chart === 'all' || $chart === 'bradford') {
     $totalArticles = array_sum(array_column($rows, 'n'));
     $third = $totalArticles / 3;
 
-    // Accumulate up to each third
+    // Acumula até cada terço
     $cum = 0; $zone = 1;
     $zones = [1 => [], 2 => [], 3 => []];
     foreach ($rows as $i => $r) {
@@ -356,11 +342,11 @@ if ($chart === 'all' || $chart === 'bradford') {
             'related'   => ['count' => count($zones[2]), 'articles' => array_sum(array_column($zones[2],'n'))],
             'peripheral'=> ['count' => count($zones[3]), 'articles' => array_sum(array_column($zones[3],'n'))],
         ],
-        'series' => array_merge($zones[1], $zones[2], $zones[3]), // for the ranking chart
+        'series' => array_merge($zones[1], $zones[2], $zones[3]), // para o gráfico de ranking
     ];
 }
 
-// ── Annual production + compound annual growth rate (CAGR) ───
+// ── Produção anual + taxa de crescimento composto (CAGR) ─────
 if ($chart === 'all' || $chart === 'annual_growth') {
     $stmt = $pdo->prepare("
         SELECT year, COUNT(*) AS total
@@ -396,7 +382,7 @@ if ($chart === 'all' || $chart === 'annual_growth') {
     ];
 }
 
-// ── Word Cloud: keywords and frequencies for wordcloud2.js ───
+// ── Word Cloud: keywords e frequências para wordcloud2.js ────
 if ($chart === 'all' || $chart === 'word_cloud') {
     $limit  = (int) ($_GET['limit'] ?? 100);
     $kwType = $_GET['kw_type'] ?? 'author';
@@ -413,13 +399,13 @@ if ($chart === 'all' || $chart === 'word_cloud') {
     $result['word_cloud'] = $stmt->fetchAll();
 }
 
-// ── Trend Topics: keywords positioned by year median ─────────
-// bibliometrix style: each keyword gets q1, median, and q3 of its publication year.
+// ── Trend Topics: keywords posicionadas pela mediana do ano ──
+// Estilo bibliometrix: cada keyword recebe q1, mediana e q3 do ano de publicação.
 if ($chart === 'all' || $chart === 'trend_topics') {
     $minFreq = (int) ($_GET['min_freq'] ?? 3);
     $limit   = (int) ($_GET['limit']    ?? 25);
 
-    // Top keywords (author)
+    // Top keywords (autor)
     $stmtTop = $pdo->prepare("
         SELECT ak.keyword, COUNT(*) AS freq
         FROM article_keywords ak
@@ -434,7 +420,7 @@ if ($chart === 'all' || $chart === 'trend_topics') {
 
     $out = [];
     foreach ($topKw as $kw) {
-        // Gets the years of occurrences to compute quartiles
+        // Pega anos das ocorrências para calcular quartis
         $stmt = $pdo->prepare("
             SELECT a.year FROM article_keywords ak
             JOIN articles a ON a.id = ak.article_id
@@ -458,16 +444,16 @@ if ($chart === 'all' || $chart === 'trend_topics') {
             'year_q3'    => $q3,
         ];
     }
-    // Sorts by ascending median (timeline)
+    // Ordena pela mediana ascendente (timeline)
     usort($out, fn($a,$b) => $a['year_median'] <=> $b['year_median']);
     $result['trend_topics'] = $out;
 }
 
-// ── Three-Field Plot (Sankey): Authors → Keywords → Journals
+// ── Three-Field Plot (Sankey): Autores → Keywords → Periódicos
 if ($chart === 'all' || $chart === 'three_field') {
     $nTop = (int) ($_GET['n_top'] ?? 12);
 
-    // Top authors
+    // Top autores
     $stmt = $pdo->prepare("
         SELECT au.id, au.full_name FROM authors au
         JOIN article_authors aa ON aa.author_id = au.id
@@ -479,7 +465,7 @@ if ($chart === 'all' || $chart === 'three_field') {
     $topAuthors = $stmt->fetchAll();
     $authorIds  = array_column($topAuthors, 'id');
 
-    // Top keywords (author)
+    // Top keywords (autor)
     $stmt = $pdo->prepare("
         SELECT ak.keyword FROM article_keywords ak
         JOIN articles a ON a.id = ak.article_id
@@ -489,7 +475,7 @@ if ($chart === 'all' || $chart === 'three_field') {
     $stmt->execute([$projectId, $nTop]);
     $topKw = array_column($stmt->fetchAll(), 'keyword');
 
-    // Top journals
+    // Top periódicos
     $stmt = $pdo->prepare("
         SELECT journal FROM articles a
         WHERE project_id = ? $scopeWhere AND journal IS NOT NULL AND journal != ''
@@ -539,7 +525,7 @@ if ($chart === 'all' || $chart === 'three_field') {
     ];
 }
 
-// ── Average citations per publication year (normalized TC/Y) ─
+// ── Citações médias por ano de publicação (TC/Y normalizado) ─
 if ($chart === 'all' || $chart === 'citations_per_year') {
     $stmt = $pdo->prepare("
         SELECT year,
@@ -562,7 +548,7 @@ if ($chart === 'all' || $chart === 'citations_per_year') {
     $result['citations_per_year'] = $rows;
 }
 
-// Scientific production map by country
+// Mapa de produção científica por país
 if ($chart === 'country_production') {
     // TRIM + strip trailing punctuation + min length 4 to filter out
     // author name fragments that sometimes appear in the country field
@@ -584,11 +570,11 @@ if ($chart === 'country_production') {
     jsonResponse($result);
 }
 
-// Co-authorship network
+// Rede de co-autoria
 if ($chart === 'coauthorship') {
     $minArticles = (int) ($_GET['min_articles'] ?? 2);
 
-    // Authors with at least min_articles
+    // Autores com pelo menos min_articles
     $stmt = $pdo->prepare("
         SELECT au.id, au.full_name, COUNT(DISTINCT aa.article_id) AS article_count
         FROM authors au
@@ -625,7 +611,7 @@ if ($chart === 'coauthorship') {
     return;
 }
 
-// Keyword co-occurrence network
+// Rede de co-ocorrência de palavras-chave
 if ($chart === 'keyword_cooccurrence') {
     $minOccurrences = (int) ($_GET['min_occ'] ?? 2);
     $limit = (int) ($_GET['limit'] ?? 50);
@@ -669,11 +655,11 @@ if ($chart === 'keyword_cooccurrence') {
     return;
 }
 
-// ── Author local impact: h, g, and m indices ──────────────────
-// Computed over the citations of articles WITHIN the corpus ("local" indices,
-// as in bibliometrix::Hindex). h: largest h such that h articles have >= h citations;
-// g: largest g such that the g most-cited articles accumulate >= g² citations;
-// m: h divided by the author's academic age in the corpus (years since 1st publication).
+// ── Impacto local dos autores: índices h, g e m ───────────────
+// Calculados sobre as citações dos artigos DENTRO do corpus (índices "locais",
+// como em bibliometrix::Hindex). h: maior h tal que h artigos têm >= h citações;
+// g: maior g tal que os g artigos mais citados acumulam >= g² citações;
+// m: h dividido pela idade acadêmica do autor no corpus (anos desde a 1ª publicação).
 if ($chart === 'all' || $chart === 'author_impact') {
     $limit = (int) ($_GET['limit'] ?? 15);
     $stmt = $pdo->prepare("
@@ -716,7 +702,7 @@ if ($chart === 'all' || $chart === 'author_impact') {
     $result['author_impact'] = array_slice($impact, 0, $limit);
 }
 
-// ── Journal local impact: h and g indices ─────────────────────
+// ── Impacto local dos periódicos: índices h e g ───────────────
 if ($chart === 'all' || $chart === 'source_impact') {
     $limit = (int) ($_GET['limit'] ?? 15);
     $stmt = $pdo->prepare("
@@ -747,11 +733,11 @@ if ($chart === 'all' || $chart === 'source_impact') {
     $result['source_impact'] = array_slice($impact, 0, $limit);
 }
 
-// ── Thematic Map (Callon strategic diagram) ───────────────────
-// Keyword clusters via co-occurrence normalized by the equivalence index
-// e_ij = c_ij² / (c_i · c_j) (Callon et al., 1991), as in bibliometrix::thematicMap.
-// Centrality = degree of the cluster's interaction with others (topic relevance);
-// Density = strength of internal ties (degree of topic development).
+// ── Mapa Temático (diagrama estratégico de Callon) ────────────
+// Clusters de keywords via co-ocorrência normalizada pelo índice de equivalência
+// e_ij = c_ij² / (c_i · c_j) (Callon et al., 1991), como em bibliometrix::thematicMap.
+// Centralidade = grau de interação do cluster com os demais (relevância do tema);
+// Densidade = força dos laços internos (grau de desenvolvimento do tema).
 if ($chart === 'thematic_map') {
     $minFreq = (int) ($_GET['min_freq'] ?? 2);
     $limit   = (int) ($_GET['limit'] ?? 50);
@@ -766,8 +752,8 @@ if ($chart === 'thematic_map') {
     ");
     $stmt->execute([$projectId, $minFreq, $limit]);
     $kwRows = $stmt->fetchAll();
-    // Normalizes to lowercase: MySQL collation is case-insensitive,
-    // but PHP array comparisons are not
+    // Normaliza para minúsculas: a collation do MySQL é case-insensitive,
+    // mas as comparações de array no PHP não são
     $freq = [];
     foreach ($kwRows as $r) $freq[mb_strtolower($r['keyword'])] = (int) $r['freq'];
     $kws = array_keys($freq);
@@ -792,13 +778,13 @@ if ($chart === 'thematic_map') {
             $k1 = mb_strtolower($e['k1']);
             $k2 = mb_strtolower($e['k2']);
             if (!isset($freq[$k1], $freq[$k2]) || $k1 === $k2) continue;
-            // Equivalence index: normalizes co-occurrence by marginal frequencies
+            // Índice de equivalência: normaliza a co-ocorrência pelas frequências marginais
             $eq = ($e['w'] ** 2) / ($freq[$k1] * $freq[$k2]);
             $edges[] = ['k1' => $k1, 'k2' => $k2, 'eq' => $eq];
         }
     }
 
-    // Clustering via label propagation (deterministic: ordered by frequency)
+    // Clusterização por propagação de rótulos (determinística: ordem por frequência)
     $label = array_combine($kws, $kws);
     $neighbors = [];
     foreach ($edges as $e) {
@@ -820,7 +806,7 @@ if ($chart === 'thematic_map') {
         if (!$changed) break;
     }
 
-    // Callon metrics per cluster
+    // Métricas de Callon por cluster
     $clusters = [];
     foreach ($kws as $kw) $clusters[$label[$kw]]['keywords'][] = $kw;
     $out = [];
@@ -833,7 +819,7 @@ if ($chart === 'thematic_map') {
             if ($in1 && $in2)      { $internal += $e['eq']; }
             elseif ($in1 || $in2)  { $external += $e['eq']; }
         }
-        // Names the cluster after its most frequent keyword
+        // Nomeia o cluster pela keyword mais frequente
         usort($c['keywords'], fn($a, $b) => $freq[$b] <=> $freq[$a]);
         $out[] = [
             'name'       => $c['keywords'][0],
@@ -844,12 +830,12 @@ if ($chart === 'thematic_map') {
             'density'    => round(100 * $internal / max(1, count($c['keywords'])), 4),
         ];
     }
-    // Only clusters with 2+ keywords are considered themes; isolated ones become noise
+    // Apenas clusters com 2+ keywords são temas; isolados viram ruído
     $out = array_values(array_filter($out, fn($c) => $c['n_keywords'] >= 2));
     jsonResponse(['thematic_map' => $out]);
 }
 
-// ── 1. Top Institutions ─────────────────────────────────────────
+// ── 1. Top Instituições ───────────────────────────────────────
 if ($chart === 'top_institutions') {
     try {
         $limit = min((int)($_GET['limit'] ?? 20), 50);
@@ -938,8 +924,8 @@ function extractInstitutionName(string $aff): string
     return $parts[0] ?? '';
 }
 
-// ── 2. MCP vs SCP by Country ──────────────────────────────────
-// SCP = article has authors from only 1 country | MCP = ≥ 2 countries
+// ── 2. MCP vs SCP por País ────────────────────────────────────
+// SCP = artigo só tem autores de 1 país | MCP = ≥ 2 países
 if ($chart === 'mcp_scp') {
     $stmt = $pdo->prepare("
         SELECT
@@ -968,7 +954,7 @@ if ($chart === 'mcp_scp') {
     ");
     $stmt->execute([$projectId]);
     $rows = $stmt->fetchAll();
-    // collaboration index = average number of countries per article
+    // índice de colaboração = média de países por artigo
     $stmt2 = $pdo->prepare("
         SELECT AVG(cnt) AS ci FROM (
             SELECT af.article_id, COUNT(DISTINCT TRIM(TRAILING '.' FROM TRIM(af.country))) AS cnt
@@ -983,10 +969,10 @@ if ($chart === 'mcp_scp') {
     jsonResponse(['mcp_scp' => $rows, 'collaboration_index' => $ci]);
 }
 
-// ── 3. Author Production Over Time ────────────────────────────
+// ── 3. Produção dos Autores ao Longo do Tempo ─────────────────
 if ($chart === 'author_over_time') {
     $topN = min((int)($_GET['top'] ?? 10), 25);
-    // Top N authors by number of articles
+    // Top N autores por nº de artigos
     $stmt = $pdo->prepare("
         SELECT au.id, au.full_name, COUNT(DISTINCT aa.article_id) AS total
         FROM authors au
@@ -1016,10 +1002,10 @@ if ($chart === 'author_over_time') {
     jsonResponse(['author_over_time' => $rows, 'authors' => array_column($topAuthors, 'full_name')]);
 }
 
-// ── 4. Country Collaboration Network ──────────────────────────
+// ── 4. Rede de Colaboração entre Países ───────────────────────
 if ($chart === 'country_collab') {
     $minWeight = (int)($_GET['min_weight'] ?? 1);
-    // For each article, gets pairs of distinct countries among the authors
+    // Para cada artigo, pega pares de países distintos dos autores
     $stmt = $pdo->prepare("
         SELECT
             LEAST(TRIM(af1.country), TRIM(af2.country)) AS c1,
@@ -1041,7 +1027,7 @@ if ($chart === 'country_collab') {
     $stmt->execute([$projectId, $minWeight]);
     $edges = $stmt->fetchAll();
 
-    // Production per country (for node size) — minimum 2 articles to filter out bad data
+    // Produção por país (para tamanho dos nós) — mínimo 2 artigos para filtrar dados ruins
     $stmt2 = $pdo->prepare("
         SELECT TRIM(TRAILING '.' FROM TRIM(country)) AS country,
                COUNT(DISTINCT af.article_id) AS n
@@ -1057,13 +1043,13 @@ if ($chart === 'country_collab') {
     jsonResponse(['nodes' => $nodes, 'edges' => $edges]);
 }
 
-// ── 5. Thematic Evolution (Callon map by period) ───────────────
+// ── 5. Evolução Temática (mapa de Callon por períodos) ────────
 if ($chart === 'thematic_evolution') { try {
     $minFreq = (int)($_GET['min_freq'] ?? 2);
-    $periods = (int)($_GET['periods'] ?? 2); // 2 or 3 periods
+    $periods = (int)($_GET['periods'] ?? 2); // 2 ou 3 períodos
     $periods = max(2, min(3, $periods));
 
-    // Determines the available years and splits them into equal periods
+    // Determina os anos disponíveis e divide em períodos iguais
     $stmt = $pdo->prepare("
         SELECT MIN(a.year) AS y_min, MAX(a.year) AS y_max
         FROM articles a WHERE a.project_id = ? $scopeWhere AND a.year > 1900
@@ -1079,7 +1065,7 @@ if ($chart === 'thematic_evolution') { try {
     for ($i = 0; $i < $periods; $i++) {
         $cuts[] = ['from' => $yMin + $i * $step, 'to' => min($yMax, $yMin + ($i + 1) * $step - 1)];
     }
-    $cuts[count($cuts) - 1]['to'] = $yMax; // ensures the last period covers up to yMax
+    $cuts[count($cuts) - 1]['to'] = $yMax; // garante que o último cobre até yMax
 
     $result_periods = [];
     foreach ($cuts as $cut) {
@@ -1125,7 +1111,7 @@ if ($chart === 'thematic_evolution') { try {
             }
         }
 
-        // Same clustering as thematic_map
+        // Mesma clusterização do thematic_map
         $label = array_combine($kws,$kws);
         $neighbors = [];
         foreach ($edges as $e) {
@@ -1173,7 +1159,7 @@ if ($chart === 'thematic_evolution') { try {
 } }
 
 /**
- * h and g indices computed from a vector of citations in descending order.
+ * Índices h e g a partir de um vetor de citações em ordem decrescente.
  */
 function computeImpactIndices(array $citationsDesc): array
 {

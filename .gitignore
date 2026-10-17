@@ -39,7 +39,9 @@ desktop.ini
 *~
 
 # ─── PHP ─────────────────────────────────────────────────────
-vendor/
+# Only Composer's root vendor/ — assets/vendor/ (front-end libraries) and
+# lib/vendor/ (MaxMind DB reader) ARE part of the repository.
+/vendor/
 composer.lock
 
 # ─── Node (caso use npm para assets) ─────────────────────────

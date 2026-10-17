@@ -45,6 +45,25 @@ function requireProjectAccess(PDO $pdo, int $projectId): void
 }
 
 /**
+ * User's role in a project: 'admin', 'owner', 'reviewer' (blind), 'support' or '' (no access).
+ * A support reviewer sees the other reviewers' decisions and stays out of the kappa and of the official status.
+ */
+function projectRole(PDO $pdo, int $projectId, int $userId): string
+{
+    $user = currentUser();
+    if (($user['role'] ?? 'user') === 'admin') return 'admin';
+
+    $stmt = $pdo->prepare("SELECT user_id FROM projects WHERE id = ?");
+    $stmt->execute([$projectId]);
+    $owner = $stmt->fetchColumn();
+    if ($owner === null || (int) $owner === $userId) return 'owner';
+
+    $stmt = $pdo->prepare("SELECT role FROM project_members WHERE project_id = ? AND user_id = ?");
+    $stmt->execute([$projectId, $userId]);
+    return (string) ($stmt->fetchColumn() ?: '');
+}
+
+/**
  * SQL fragment: article was PERSONALLY included by the logged-in reviewer
  * (include decision at eligibility), not the project's consolidated official
  * status (which may reflect another reviewer's decision). Use in queries

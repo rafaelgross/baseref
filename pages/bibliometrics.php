@@ -1,6 +1,6 @@
 <?php
 /**
- * PRISMA-SLR - Bibliometrics
+ * PRISMA-SLR - Bibliometria
  */
 if (!$projectId): ?>
 <div class="empty-state"><i class="fa fa-triangle-exclamation"></i>
@@ -8,7 +8,7 @@ if (!$projectId): ?>
 <?php return; endif; ?>
 
 <style>
-/* ── Chart card layout ─────────────────────────────── */
+/* ── Layout de cards de gráficos ─────────────────────────────── */
 .charts-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -46,12 +46,12 @@ if (!$projectId): ?>
   gap: 7px;
 }
 
-/* Canvas wrapper height */
+/* Altura dos wrappers de canvas */
 .chart-wrapper       { height: 280px; }
 .chart-wrapper-tall  { height: 420px; }
 </style>
 
-<?php /* ── Main content ── */ ?>
+<?php /* ── Conteúdo principal ── */ ?>
 
 <div class="page-header">
   <div>
@@ -73,8 +73,8 @@ if (!$projectId): ?>
 </div>
 
 <!-- ============================================================
-     SECTION 1 — CLASSIC BIBLIOMETRIC LAWS
-     (Lotka · Bradford · Annual production with CAGR)
+     SEÇÃO 1 — LEIS BIBLIOMÉTRICAS CLÁSSICAS
+     (Lotka · Bradford · Produção anual com CAGR)
      ============================================================ -->
 <h2 style="font-size:1rem;font-weight:700;margin:8px 0 14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">
   <i class="fa fa-scale-balanced" style="color:var(--primary)"></i> Leis Bibliométricas Clássicas
@@ -82,20 +82,20 @@ if (!$projectId): ?>
 
 <div class="charts-grid">
 
-  <!-- Lotka's Law -->
+  <!-- Lei de Lotka -->
   <div class="chart-card" id="chart-card-lotka">
     <div class="chart-card-header">
-      <h3 class="chart-title"><i class="fa fa-chart-scatter"></i> Lei de Lotka</h3>
+      <h3 class="chart-title"><i class="fa fa-chart-scatter"></i> Produtividade dos autores</h3>
       <button class="btn btn-ghost btn-sm" onclick="exportCanvasPng('chart-lotka','lotka.png')" title="Exportar PNG"><i class="fa fa-download"></i></button>
       <button class="btn btn-ghost btn-sm" onclick="exportChartXLS('lotka','lotka.xlsx')" title="Exportar XLS"><i class="fa fa-file-excel"></i></button>
     </div>
     <div class="chart-wrapper"><canvas id="chart-lotka"></canvas></div>
     <p style="font-size:.72rem;color:var(--text-muted);margin:8px 4px 0;line-height:1.4">
-      Distribuição de produtividade: nº de autores que publicaram cada quantidade de artigos. A linha tracejada é a previsão teórica de Lotka (1926), f(n)=f(1)/nⁿ, ancorada nos autores com 1 artigo; expoente n ≈ 2 indica padrão lotkaiano clássico.
+      Distribuição de produtividade: nº de autores que publicaram cada quantidade de artigos, na amostra indicada no gráfico. Apresentação descritiva, sem ajuste de modelo nem teste de aderência à Lei de Lotka.
     </p>
   </div>
 
-  <!-- Bradford's Law -->
+  <!-- Lei de Bradford -->
   <div class="chart-card" id="chart-card-bradford">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-layer-group"></i> Lei de Bradford</h3>
@@ -108,7 +108,7 @@ if (!$projectId): ?>
     </p>
   </div>
 
-  <!-- Annual Production with CAGR -->
+  <!-- Produção Anual com CAGR -->
   <div class="chart-card chart-card-wide" id="chart-card-annual_growth">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-chart-line"></i> Produção Científica Anual + CAGR</h3>
@@ -124,7 +124,7 @@ if (!$projectId): ?>
 </div>
 
 <!-- ============================================================
-     SECTION 1B — LOCAL IMPACT INDICES (h, g, m)
+     SEÇÃO 1B — ÍNDICES DE IMPACTO LOCAL (h, g, m)
      ============================================================ -->
 <h2 style="font-size:1rem;font-weight:700;margin:28px 0 14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">
   <i class="fa fa-ranking-star" style="color:var(--primary)"></i> Índices de Impacto Local
@@ -132,7 +132,7 @@ if (!$projectId): ?>
 
 <div class="charts-grid">
 
-  <!-- Author Impact -->
+  <!-- Impacto dos Autores -->
   <div class="chart-card chart-card-wide" id="chart-card-author_impact">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-user-graduate"></i> Impacto dos Autores (índices h, g, m)</h3>
@@ -148,7 +148,7 @@ if (!$projectId): ?>
     </p>
   </div>
 
-  <!-- Journal Impact -->
+  <!-- Impacto dos Periódicos -->
   <div class="chart-card chart-card-wide" id="chart-card-source_impact">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-book-journal-whills"></i> Impacto dos Periódicos (índices h, g)</h3>
@@ -166,7 +166,7 @@ if (!$projectId): ?>
 </div>
 
 <!-- ============================================================
-     SECTION 2 — CONTENT AND THEME ANALYSIS
+     SEÇÃO 2 — ANÁLISE DE CONTEÚDO E TEMAS
      (Word Cloud · Trend Topics · Three-Field Plot)
      ============================================================ -->
 <h2 style="font-size:1rem;font-weight:700;margin:28px 0 14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">
@@ -202,7 +202,7 @@ if (!$projectId): ?>
   </div>
 
   <!-- Three-Field Plot (Sankey) -->
-  <!-- Thematic Map (Callon) -->
+  <!-- Mapa Temático (Callon) -->
   <div class="chart-card chart-card-wide" id="chart-card-thematic_map">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-map"></i> Mapa Temático — Diagrama Estratégico de Callon</h3>
@@ -231,7 +231,7 @@ if (!$projectId): ?>
 </div>
 
 <!-- ============================================================
-     SECTION 2B — COLLABORATION & INSTITUTIONS
+     SEÇÃO 2B — COLABORAÇÃO & INSTITUIÇÕES
      ============================================================ -->
 <h2 style="font-size:1rem;font-weight:700;margin:28px 0 14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">
   <i class="fa fa-building-columns" style="color:var(--primary)"></i> Colaboração &amp; Instituições
@@ -239,7 +239,7 @@ if (!$projectId): ?>
 
 <div class="charts-grid">
 
-  <!-- Top Institutions -->
+  <!-- Top Instituições -->
   <div class="chart-card chart-card-wide" id="chart-card-top_institutions">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-university"></i> Top Instituições por Produção</h3>
@@ -265,7 +265,7 @@ if (!$projectId): ?>
     </p>
   </div>
 
-  <!-- Author Production Over Time -->
+  <!-- Produção dos Autores ao Longo do Tempo -->
   <div class="chart-card chart-card-full" id="chart-card-author_over_time">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-chart-scatter"></i> Produção dos Autores ao Longo do Tempo</h3>
@@ -278,7 +278,7 @@ if (!$projectId): ?>
     </p>
   </div>
 
-  <!-- Country Collaboration Network -->
+  <!-- Rede de Colaboração entre Países -->
   <div class="chart-card chart-card-full" id="chart-card-country_collab">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-diagram-project"></i> Rede de Colaboração entre Países</h3>
@@ -294,7 +294,7 @@ if (!$projectId): ?>
 </div>
 
 <!-- ============================================================
-     SECTION 2C — THEMATIC EVOLUTION
+     SEÇÃO 2C — EVOLUÇÃO TEMÁTICA
      ============================================================ -->
 <h2 style="font-size:1rem;font-weight:700;margin:28px 0 14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">
   <i class="fa fa-timeline" style="color:var(--primary)"></i> Evolução Temática
@@ -319,7 +319,7 @@ if (!$projectId): ?>
 </div>
 
 <!-- ============================================================
-     SECTION 3 — CITATION ANALYSIS
+     SEÇÃO 3 — ANÁLISE DE CITAÇÕES
      ============================================================ -->
 <h2 style="font-size:1rem;font-weight:700;margin:28px 0 14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">
   <i class="fa fa-quote-right" style="color:var(--primary)"></i> Análise de Citações
@@ -327,7 +327,7 @@ if (!$projectId): ?>
 
 <div class="charts-grid">
 
-  <!-- Citations per year -->
+  <!-- Citações por ano -->
   <div class="chart-card chart-card-wide" id="chart-card-citations_per_year">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-chart-line"></i> Citações por Ano de Publicação (TC/Y)</h3>
@@ -343,16 +343,16 @@ if (!$projectId): ?>
 </div>
 
 <!-- ============================================================
-     SECTION 4 — SUPPLEMENTARY DESCRIPTIVES
+     SEÇÃO 4 — DESCRITIVAS COMPLEMENTARES
      ============================================================ -->
 <h2 style="font-size:1rem;font-weight:700;margin:28px 0 14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">
   <i class="fa fa-table-cells" style="color:var(--primary)"></i> Análises Descritivas
 </h2>
 
-<!-- Chart grid -->
+<!-- Grid de gráficos -->
 <div class="charts-grid">
 
-  <!-- Publications per Year -->
+  <!-- Publicações por Ano -->
   <div class="chart-card" id="chart-card-publications_year">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-chart-line"></i> Publicações por Ano</h3>
@@ -362,7 +362,7 @@ if (!$projectId): ?>
     <div class="chart-wrapper"><canvas id="chart-publications_year"></canvas></div>
   </div>
 
-  <!-- Distribution by Database -->
+  <!-- Distribuição por Base -->
   <div class="chart-card" id="chart-card-source_types">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-database"></i> Distribuição por Base</h3>
@@ -372,7 +372,7 @@ if (!$projectId): ?>
     <div class="chart-wrapper"><canvas id="chart-source_types"></canvas></div>
   </div>
 
-  <!-- Document Types -->
+  <!-- Tipos de Documento -->
   <div class="chart-card" id="chart-card-document_types">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-file-alt"></i> Tipos de Documento</h3>
@@ -382,7 +382,7 @@ if (!$projectId): ?>
     <div class="chart-wrapper"><canvas id="chart-document_types"></canvas></div>
   </div>
 
-  <!-- Open Access -->
+  <!-- Acesso Aberto -->
   <div class="chart-card" id="chart-card-open_access">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-lock-open"></i> Acesso Aberto</h3>
@@ -392,7 +392,7 @@ if (!$projectId): ?>
     <div class="chart-wrapper"><canvas id="chart-open_access"></canvas></div>
   </div>
 
-  <!-- Top Journals (full width) -->
+  <!-- Top Periódicos (full width) -->
   <div class="chart-card chart-card-wide" id="chart-card-top_journals">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-journal-whills"></i> Top 15 Periódicos</h3>
@@ -402,7 +402,7 @@ if (!$projectId): ?>
     <div class="chart-wrapper chart-wrapper-tall"><canvas id="chart-top_journals"></canvas></div>
   </div>
 
-  <!-- Top Authors (full width) -->
+  <!-- Top Autores (full width) -->
   <div class="chart-card chart-card-wide" id="chart-card-top_authors">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-users"></i> Top 15 Autores com Mais Publicações</h3>
@@ -412,7 +412,7 @@ if (!$projectId): ?>
     <div class="chart-wrapper chart-wrapper-tall"><canvas id="chart-top_authors"></canvas></div>
   </div>
 
-  <!-- Top Countries -->
+  <!-- Top Países -->
   <div class="chart-card" id="chart-card-top_countries">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-globe"></i> Top Países</h3>
@@ -422,7 +422,7 @@ if (!$projectId): ?>
     <div class="chart-wrapper"><canvas id="chart-top_countries"></canvas></div>
   </div>
 
-  <!-- World Map of Scientific Production -->
+  <!-- Mapa Mundial de Produção Científica -->
   <div class="chart-card chart-card-wide" id="chart-card-country_production">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-earth-americas"></i> Country Scientific Production</h3>
@@ -432,7 +432,7 @@ if (!$projectId): ?>
     <div id="map-country_production" style="width:100%;position:relative;"></div>
   </div>
 
-  <!-- Citation Distribution -->
+  <!-- Distribuição de Citações -->
   <div class="chart-card" id="chart-card-citations_distribution">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-quote-left"></i> Distribuição de Citações</h3>
@@ -442,7 +442,7 @@ if (!$projectId): ?>
     <div class="chart-wrapper"><canvas id="chart-citations_distribution"></canvas></div>
   </div>
 
-  <!-- Top Publishers -->
+  <!-- Top Editoras -->
   <div class="chart-card" id="chart-card-top_publishers">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-building"></i> Top Editoras</h3>
@@ -452,7 +452,7 @@ if (!$projectId): ?>
     <div class="chart-wrapper"><canvas id="chart-top_publishers"></canvas></div>
   </div>
 
-  <!-- Frequent Keywords (full width) -->
+  <!-- Keywords Frequentes (full width) -->
   <div class="chart-card chart-card-wide" id="chart-card-keywords_frequency">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-tags"></i> Palavras-chave Mais Frequentes</h3>
@@ -462,7 +462,7 @@ if (!$projectId): ?>
     <div class="chart-wrapper chart-wrapper-tall"><canvas id="chart-keywords_frequency"></canvas></div>
   </div>
 
-  <!-- Keyword Evolution (full width) -->
+  <!-- Evolução de Keywords (full width) -->
   <div class="chart-card chart-card-wide" id="chart-card-keywords_by_year">
     <div class="chart-card-header">
       <h3 class="chart-title"><i class="fa fa-chart-area"></i> Evolução de Keywords por Ano</h3>
@@ -473,7 +473,7 @@ if (!$projectId): ?>
   </div>
 </div>
 
-<!-- Table: Most Cited Articles -->
+<!-- Tabela: Artigos Mais Citados -->
 <div class="chart-card chart-card-full" style="margin-top:20px" id="section-top-cited">
   <div class="chart-card-header">
     <h3 class="chart-title"><i class="fa fa-trophy"></i> Top 10 Artigos Mais Citados</h3>
@@ -485,7 +485,7 @@ if (!$projectId): ?>
   </div>
 </div>
 
-<!-- Co-authorship Network -->
+<!-- Rede de Co-autoria -->
 <div class="chart-card chart-card-full" style="margin-top:20px" id="section-coauthorship">
   <div class="chart-card-header">
     <h3 class="chart-title"><i class="fa fa-network-wired"></i> Rede de Co-autoria</h3>
@@ -506,7 +506,7 @@ if (!$projectId): ?>
   </div>
 </div>
 
-<!-- Keyword Co-occurrence -->
+<!-- Co-ocorrência de Keywords -->
 <div class="chart-card chart-card-full" style="margin-top:20px" id="section-keyword-network">
   <div class="chart-card-header">
     <h3 class="chart-title"><i class="fa fa-diagram-project"></i> Co-ocorrência de Keywords</h3>
@@ -531,27 +531,35 @@ if (!$projectId): ?>
 const BIB_PROJECT_ID = <?= $projectId ?>;
 const chartInstances  = {};
 
-// Cache of each chart/table's last payload on this page, so it can be
-// redrawn in another language without repeating the API calls (see
-// bib-i18n.js) and to feed the XLS export (see chartToRows/exportChartXLS below).
+// Cache do último payload de cada gráfico/tabela desta página, para redesenhar
+// em outro idioma sem repetir as chamadas à API (ver bib-i18n.js) e para
+// alimentar a exportação em XLS (ver chartToRows/exportChartXLS abaixo).
 const BIB_RAW = {};
 
-// ─── XLS export (raw data for each chart, turned into a table) ──────
+// ─── Exportação em XLS (dados brutos de cada gráfico, para virar tabela) ──────
 
-// Normalizes each chart type's payload into a plain list of rows
-// (array of objects), a format SheetJS converts directly into a spreadsheet.
+// Normaliza o payload de cada tipo de gráfico para uma lista simples de linhas
+// (array de objetos), formato que o SheetJS converte direto numa planilha.
 function chartToRows(type, raw) {
   if (!raw) return [];
 
-  // Networks (nodes + edges): the most useful table is the edges (the links themselves)
+  // Redes (nós + arestas): a tabela mais útil é a de arestas (as ligações em si)
   if (raw && Array.isArray(raw.edges)) return raw.edges;
 
   switch (type) {
     case 'open_access':
       return [{ acesso_aberto: raw.open_access || 0, acesso_fechado: raw.closed_access || 0 }];
 
-    case 'lotka':
-      return raw.distribution || [];
+    case 'lotka': {
+      // Distribuição observada + identificação da amostra
+      return (raw.distribution || []).map(d => ({
+        artigos_por_autor: +d.n_articles,
+        autores: +d.n_authors,
+        amostra_artigos: raw.total_articles ?? '',
+        amostra_autores: raw.total_authors ?? '',
+        escopo: raw.scope === 'included' ? 'incluídos' : 'todos sem duplicatas',
+      }));
+    }
 
     case 'bradford':
       return raw.series || [];
@@ -577,7 +585,7 @@ function chartToRows(type, raw) {
       );
 
     default:
-      // Most charts are already a plain array of objects {label, value, ...}
+      // A maioria dos gráficos já é um array simples de objetos {rótulo, valor, ...}
       return Array.isArray(raw) ? raw : [raw];
   }
 }
@@ -603,8 +611,8 @@ function getSourceId() {
   return document.getElementById('bib-source').value;
 }
 
-// Populates the database selector with the project's imported sources
-// (e.g. WOS, Scopus) — lets the user view charts for a single database or combined.
+// Preenche o seletor de base de dados com as fontes importadas do projeto
+// (ex: WOS, Scopus) — permite ver os gráficos de uma base isolada ou combinadas.
 async function loadSourcesDropdown() {
   const sel = document.getElementById('bib-source');
   try {
@@ -644,7 +652,7 @@ function destroyChart(key) {
   if (chartInstances[key]) { chartInstances[key].destroy(); delete chartInstances[key]; }
 }
 
-// ─── Transforms raw API data → Chart.js format ────────────────────────
+// ─── Transforma dados brutos da API → formato Chart.js ────────────────────────
 
 function transformData(type, raw) {
   if (!raw) return null;
@@ -701,7 +709,7 @@ function transformData(type, raw) {
   }
 }
 
-// ─── Builds Chart.js charts ───────────────────────────────────────────────
+// ─── Constrói gráficos Chart.js ───────────────────────────────────────────────
 
 function buildChart(type, data) {
   if (!data) return;
@@ -725,7 +733,7 @@ function buildChart(type, data) {
 
   let config;
 
-  // ── Publications per Year ──────────────────────────────────────────────────
+  // ── Publicações por Ano ──────────────────────────────────────────────────
   if (type === 'publications_year') {
     config = {
       type: 'bar',
@@ -754,7 +762,7 @@ function buildChart(type, data) {
       },
     };
 
-  // ── Databases / Document Types / Open Access ───────────────────────────
+  // ── Bases / Tipos de Documento / Acesso Aberto ───────────────────────────
   } else if (['source_types','document_types','open_access'].includes(type)) {
     const isDoughnut = type === 'document_types';
     config = {
@@ -767,12 +775,12 @@ function buildChart(type, data) {
       },
     };
 
-  // ── Horizontal bars: journals, authors, countries, publishers ──────────────
+  // ── Horizontal bars: periódicos, autores, países, editoras ──────────────
   } else if (['top_journals','top_authors','top_countries','top_publishers','citations_distribution'].includes(type)) {
     const isHoriz = type !== 'citations_distribution';
     const isCit   = type === 'citations_distribution';
 
-    // One color per chart type with an opacity gradient (bigger bar = more vivid)
+    // Uma cor por tipo de gráfico com gradiente de opacidade (barra maior = mais vívida)
     const colorMap = {
       top_journals:            [0, 212, 255],
       top_authors:             [0, 229, 160],
@@ -782,7 +790,7 @@ function buildChart(type, data) {
     };
     const [r2, g2, b2] = colorMap[type] || [0, 212, 255];
     const maxVal = Math.max(...values, 1);
-    // Opacity proportional to the value: bigger bar becomes more solid
+    // Opacidade proporcional ao valor: barra maior fica mais sólida
     const gradBg = values.map(v => `rgba(${r2},${g2},${b2},${(0.35 + 0.55 * (v / maxVal)).toFixed(2)})`);
 
     config = {
@@ -816,7 +824,7 @@ function buildChart(type, data) {
       },
     };
 
-  // ── Frequent Keywords (horizontal bar) ─────────────────────────────────
+  // ── Keywords Frequentes (horizontal bar) ─────────────────────────────────
   } else if (type === 'keywords_frequency') {
     config = {
       type: 'bar',
@@ -829,7 +837,7 @@ function buildChart(type, data) {
       },
     };
 
-  // ── Keywords per Year ──────────────────────────────────────────────────────
+  // ── Keywords por Ano ──────────────────────────────────────────────────────
   } else if (type === 'keywords_by_year') {
     const kColors = bibColors(data.datasets.length);
     config = {
@@ -860,11 +868,11 @@ function buildChart(type, data) {
   chartInstances[type] = new Chart(ctx, config);
 }
 
-// ─── Loading each chart ────────────────────────────────────────────────────
+// ─── Carga de cada gráfico ────────────────────────────────────────────────────
 
 async function loadChart(type) {
   try {
-    // FIXED: uses 'chart=' instead of 'type='
+    // CORRIGIDO: usa 'chart=' em vez de 'type='
     const r = await fetch(`api/bibliometrics.php?project_id=${BIB_PROJECT_ID}&chart=${type}&scope=${getScope()}&source_id=${getSourceId()}`);
     const d = await r.json();
     if (d.error) return;
@@ -874,8 +882,8 @@ async function loadChart(type) {
   } catch(e) { console.error('Erro ao carregar ' + type, e); }
 }
 
-// Redraws, in the current language, everything built in this file.
-// Called by bib-i18n.js when the user switches the language flag.
+// Redesenha, no idioma corrente, tudo que é construído neste arquivo.
+// Chamado por bib-i18n.js quando o usuário troca a bandeira do idioma.
 function bibRerenderPageCharts() {
   Object.keys(BIB_RAW).forEach(type => {
     if (type.charAt(0) === '_') return;
@@ -887,7 +895,7 @@ function bibRerenderPageCharts() {
   if (BIB_RAW._kwnet)      renderKeywordNetwork(BIB_RAW._kwnet);
 }
 
-// ─── Table: most cited articles ────────────────────────────────────────────
+// ─── Tabela: artigos mais citados ────────────────────────────────────────────
 
 async function loadTopCited() {
   const el = document.getElementById('top-cited-table');
@@ -942,14 +950,14 @@ function renderTopCited(rows) {
   }
 }
 
-// ─── Networks ────────────────────────────────────────────────────────────────────
+// ─── Redes ────────────────────────────────────────────────────────────────────
 
 async function loadCoauthorship() {
   const container = document.getElementById('network-coauthorship');
   container.innerHTML = '<div class="text-center" style="padding:60px"><div class="spinner"></div></div>';
   try {
     const minA = document.getElementById('coauth-min').value;
-    // FIXED: uses chart= and min_articles=
+    // CORRIGIDO: usa chart= e min_articles=
     const r = await fetch(`api/bibliometrics.php?project_id=${BIB_PROJECT_ID}&chart=coauthorship&scope=${getScope()}&source_id=${getSourceId()}&min_articles=${minA}`);
     const d = await r.json();
     BIB_RAW._coauth = d;
@@ -968,14 +976,14 @@ function renderCoauthorship(d) {
     return;
   }
   container.innerHTML = '';
-  // FIXED: maps full_name → label and article_count → value
+  // CORRIGIDO: mapeia full_name → label e article_count → value
   const nodes = d.nodes.map(n => ({
     id:    n.id,
     label: n.full_name,
     value: n.article_count,
     title: `${n.full_name}\n` + bt('n_articles', { n: n.article_count }),
   }));
-  // FIXED: maps source/target → from/to
+  // CORRIGIDO: mapeia source/target → from/to
   const edges = d.edges.map(e => ({
     from: e.source, to: e.target, value: +e.weight,
     title: bt('net_joint_articles', { n: e.weight }),
@@ -988,7 +996,7 @@ async function loadKeywordNetwork() {
   container.innerHTML = '<div class="text-center" style="padding:60px"><div class="spinner"></div></div>';
   try {
     const minO = document.getElementById('kwnet-min').value;
-    // FIXED: uses chart= and min_occ=
+    // CORRIGIDO: usa chart= e min_occ=
     const r = await fetch(`api/bibliometrics.php?project_id=${BIB_PROJECT_ID}&chart=keyword_cooccurrence&scope=${getScope()}&source_id=${getSourceId()}&min_occ=${minO}`);
     const d = await r.json();
     BIB_RAW._kwnet = d;
@@ -1007,7 +1015,7 @@ function renderKeywordNetwork(d) {
     return;
   }
   container.innerHTML = '';
-  // Keywords use strings as IDs — build a numeric index
+  // Keywords usam strings como ID — criar índice numérico
   const kwMap = {};
   d.nodes.forEach((n, i) => { kwMap[n.keyword] = i; });
   const nodes = d.nodes.map((n, i) => ({
@@ -1031,7 +1039,7 @@ function buildNetwork(container, nodes, edges, opts) {
     return;
   }
 
-  // Detects whether we're in light theme to adjust the font color
+  // Detecta se estamos no tema claro para ajustar cor da fonte
   const isLight   = document.body.classList.contains('theme-light');
   const fontColor = isLight ? '#1e293b' : '#f1f5f9';
   const strokeCol = isLight ? 'rgba(255,255,255,0.95)' : 'rgba(15,23,41,0.9)';
@@ -1079,7 +1087,7 @@ function buildNetwork(container, nodes, edges, opts) {
   });
 }
 
-// ─── Reload everything ─────────────────────────────────────────────────────────
+// ─── Recarregar tudo ─────────────────────────────────────────────────────────
 
 async function reloadAll() {
   const charts = [
@@ -1092,11 +1100,11 @@ async function reloadAll() {
   loadTopCited();
   loadCoauthorship();
   loadKeywordNetwork();
-  // ── New classic bibliometric analyses ────────────────────
+  // ── Novas análises bibliométricas clássicas ────────────────────
   loadAdvanced();
 }
 
-// ─── Advanced bibliometric analyses ───────────────────────────────────────
+// ─── Análises bibliométricas avançadas ───────────────────────────────────────
 function bibErrCard(canvasId, msg) {
   const el = document.getElementById(canvasId);
   if (el) el.insertAdjacentHTML('afterend', `<p style="color:#f87171;font-size:.78rem;padding:8px 0">${msg}</p>`);
@@ -1106,25 +1114,25 @@ async function loadAdvanced() {
   const scope = getScope();
   const baseUrl = `api/bibliometrics.php?project_id=${BIB_PROJECT_ID}&scope=${scope}&source_id=${getSourceId()}`;
 
-  // Lotka's Law
+  // Lei de Lotka
   fetch(`${baseUrl}&chart=lotka`)
     .then(r => r.json())
     .then(d => { if (d.lotka) { BIB_RAW.lotka = d.lotka; buildLotkaChart('chart-lotka', d.lotka); } })
     .catch(e => { console.error('lotka', e); bibErrCard('chart-lotka', 'Erro: ' + e.message); });
 
-  // Bradford's Law
+  // Lei de Bradford
   fetch(`${baseUrl}&chart=bradford`)
     .then(r => r.json())
     .then(d => { if (d.bradford) { BIB_RAW.bradford = d.bradford; buildBradfordChart('chart-bradford', d.bradford); } })
     .catch(e => { console.error('bradford', e); bibErrCard('chart-bradford', 'Erro: ' + e.message); });
 
-  // Annual production + CAGR
+  // Produção anual + CAGR
   fetch(`${baseUrl}&chart=annual_growth`)
     .then(r => r.json())
     .then(d => { if (d.annual_growth) { BIB_RAW.annual_growth = d.annual_growth; buildAnnualGrowthChart('chart-annual_growth', d.annual_growth); } })
     .catch(e => { console.error('annual_growth', e); bibErrCard('chart-annual_growth', 'Erro: ' + e.message); });
 
-  // Word Cloud — uses requestAnimationFrame to ensure dimensions have been computed
+  // Word Cloud — usa requestAnimationFrame para garantir dimensões calculadas
   fetch(`${baseUrl}&chart=word_cloud&limit=100`)
     .then(r => r.json())
     .then(d => { if (d.word_cloud) { BIB_RAW.word_cloud = d.word_cloud; requestAnimationFrame(() => buildWordCloud('word-cloud-container', d.word_cloud)); } })
@@ -1136,25 +1144,25 @@ async function loadAdvanced() {
     .then(d => { if (d.trend_topics) { BIB_RAW.trend_topics = d.trend_topics; requestAnimationFrame(() => buildTrendTopicsChart('chart-trend_topics', d.trend_topics)); } })
     .catch(e => console.error('trend_topics', e));
 
-  // Three-Field Plot — SVG needs the container's real dimensions
+  // Three-Field Plot — SVG precisa de dimensões reais do container
   fetch(`${baseUrl}&chart=three_field&n_top=12`)
     .then(r => r.json())
     .then(d => { if (d.three_field) { BIB_RAW.three_field = d.three_field; requestAnimationFrame(() => buildThreeFieldPlot('three-field-container', d.three_field)); } })
     .catch(e => console.error('three_field', e));
 
-  // Citations per year
+  // Citações por ano
   fetch(`${baseUrl}&chart=citations_per_year`)
     .then(r => r.json())
     .then(d => { if (d.citations_per_year) { BIB_RAW.citations_per_year = d.citations_per_year; buildCitationsPerYearChart('chart-citations_per_year', d.citations_per_year); } })
     .catch(e => console.error('citations_per_year', e));
 
-  // World map of production
+  // Mapa mundial de produção
   fetch(`${baseUrl}&chart=country_production`)
     .then(r => r.json())
     .then(d => { if (d.country_production) { BIB_RAW.country_production = d.country_production; requestAnimationFrame(() => buildCountryMap('map-country_production', d.country_production)); } })
     .catch(e => console.error('country_production', e));
 
-  // Local impact indices (h, g, m)
+  // Índices de impacto local (h, g, m)
   fetch(`${baseUrl}&chart=author_impact&limit=15`)
     .then(r => r.json())
     .then(d => { if (d.author_impact) { BIB_RAW.author_impact = d.author_impact; buildImpactTable('table-author_impact', d.author_impact, 'author'); } })
@@ -1165,13 +1173,13 @@ async function loadAdvanced() {
     .then(d => { if (d.source_impact) { BIB_RAW.source_impact = d.source_impact; buildImpactTable('table-source_impact', d.source_impact, 'source'); } })
     .catch(e => console.error('source_impact', e));
 
-  // Callon's thematic map
+  // Mapa temático de Callon
   fetch(`${baseUrl}&chart=thematic_map&min_freq=2&limit=50`)
     .then(r => r.json())
     .then(d => { if (d.thematic_map) { BIB_RAW.thematic_map = d.thematic_map; buildThematicMap('chart-thematic_map', d.thematic_map); } })
     .catch(e => console.error('thematic_map', e));
 
-  // Top Institutions
+  // Top Instituições
   fetch(`${baseUrl}&chart=top_institutions&limit=20`)
     .then(r => r.json())
     .then(d => {
@@ -1190,19 +1198,19 @@ async function loadAdvanced() {
     .then(d => { if (d.mcp_scp) { BIB_RAW.mcp_scp = d.mcp_scp; buildMcpScpChart('chart-mcp_scp', d); } })
     .catch(e => console.error('mcp_scp', e));
 
-  // Author production over time
+  // Produção dos autores ao longo do tempo
   fetch(`${baseUrl}&chart=author_over_time&top=10`)
     .then(r => r.json())
     .then(d => { if (d.author_over_time) { BIB_RAW.author_over_time = d.author_over_time; buildAuthorOverTimeChart('chart-author_over_time', d); } })
     .catch(e => console.error('author_over_time', e));
 
-  // Country collaboration network
+  // Rede de colaboração entre países
   fetch(`${baseUrl}&chart=country_collab&min_weight=1`)
     .then(r => r.json())
     .then(d => { BIB_RAW.country_collab = d; requestAnimationFrame(() => buildCountryCollabChart('country-collab-container', d)); })
     .catch(e => console.error('country_collab', e));
 
-  // Thematic evolution
+  // Evolução temática
   loadThematicEvolution();
 }
 
@@ -1231,7 +1239,7 @@ function loadThematicEvolution() {
     });
 }
 
-// Start
+// Inicia
 loadSourcesDropdown();
 reloadAll();
 </script>

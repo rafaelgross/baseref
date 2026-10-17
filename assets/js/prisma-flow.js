@@ -1,11 +1,11 @@
 /**
  * PRISMA-SLR — prisma-flow.js
- * Utilities for the PRISMA 2020 diagram (complements prisma-flow.php)
+ * Utilitários para o diagrama PRISMA 2020 (complementa prisma-flow.php)
  */
 'use strict';
 
 /**
- * Prints the PRISMA diagram in a new tab
+ * Imprime o diagrama PRISMA em uma nova aba
  */
 function printPrismaFlow() {
   const svgEl = document.getElementById('prisma-svg');
@@ -22,40 +22,32 @@ function printPrismaFlow() {
 }
 
 /**
- * Copies the PRISMA diagram numbers formatted as text
+ * Copia os números do diagrama PRISMA 2020 (modelo para bases de dados) como texto
  */
 function copyFlowNumbers(data) {
   if (!data) { showToast('Carregue o diagrama primeiro', 'warning'); return; }
   const id  = data.identification;
   const sc  = data.screening;
-  const el  = data.eligibility;
   const inc = data.included;
-
-  const scExc = (sc.excluded_reasons||[]).reduce((a,r)=>a+r.count,0);
-  const elExc = (el.excluded_reasons||[]).reduce((a,r)=>a+r.count,0);
+  const reasons = list => (list || []).map(r => `    - ${r.reason || 'Sem motivo informado'}: ${r.total}\n`).join('');
 
   let text = `DIAGRAMA PRISMA 2020\n`;
   text += `${'═'.repeat(40)}\n`;
   text += `IDENTIFICAÇÃO\n`;
-  text += `  Total identificado: ${id.total_identified}\n`;
-  (id.by_database||[]).forEach(b => { text += `  - ${b.name}: ${b.count}\n`; });
-  text += `  Duplicatas removidas: ${id.duplicates_removed}\n`;
-  text += `  Únicos para triagem: ${id.unique_after_dedup}\n\n`;
+  text += `  Registros identificados: ${id.total_identified}\n`;
+  (id.by_database || []).forEach(b => { text += `    - ${b.name || 'Outras fontes'}: ${b.count}\n`; });
+  text += `  Registros duplicados removidos: ${id.duplicates_removed}\n\n`;
 
   text += `TRIAGEM\n`;
-  text += `  Avaliados: ${sc.records_screened}\n`;
-  text += `  Excluídos: ${scExc}\n`;
-  (sc.excluded_reasons||[]).forEach(r => { text += `  - ${r.reason}: ${r.count}\n`; });
-  text += '\n';
-
-  text += `ELEGIBILIDADE\n`;
-  text += `  Texto completo avaliado: ${el.assessed_full_text}\n`;
-  text += `  Excluídos: ${elExc}\n`;
-  (el.excluded_reasons||[]).forEach(r => { text += `  - ${r.reason}: ${r.count}\n`; });
-  text += '\n';
+  text += `  Registros triados: ${sc.records_screened}\n`;
+  text += `  Registros excluídos: ${sc.records_excluded}\n`;
+  text += `  Relatos buscados para recuperação: ${sc.reports_sought}\n`;
+  text += `  Relatos não recuperados: ${sc.reports_not_retrieved}\n`;
+  text += `  Relatos avaliados para elegibilidade: ${sc.reports_assessed}\n`;
+  text += `  Relatos excluídos: ${sc.reports_excluded}\n` + reasons(sc.reports_reasons) + '\n';
 
   text += `INCLUÍDOS\n`;
-  text += `  Estudos incluídos: ${inc.studies_included}\n`;
+  text += `  Estudos incluídos na revisão: ${inc.studies_included}\n`;
 
   copyToClipboard(text);
 }

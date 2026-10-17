@@ -1,25 +1,25 @@
 /**
  * PRISMA-SLR — bib-i18n.js
  *
- * Translation of the text DRAWN INSIDE the charts (canvas/SVG) on the
- * bibliometrics page.
+ * Tradução dos textos DESENHADOS DENTRO dos gráficos (canvas/SVG) da página
+ * de bibliometria.
  *
- * Why: the gtranslate.io widget translates the DOM, but text painted on
- * <canvas> (Chart.js) is never reached by it, and content injected after
- * load (tables, empty states) gets translated inconsistently. Result: with
- * the site in English, the figures' titles and axes stayed in Portuguese —
- * making the figure unusable for submission to an international journal.
+ * Motivo: o widget gtranslate.io traduz o DOM, mas texto pintado em <canvas>
+ * (Chart.js) nunca é alcançado por ele, e conteúdo injetado depois da carga
+ * (tabelas, empty states) é traduzido de forma inconsistente. Resultado: com o
+ * site em inglês, os títulos e eixos das figuras continuavam em português —
+ * inutilizando a figura para submissão em periódico internacional.
  *
- * Usage: bt('lotka_title', { slope: 2.31, n: 880 })
- * Current language: window.PRISMA_LANG ('pt' | 'en' | 'es'), set in index.php.
+ * Uso:  bt('lotka_title', { slope: 2.31, se: 0.12, n: 880 })
+ * Idioma corrente: window.PRISMA_LANG ('pt' | 'en' | 'es'), definido no index.php.
  */
 'use strict';
 
 const BIB_I18N = {
 
-  // ─────────────────────────────────────────────────────────── PORTUGUESE ────
+  // ─────────────────────────────────────────────────────────── PORTUGUÊS ────
   pt: {
-    // Generic
+    // Genéricos
     articles:              'Artigos',
     articles_log:          'Artigos (escala log)',
     occurrences:           'Ocorrências',
@@ -39,16 +39,17 @@ const BIB_I18N = {
     unit_article:          ' artigo',
     unit_articles:         ' artigos',
 
-    // Lotka's Law
-    lotka_observed:        'Observado (N={n} autores)',
-    lotka_theory:          'Lotka teórica (n≈{slope})',
-    lotka_theory_short:    'Lotka teórica',
-    lotka_title:           'Lei de Lotka — expoente n ≈ {slope} (ideal ≈ 2,0) · N = {n} autores',
-    lotka_title_short:     'Lei de Lotka',
+    // Lei de Lotka
+    lotka_observed:        'Autores (N={n})',
+    lotka_title:           'Distribuição da produtividade dos autores',
+    lotka_sample_all:      'Todos os registros sem duplicatas: {a} artigos, {n} autores',
+    lotka_sample_included: 'Apenas estudos incluídos: {a} artigos, {n} autores',
+    lotka_sample_db:       '(somente a base selecionada)',
+    lotka_title_short:     'Produtividade dos autores',
     lotka_x:               'Artigos por autor',
     lotka_y:               'Nº de autores',
 
-    // Bradford's Law
+    // Lei de Bradford
     bradford_title:        'Lei de Bradford — Núcleo: {core} periódicos · {total} periódicos totais',
     bradford_x:            'Artigos publicados',
     zone_core:             'Núcleo',
@@ -56,7 +57,7 @@ const BIB_I18N = {
     zone_periphery:        'Periferia',
     bradford_tooltip:      '{value} artigos · zona: {zone}',
 
-    // Annual production
+    // Produção anual
     annual_title:          'Produção Científica Anual — N={n} artigos',
     annual_title_cagr:     'Produção Científica Anual — N={n} artigos · CAGR ≈ {cagr}%/ano',
     annual_in_year:        'Publicações no ano',
@@ -71,7 +72,7 @@ const BIB_I18N = {
     trend_x:               'Ano de publicação (mediana)',
     trend_tooltip:         '{kw} — {freq} ocorrências · Q1={q1} / Mediana={med} / Q3={q3}',
 
-    // Citations per year
+    // Citações por ano
     cit_title:             'Citações por Ano de Publicação',
     cit_x:                 'Ano de publicação',
     cit_avg:               'Citações médias por artigo',
@@ -80,17 +81,17 @@ const BIB_I18N = {
     // Three-field plot
     three_field_empty:     'Dados insuficientes para o Three-Field Plot.',
 
-    // Country map
+    // Mapa de países
     map_loading:           'Carregando mapa...',
     map_libs_missing:      'Erro: D3.js ou TopoJSON não carregados. Verifique a conexão.',
     map_error:             'Erro ao carregar mapa: {msg}',
     map_legend:            'Nº de documentos',
 
-    // Impact tables
+    // Tabelas de impacto
     impact_empty:          'Dados de citação não disponíveis.',
     topcited_empty:        'Dados de citação não disponíveis.<br>A base WoS exporta o campo "Times Cited".',
 
-    // Thematic map (Callon)
+    // Mapa temático (Callon)
     thematic_empty:        'Keywords insuficientes para formar clusters temáticos.',
     quad_niche:            'TEMAS DE NICHO',
     quad_motor:            'TEMAS MOTORES',
@@ -102,7 +103,7 @@ const BIB_I18N = {
     thematic_tip_kw:       '{k} keywords · {o} ocorrências',
     thematic_tip_terms:    'Termos: {terms}',
 
-    // Institutions
+    // Instituições
     inst_empty:            'Sem dados de afiliação institucional neste corpus.',
     inst_title:            'Top {n} Instituições por Produção',
 
@@ -112,13 +113,13 @@ const BIB_I18N = {
     scp_label:             'SCP (nacional)',
     mcp_label:             'MCP (internacional)',
 
-    // Authors over time
+    // Autores ao longo do tempo
     aot_title:             'Produção dos Autores ao Longo do Tempo',
 
-    // Country collaboration
+    // Colaboração entre países
     collab_empty:          'Sem dados de colaboração internacional.',
 
-    // Thematic evolution
+    // Evolução temática
     evol_empty:            'Palavras-chave insuficientes para análise de evolução temática neste corpus.',
     evol_no_clusters:      'Sem clusters neste período.',
     evol_error:            'Erro ao renderizar mapa temático: {msg}',
@@ -127,11 +128,11 @@ const BIB_I18N = {
     q_basic:               'Básico',
     q_emerging:            'Emergente',
 
-    // Simple page charts
+    // Gráficos simples da página
     open_access:           'Acesso Aberto',
     closed_access:         'Acesso Restrito',
 
-    // Networks
+    // Redes
     net_missing:           'vis.js não disponível',
     net_few_articles:      'Dados insuficientes. Tente reduzir o mínimo de artigos.',
     net_few_occurrences:   'Dados insuficientes. Tente reduzir o mínimo de ocorrências.',
@@ -161,11 +162,12 @@ const BIB_I18N = {
     unit_article:          ' article',
     unit_articles:         ' articles',
 
-    lotka_observed:        'Observed (N={n} authors)',
-    lotka_theory:          'Lotka theoretical (n≈{slope})',
-    lotka_theory_short:    'Lotka theoretical',
-    lotka_title:           "Lotka's Law — exponent n ≈ {slope} (ideal ≈ 2.0) · N = {n} authors",
-    lotka_title_short:     "Lotka's Law",
+    lotka_observed:        'Authors (N={n})',
+    lotka_title:           'Author productivity distribution',
+    lotka_sample_all:      'All records after deduplication: {a} articles, {n} authors',
+    lotka_sample_included: 'Included studies only: {a} articles, {n} authors',
+    lotka_sample_db:       '(selected database only)',
+    lotka_title_short:     'Author productivity distribution',
     lotka_x:               'Articles per author',
     lotka_y:               'No. of authors',
 
@@ -245,7 +247,7 @@ const BIB_I18N = {
     net_cooccurrences:     'Co-occurrences: {n}',
   },
 
-  // ──────────────────────────────────────────────────────────── SPANISH ────
+  // ──────────────────────────────────────────────────────────── ESPAÑOL ────
   es: {
     articles:              'Artículos',
     articles_log:          'Artículos (escala log)',
@@ -266,11 +268,12 @@ const BIB_I18N = {
     unit_article:          ' artículo',
     unit_articles:         ' artículos',
 
-    lotka_observed:        'Observado (N={n} autores)',
-    lotka_theory:          'Lotka teórica (n≈{slope})',
-    lotka_theory_short:    'Lotka teórica',
-    lotka_title:           'Ley de Lotka — exponente n ≈ {slope} (ideal ≈ 2,0) · N = {n} autores',
-    lotka_title_short:     'Ley de Lotka',
+    lotka_observed:        'Autores (N={n})',
+    lotka_title:           'Distribución de la productividad de los autores',
+    lotka_sample_all:      'Todos los registros sin duplicados: {a} artículos, {n} autores',
+    lotka_sample_included: 'Solo estudios incluidos: {a} artículos, {n} autores',
+    lotka_sample_db:       '(solo la base seleccionada)',
+    lotka_title_short:     'Productividad de los autores',
     lotka_x:               'Artículos por autor',
     lotka_y:               'Nº de autores',
 
@@ -351,13 +354,13 @@ const BIB_I18N = {
   },
 };
 
-/** Current language, falling back to pt. */
+/** Idioma corrente, com fallback para pt. */
 function bibLang() {
   const l = String(window.PRISMA_LANG || 'pt').toLowerCase().slice(0, 2);
   return BIB_I18N[l] ? l : 'pt';
 }
 
-/** Translated text. bt('lotka_title', { slope: 2.3, n: 880 }) */
+/** Texto traduzido. bt('lotka_title', { slope: 2.3, n: 880 }) */
 function bt(key, vars) {
   const dict = BIB_I18N[bibLang()];
   let s = (dict && dict[key] !== undefined) ? dict[key]
@@ -366,9 +369,9 @@ function bt(key, vars) {
   return s;
 }
 
-// ── Replay: redraws already-loaded charts when the language changes ────────
-// Each build*() records the arguments it was called with; when the language
-// changes, the same functions are re-run with the cached data, without a new API call.
+// ── Replay: redesenha os gráficos já carregados quando o idioma muda ────────
+// Cada build*() registra os argumentos com que foi chamada; na troca de idioma
+// as mesmas funções são reexecutadas com os dados em cache, sem nova ida à API.
 const BIB_REPLAY = {};
 
 function bibReplaySave(fn, args) {
@@ -388,6 +391,6 @@ function bibReplayAll() {
 
 document.addEventListener('prismaLangChanged', function () {
   bibReplayAll();
-  // Simple charts and tables live in the page's inline script
+  // Gráficos simples e tabelas vivem no script inline da página
   if (typeof bibRerenderPageCharts === 'function') bibRerenderPageCharts();
 });

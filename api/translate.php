@@ -1,14 +1,12 @@
 <?php
 /**
- * PRISMA-SLR - Translation proxy (server-side to avoid CORS)
+ * PRISMA-SLR - Proxy de Tradução (server-side para evitar CORS)
  *
- * Primary source: MyMemory (api.mymemory.translated.net) — a free API built
- * for translating standalone snippets of text, no key required, with a
- * documented limit (raised via the "de" parameter — a contact email — for
- * the service's "polite mode"). Fallback: unofficial Google Translate
- * (client=gtx), used only if MyMemory fails — this endpoint is undocumented
- * and can be IP-blocked under heavy use, which is why it is no longer the
- * primary source.
+ * Serviço único: MyMemory (api.mymemory.translated.net) — API pública e documentada
+ * para tradução de textos avulsos, sem chave, com limite documentado (aumentado
+ * via parâmetro "de" — e-mail de contato — para o "modo cortês" do serviço).
+ * Não há mais fallback para o endpoint não oficial do Google Translate: se a
+ * MyMemory falhar, a requisição devolve erro e o texto original continua visível.
  */
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/api_guard.php';
@@ -25,14 +23,14 @@ if (empty(trim($text))) {
     exit;
 }
 
-// Target language — defaults to pt-BR (original use case: translating abstracts for reading).
-// Restricted to a closed list so arbitrary input is never passed through to the external API.
+// Idioma de destino — padrão pt-BR (uso original: traduzir resumos para leitura).
+// Restrito a uma lista fechada para não repassar entrada arbitrária à API externa.
 $allowedTargets = ['pt-BR', 'en', 'es'];
 $targetLang     = $_GET['tl'] ?? 'pt-BR';
 if (!in_array($targetLang, $allowedTargets, true)) $targetLang = 'pt-BR';
 
-// Source language — if the caller already knows it (e.g. exclusion reasons,
-// always in PT), it can be passed via "sl" to skip the heuristic detection below.
+// Idioma de origem — se o chamador já sabe (ex: motivos de exclusão, sempre em
+// PT), pode informar via "sl" e evita a detecção heurística abaixo.
 $allowedSources = ['en', 'pt-BR', 'es', 'fr'];
 $sourceLang     = $_GET['sl'] ?? null;
 if ($sourceLang !== null && !in_array($sourceLang, $allowedSources, true)) $sourceLang = null;
@@ -43,8 +41,8 @@ if ($sourceLang === null) {
     $sourceLang = detectSourceLang($text);
 }
 
-// Source and target are the same (e.g. an inconclusive heuristic that lands
-// on the target language) — nothing to translate, and some providers reject that pair.
+// Origem e destino iguais (ex: heurística inconclusiva caindo no mesmo idioma
+// do alvo) — nada a traduzir, e alguns provedores rejeitam esse par.
 if ($sourceLang === $targetLang) {
     echo json_encode([
         'error' => false, 'translated' => $text, 'chunks' => 0, 'source_lang' => $sourceLang,
@@ -53,9 +51,9 @@ if ($sourceLang === $targetLang) {
 }
 
 /**
- * Lightweight language detection by counting common function words.
- * Not perfect, but handles the real case: academic abstracts are almost
- * always in English, sometimes in Portuguese/Spanish/French.
+ * Detecção leve de idioma por contagem de palavras funcionais comuns.
+ * Não é perfeita, mas resolve o caso real: resumos acadêmicos quase sempre
+ * em inglês, às vezes em português/espanhol/francês.
  */
 function detectSourceLang(string $text): string
 {
@@ -73,9 +71,9 @@ function detectSourceLang(string $text): string
         }
     }
 
-    // Short texts (e.g. exclusion reasons) rarely contain these full stopwords
-    // — use characteristic accented letters as a second signal, cheaper than
-    // calling an external API just to detect the language.
+    // Textos curtos (ex: motivos de exclusão) raramente contêm essas stopwords
+    // inteiras — usa acentuação característica como segundo sinal, mais barato
+    // que chamar uma API externa só para detectar o idioma.
     if (preg_match('/[ãõç]/u', $t))                        $scores['pt-BR'] += 2;
     if (preg_match('/[ñ¿¡]/u', $t))                        $scores['es']    += 2;
     if (preg_match('/[àâêîôûœ]/u', $t))                     $scores['fr']    += 2;
@@ -86,8 +84,7 @@ function detectSourceLang(string $text): string
 }
 
 /**
- * MyMemory — primary source. Returns null (does not throw) on any problem,
- * so it can fall back to Google without interrupting the request.
+ * MyMemory. Retorna null (não lança) em qualquer problema; quem chama decide o erro.
  */
 function translateChunkMyMemory(string $chunk, string $sourceLang, string $targetLang): ?string
 {
@@ -108,36 +105,11 @@ function translateChunkMyMemory(string $chunk, string $sourceLang, string $targe
 
     $translated = $data['responseData']['translatedText'] ?? null;
     if (!$translated) return null;
-    // MyMemory returns error messages as 200 OK text (e.g. length limit)
+    // MyMemory devolve mensagens de erro como texto 200 (ex: limite de tamanho)
     if (preg_match('/QUERY LENGTH LIMIT|INVALID (SOURCE|TARGET) LANGUAGE|MYMEMORY WARNING/i', $translated)) {
         return null;
     }
     return $translated;
-}
-
-/**
- * Unofficial Google Translate — fallback, used only if MyMemory fails.
- */
-function translateChunkGoogle(string $chunk, string $targetLang): ?string
-{
-    $googleTarget = $targetLang === 'pt-BR' ? 'pt' : $targetLang;
-    $encoded = urlencode($chunk);
-    $url     = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={$googleTarget}&dt=t&q={$encoded}";
-
-    $ctx = stream_context_create([
-        'http' => ['timeout' => 12, 'ignore_errors' => true, 'header' => "User-Agent: Mozilla/5.0\r\n"],
-    ]);
-    $response = @file_get_contents($url, false, $ctx);
-    if ($response === false) return null;
-
-    $data = json_decode($response, true);
-    if (!$data || !isset($data[0])) return null;
-
-    $result = '';
-    foreach ($data[0] as $segment) {
-        if (isset($segment[0])) $result .= $segment[0];
-    }
-    return $result ?: null;
 }
 
 function translateChunk(string $chunk, string $sourceLang, string $targetLang): string
@@ -145,15 +117,12 @@ function translateChunk(string $chunk, string $sourceLang, string $targetLang): 
     $result = translateChunkMyMemory($chunk, $sourceLang, $targetLang);
     if ($result !== null) return $result;
 
-    $result = translateChunkGoogle($chunk, $targetLang);
-    if ($result !== null) return $result;
-
-    throw new RuntimeException('Nenhum serviço de tradução disponível no momento');
+    throw new RuntimeException('Serviço de tradução (MyMemory) indisponível no momento. Tente novamente em instantes.');
 }
 
 /**
- * Splits the text into chunks, breaking at sentence end or whitespace.
- * 450-character limit: MyMemory rejects texts above 500 chars/request.
+ * Divide o texto em blocos quebrando em fim de frase ou espaço.
+ * Limite de 450 caracteres: a MyMemory rejeita textos acima de 500/requisição.
  */
 function splitText(string $text, int $maxLen = 450): array {
     $chunks = [];
@@ -190,7 +159,7 @@ foreach ($chunks as $chunk) {
     try {
         $translated[] = translateChunk($chunk, $sourceLang, $targetLang);
         if (count($chunks) > 1) {
-            usleep(150000); // 0.15s between requests, courtesy delay for the API
+            usleep(150000); // 0.15s entre requisições, cortesia com a API
         }
     } catch (RuntimeException $e) {
         echo json_encode(['error' => true, 'message' => $e->getMessage()]);
