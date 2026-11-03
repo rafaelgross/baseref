@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/config/auth.php';
+require_once __DIR__ . '/config/ui.php';   // GTRANSLATE_ENABLED (external widget, off by default)
 
 // Unauthenticated visitors see the public landing page (presentation + login).
 // Authenticated users proceed to the app as usual.
@@ -107,7 +108,8 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
   <!-- Styles -->
   <link rel="stylesheet" href="assets/css/style.css?v=<?= @filemtime(__DIR__ . '/assets/css/style.css') ?>">
 
-  <!-- GTranslate (gtranslate.io) - PT / EN / ES translation -->
+  <?php if (GTRANSLATE_ENABLED): ?>
+  <!-- GTranslate (gtranslate.io) - PT / EN / ES translation (optional: config/ui.php) -->
   <style>
   .goog-te-banner-frame { display:none !important; }
   body { top: 0px !important; }
@@ -130,6 +132,7 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
   };
   </script>
   <script src="https://cdn.gtranslate.net/widgets/latest/flags.js" defer></script>
+  <?php endif; ?>
 
   <!-- Chart.js -->
   <script src="assets/vendor/chart.js-4.4.3/chart.umd.min.js"></script>
@@ -335,8 +338,15 @@ $pageTitle = $pageLabels[$page] ?? 'PRISMA-SLR';
         <span class="badge badge-<?= $currentProject['status'] ?>"><?= $currentProject['status'] ?></span>
       <?php endif; ?>
 
+      <?php if (GTRANSLATE_ENABLED): ?>
       <!-- gtranslate.io translation widget (PT / EN / ES) -->
       <div class="gtranslate_wrapper" title="Idioma"></div>
+      <?php else: ?>
+      <!-- Without gtranslate: switches only the PRISMA labels (flow diagram, dashboard counters, exports) -->
+      <select id="prisma-lang-select" class="form-control" style="width:auto;padding:4px 8px;font-size:.78rem" title="Idioma dos rótulos PRISMA 2020 (diagrama e exportações)" onchange="setPrismaLang(this.value)">
+        <option value="pt">PT</option><option value="en">EN</option><option value="es">ES</option>
+      </select>
+      <?php endif; ?>
 
 
       <a href="?page=projects" class="btn btn-ghost btn-sm" title="Gerenciar Projetos">
@@ -434,6 +444,7 @@ const APP = {
 // Cache-busting based on the file's mtime (forces reload after edits)
 $jsVer = fn($f) => '?v=' . @filemtime(__DIR__ . '/' . $f);
 ?>
+<script src="assets/js/tx.js<?= $jsVer('assets/js/tx.js') ?>"></script>
 <script src="assets/js/app.js<?= $jsVer('assets/js/app.js') ?>"></script>
 
 <!-- Page-specific scripts -->
@@ -478,6 +489,7 @@ function toggleTheme() {
 window.PRISMA_LANG = localStorage.getItem('prisma-lang') || 'pt';
 
 function setPrismaLang(lang) {
+  if (lang === window.PRISMA_LANG) return;
   window.PRISMA_LANG = lang;
   localStorage.setItem('prisma-lang', lang);
   // Redraws the SVG diagram on the prisma-flow page (and any other listener)
@@ -499,9 +511,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var savedLang = localStorage.getItem('prisma-lang') || 'pt';
   window.PRISMA_LANG = savedLang;
+  var langSel = document.getElementById('prisma-lang-select');
+  if (langSel) langSel.value = savedLang;
 
   // Restore saved language: clicks the matching flag once the widget loads
-  if (savedLang !== 'pt') {
+  if (savedLang !== 'pt' && !langSel) {
     var tries = 0;
     var iv = setInterval(function() {
       var flag = document.querySelector('.gtranslate_wrapper a.glink[data-gt-lang="' + savedLang + '"]');

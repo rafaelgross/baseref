@@ -8,6 +8,9 @@
  * Tests:
  * 1. Cohen's Kappa calculation logic matching api/kappa.php
  * 2. PRISMA 2020 Flow counting and reason categorization logic (lib/PrismaReasons.php)
+ * 3. Eligibility agreement scope used by api/kappa.php
+ * 4. Dashboard counters with PRISMA 2020 terms (pages/dashboard.php)
+ * 5. Optional gtranslate widget is off by default (config/ui.php)
  */
 
 $totalTests = 0;
@@ -101,7 +104,7 @@ $res2 = computeCohenKappa($revA, $revB);
 assertEquals(0.975, $res2['po'], "Screening observed agreement is 97.5%");
 assertEquals(0.9292, $res2['kappa'], "Screening kappa is ~0.929", 0.001);
 
-// Test 1.3: Eligibility agreement on the 45 reports assessed in full text (PRISMA 2020 flow):
+// Test 1.3: Synthetic eligibility matrix on 45 reports (checks the formula, not study data):
 // 29 include/include, 3 include/exclude (R1/R2), 0 exclude/include, 13 exclude/exclude
 $elA = []; $elB = [];
 for ($i = 1; $i <= 32; $i++) { $elA[$i] = 'include'; }          // R1 includes 32 ...
@@ -174,6 +177,55 @@ $s2 = eligibilityReportsAssessed([1, 2], [1 => 'include', 2 => 'include'], [
     2 => ['decision' => 'exclude', 'reason' => 'Texto completo indisponível', 'not_retrieved' => 0],
 ]);
 assertEquals(1, count($s2['ids']), "Flag 1 leaves out; flag 0 keeps in the scope");
+
+// =========================================================================
+// Suite 4: Dashboard counters (real code in lib/PrismaReasons.php, used by pages/dashboard.php)
+// =========================================================================
+echo "\n4. Dashboard counters (PRISMA 2020 terms):\n";
+
+// 240 records screened: 185 excluded, 55 sought; of the 55, 10 not retrieved, 13 excluded and 32 included
+$ids = range(1, 240); $dec = [];
+for ($i = 1; $i <= 185; $i++)   { $dec[$i] = ['screening' => 'exclude']; }
+for ($i = 186; $i <= 195; $i++) { $dec[$i] = ['screening' => 'include', 'eligibility' => 'exclude', 'not_retrieved' => true]; }
+for ($i = 196; $i <= 208; $i++) { $dec[$i] = ['screening' => 'include', 'eligibility' => 'exclude', 'not_retrieved' => false]; }
+for ($i = 209; $i <= 240; $i++) { $dec[$i] = ['screening' => 'include', 'eligibility' => 'include', 'not_retrieved' => false]; }
+$c = prismaDashboardCounts($ids, $dec);
+assertEquals(240, $c['screened'], "Records screened = 240");
+assertEquals(55, $c['sought'], "Reports sought for retrieval = 55");
+assertEquals(10, $c['not_retrieved'], "Reports not retrieved = 10 (separate counter)");
+assertEquals(45, $c['elig_assessed'], "Reports assessed for eligibility = 45");
+assertEquals(32, $c['included'], "Included = 32");
+assertEquals(198, $c['excluded'], "Excluded = 185 + 13, without the 10 not retrieved");
+assertEquals(0, $c['pending'], "No record pending");
+
+// Pending, uncertain and sought without a full-text decision
+$c2 = prismaDashboardCounts([1, 2, 3], [2 => ['screening' => 'uncertain'], 3 => ['screening' => 'include']]);
+assertCondition($c2['pending'] === 1 && $c2['screened'] === 2 && $c2['sought'] === 1 && $c2['elig_assessed'] === 0 && $c2['excluded'] === 0,
+    "Pending, uncertain and sought-without-decision are counted correctly");
+
+// =========================================================================
+// Suite 5: gtranslate widget is optional and off by default (config/ui.php)
+// =========================================================================
+echo "\n5. Optional gtranslate widget:\n";
+
+$ui = __DIR__ . '/../config/ui.php';
+$probe = function (?string $value) use ($ui): string {
+    $env = $value === null ? 'env -u GTRANSLATE_ENABLED ' : 'env GTRANSLATE_ENABLED=' . escapeshellarg($value) . ' ';
+    $code = 'require ' . var_export($ui, true) . '; echo GTRANSLATE_ENABLED ? "on" : "off";';
+    return trim((string) shell_exec($env . escapeshellarg(PHP_BINARY) . ' -r ' . escapeshellarg($code)));
+};
+if (is_file(__DIR__ . '/../config/ui.local.php')) {
+    echo "  [SKIP] config/ui.local.php exists in this checkout; default not tested\n";
+} else {
+    assertEquals('off', $probe(null), "Off when GTRANSLATE_ENABLED is not set");
+    assertEquals('off', $probe('false'), "Off with GTRANSLATE_ENABLED=false");
+    assertEquals('on', $probe('true'), "On with GTRANSLATE_ENABLED=true");
+}
+$index = (string) file_get_contents(__DIR__ . '/../index.php');
+$pos = strpos($index, 'cdn.gtranslate.net');
+$guard = strrpos(substr($index, 0, (int) $pos), 'if (GTRANSLATE_ENABLED)');
+assertCondition($pos !== false && $guard !== false && strpos(substr($index, $guard, $pos - $guard), 'endif') === false,
+    "index.php loads the gtranslate script only inside if (GTRANSLATE_ENABLED)");
 
 echo "\n--------------------------------------------------\n";
 echo "Summary: $passedTests / $totalTests tests passed.\n";

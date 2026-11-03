@@ -71,3 +71,33 @@ function eligibilityReportsAssessed(array $jointIds, array $refScreening, array 
     }
     return ['ids' => $ids, 'not_retrieved' => $notRetrieved, 'screening_divergence' => $divergence];
 }
+
+/**
+ * Contadores acumulados do painel, com os termos do diagrama PRISMA 2020.
+ * Cada artigo conta em todas as etapas por que já passou. Um relatório não recuperado
+ * NÃO entra em "excluded" nem em "elig_assessed"; tem contador próprio.
+ *
+ * @param int[] $ids        artigos não duplicados do projeto
+ * @param array $decisions  [article_id => ['screening' => ?string, 'eligibility' => ?string, 'not_retrieved' => bool]]
+ * @return array{pending:int, screened:int, sought:int, not_retrieved:int, elig_assessed:int, included:int, excluded:int}
+ */
+function prismaDashboardCounts(array $ids, array $decisions): array
+{
+    $c = ['pending' => 0, 'screened' => 0, 'sought' => 0, 'not_retrieved' => 0, 'elig_assessed' => 0, 'included' => 0, 'excluded' => 0];
+    foreach ($ids as $id) {
+        $d         = $decisions[$id] ?? [];
+        $screenDec = $d['screening']   ?? null;
+        $eligDec   = $d['eligibility'] ?? null;
+        if ($screenDec === null) { $c['pending']++; continue; }
+        $c['screened']++;
+        if ($screenDec === 'exclude') { $c['excluded']++; continue; }
+        if ($screenDec !== 'include') continue;   // 'uncertain': triado, ainda sem desfecho
+        $c['sought']++;
+        if ($eligDec === null) continue;
+        if (!empty($d['not_retrieved'])) { $c['not_retrieved']++; continue; }
+        $c['elig_assessed']++;
+        if ($eligDec === 'include')     $c['included']++;
+        elseif ($eligDec === 'exclude') $c['excluded']++;
+    }
+    return $c;
+}

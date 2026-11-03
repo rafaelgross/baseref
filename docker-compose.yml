@@ -50,6 +50,7 @@ services:
       AI_API_KEY: ${AI_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-}
       AI_DAILY_LIMIT: ${AI_DAILY_LIMIT:-100}
+      GTRANSLATE_ENABLED: ${GTRANSLATE_ENABLED:-false}
     volumes:
       - ./:/var/www/html
     networks:

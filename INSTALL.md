@@ -289,6 +289,27 @@ BaseRef uses Google Sign-In for zero-maintenance user management.
 | **OpenAlex API** | `api/enrich.php` (`OPENALEX_MAILTO`) | Free DOI metadata enrichment. Enter your email address to use the Polite Pool (faster response times). |
 | **MyMemory** | `api/translate.php` (`TRANSLATE_CONTACT_EMAIL`) | Free translation proxy for abstracts and exclusion reasons. Provide your email for higher daily query limits. |
 | **Groq / Gemini / Anthropic** | `config/ai.local.php` or `.env` | AI-suggested inclusion/exclusion classifications for title/abstract screening. |
+| **GTranslate (gtranslate.io)** | `config/ui.local.php` or `.env` (`GTRANSLATE_ENABLED`) | Page translation widget (PT / EN / ES flags). **Off by default.** When on, it receives the page text, including record titles, abstracts, author names and notes. See 7.1. |
+
+### 7.1 Page translation widget (gtranslate.io), off by default
+
+The interface is written in Portuguese. BaseRef itself translates the PRISMA 2020 labels (flow diagram, dashboard counters and exports) into English and Spanish; a small PT / EN / ES selector in the header switches them, and nothing is sent anywhere.
+
+Translating the rest of the interface relies on an external widget from gtranslate.io, which is **disabled in new installations**. To enable it, create `config/ui.local.php`:
+
+```php
+<?php
+define('GTRANSLATE_ENABLED', true);
+```
+
+or set the environment variable `GTRANSLATE_ENABLED=true` (with Docker, in `.env`).
+
+What the widget receives when it is enabled:
+
+* On every page load, the visitor's browser downloads a script from `cdn.gtranslate.net` (the request carries the visitor's IP address, browser headers and the page address).
+* When a visitor chooses English or Spanish, the text shown on the page is sent to the external translation service used by the widget. This includes menus and labels and **the record data on screen, such as titles, abstracts, author names and screening notes**. Translation happens in the visitor's browser, not on the BaseRef server, and the chosen language is kept in a cookie.
+
+Do not enable it if the records, notes or project data must not leave your institution. To disable it again, delete `config/ui.local.php` (or set `GTRANSLATE_ENABLED` to `false` or `0`); the widget and its script disappear from every page and the local PT / EN / ES selector takes its place.
 
 ---
 

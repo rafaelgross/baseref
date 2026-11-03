@@ -7,14 +7,17 @@ $pdb = getDB();
 $hasProject = $projectId > 0;
 
 // Contadores ACUMULADOS do funil (cada artigo conta em todas as etapas que já passou):
+// Termos e regras iguais aos do diagrama PRISMA 2020 (api/prisma-flow.php, lib/PrismaReasons.php):
 //   screened      = com decisão de triagem (título/resumo)
-//   eligible      = aprovados na triagem (seguem para o texto completo)
-//   elig_assessed = aprovados na triagem que já têm decisão de elegibilidade
+//   sought        = aprovados na triagem ("Reports sought for retrieval")
+//   not_retrieved = buscados cujo texto completo não foi obtido ("Reports not retrieved"); não é exclusão
+//   elig_assessed = buscados avaliados no texto completo ("Reports assessed for eligibility")
 //   included      = incluídos na elegibilidade
-//   excluded      = excluídos na triagem + excluídos na elegibilidade
+//   excluded      = excluídos na triagem + excluídos após leitura do texto completo
 //   pending       = sem decisão de triagem
+require_once __DIR__ . '/../lib/PrismaReasons.php';
 $stats = ['total_articles' => 0, 'total_duplicates' => 0, 'pending' => 0, 'screened' => 0,
-          'eligible' => 0, 'elig_assessed' => 0, 'included' => 0, 'excluded' => 0];
+          'sought' => 0, 'not_retrieved' => 0, 'elig_assessed' => 0, 'included' => 0, 'excluded' => 0];
 
 $citationYear = date('Y');
 $citationUrl = 'https://baseref.com.br/';
@@ -48,48 +51,27 @@ if ($hasProject) {
     // para que cada revisor veja o que ELE já avaliou, não o status oficial do projeto.
     $reviewerId = (int) $user['id'];
     $stmt = $pdb->prepare("
-        SELECT a.id AS article_id, sd.phase, sd.decision
+        SELECT a.id AS article_id, sd.phase, sd.decision, er.reason, er.not_retrieved
         FROM articles a
         JOIN screening_decisions sd ON sd.article_id = a.id
+        LEFT JOIN exclusion_reasons er ON er.id = sd.reason_id
         WHERE a.project_id = ? AND a.is_duplicate = 0
               AND sd.is_consensus = 0 AND (sd.reviewer_id = ? OR sd.reviewer_id IS NULL)
     ");
+    ensureReasonFlagColumn($pdb);
     $stmt->execute([$projectId, $reviewerId]);
     $decisionsByArticle = [];
     foreach ($stmt->fetchAll() as $row) {
         $decisionsByArticle[$row['article_id']][$row['phase']] = $row['decision'];
+        if ($row['phase'] === 'eligibility')
+            $decisionsByArticle[$row['article_id']]['not_retrieved'] = $row['decision'] === 'exclude' && isNotRetrievedReason($row['reason'], $row['not_retrieved']);
     }
 
     $stmt = $pdb->prepare("SELECT id FROM articles WHERE project_id = ? AND is_duplicate = 0");
     $stmt->execute([$projectId]);
     $nonDupIds = array_column($stmt->fetchAll(), 'id');
 
-    foreach ($nonDupIds as $id) {
-        $d         = $decisionsByArticle[$id] ?? [];
-        $screenDec = $d['screening']   ?? null;
-        $eligDec   = $d['eligibility'] ?? null;
-
-        // Antes cada artigo caía numa única "situação atual" (só os 'uncertain' contavam
-        // como triados e só os aprovados ainda sem leitura completa como elegíveis), e as
-        // barras de progresso dividiam esses grupos excludentes entre si — num projeto
-        // concluído isso dava "Triagem 0/N", "Elegibilidade 0/0" e "Incluídos X/0".
-        if ($screenDec === null) {
-            $stats['pending']++;
-            continue;
-        }
-        $stats['screened']++;
-        if ($screenDec === 'exclude') {
-            $stats['excluded']++;
-            continue;
-        }
-        if ($screenDec !== 'include') continue;   // 'uncertain': triado, ainda sem desfecho
-
-        $stats['eligible']++;
-        if ($eligDec === null) continue;
-        $stats['elig_assessed']++;
-        if ($eligDec === 'include')     $stats['included']++;
-        elseif ($eligDec === 'exclude') $stats['excluded']++;
-    }
+    $stats = array_merge($stats, prismaDashboardCounts($nonDupIds, $decisionsByArticle));
 }
 ?>
 
@@ -631,8 +613,13 @@ function setFeedbackRating(rating) {
   </div>
   <div class="stat-card">
     <div class="stat-icon"><i class="fa fa-check-double"></i></div>
-    <div class="stat-value"><?= number_format((int)$stats['eligible']) ?></div>
-    <div class="stat-label">Elegíveis</div>
+    <div class="stat-value"><?= number_format((int)$stats['sought']) ?></div>
+    <div class="stat-label"><span data-tx="dash_sought" translate="no" class="notranslate">Relatos buscados para recuperação</span></div>
+  </div>
+  <div class="stat-card yellow">
+    <div class="stat-icon"><i class="fa fa-file-circle-xmark"></i></div>
+    <div class="stat-value"><?= number_format((int)$stats['not_retrieved']) ?></div>
+    <div class="stat-label"><span data-tx="dash_not_retrieved" translate="no" class="notranslate">Relatos não recuperados</span></div>
   </div>
   <div class="stat-card green">
     <div class="stat-icon"><i class="fa fa-circle-check"></i></div>
@@ -660,10 +647,10 @@ function setFeedbackRating(rating) {
       $phases = [
         ['Identificação',  $total,               $total,                  'var(--primary)',        'fa-book'],
         ['Deduplicação',   $nonDup,               $total,                  'var(--accent-red)',     'fa-copy'],
-        // Triagem: triados / únicos · Elegibilidade: avaliados no texto completo / aprovados
-        // na triagem · Incluídos: incluídos / avaliados no texto completo
+        // Triagem: triados / únicos · Elegibilidade: com desfecho (avaliados + não recuperados) /
+        // buscados para recuperação · Incluídos: incluídos / avaliados no texto completo
         ['Triagem',        (int)$stats['screened'],      (int)$nonDup,               'var(--accent-yellow)',  'fa-magnifying-glass'],
-        ['Elegibilidade',  (int)$stats['elig_assessed'], (int)$stats['eligible'],    'var(--primary)',        'fa-check-double'],
+        ['Elegibilidade',  (int)$stats['elig_assessed'] + (int)$stats['not_retrieved'], (int)$stats['sought'], 'var(--primary)', 'fa-check-double'],
         ['Incluídos',      (int)$stats['included'],      (int)$stats['elig_assessed'],'var(--accent-green)',  'fa-circle-check'],
       ];
       foreach ($phases as [$label, $n, $d, $color, $icon]):
